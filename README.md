@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 # Overview
@@ -37,3 +38,6 @@ Cask is a trademark of Cask Data, Inc. All rights reserved.
 
 Apache, Apache HBase, and HBase are trademarks of The Apache Software Foundation. Used with
 permission. No endorsement by The Apache Software Foundation is implied by the use of these marks.
+=======
+# salesforce-plugins
+>>>>>>> afe574c (first commit)
