@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Copyright © 2019 Cask Data, Inc.
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not
+  use this file except in compliance with the License. You may obtain a copy of
+  the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+  License for the specific language governing permissions and limitations under
+  the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+
+  <name>Salesforce plugins</name>
+  <groupId>co.cask.hydrator</groupId>
+  <artifactId>salesforce-plugins</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+
+  <properties>
+    <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- version properties -->
+    <cdap.version>6.0.0-SNAPSHOT</cdap.version>
+    <junit.version>4.11</junit.version>
+    <commons.io.version>2.6</commons.io.version>
+    <awaitility.version>3.1.6</awaitility.version>
+    <commons.lang.version>2.6</commons.lang.version>
+    <hadoop.version>2.8.0</hadoop.version>
+    <hydrator.version>2.2.0-SNAPSHOT</hydrator.version>
+    <commons.version>3.8.1</commons.version>
+    <salesforce.api.version>45.0.0</salesforce.api.version>
+    <salesforce.client.soap.version>1.1.0</salesforce.client.soap.version>
+    <cometd.java.client.version>4.0.0</cometd.java.client.version>
+    <antlr.version>4.5.3</antlr.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-api</artifactId>
+      <version>${cdap.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-etl-api</artifactId>
+      <version>${cdap.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.hydrator</groupId>
+      <artifactId>hydrator-common</artifactId>
+      <version>${hydrator.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.force.api</groupId>
+      <artifactId>force-wsc</artifactId>
+      <version>${salesforce.api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>it.dontesta.labs.liferay.salesforce.client.soap</groupId>
+      <artifactId>salesforce-client-soap</artifactId>
+      <version>${salesforce.client.soap.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.cometd.java</groupId>
+      <artifactId>cometd-java-client</artifactId>
+      <version>${cometd.java.client.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${antlr.version}</version>
+    </dependency>
+
+
+    <!-- tests -->
+
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-etl-proto</artifactId>
+      <version>${cdap.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>hydrator-test</artifactId>
+      <version>${cdap.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-data-pipeline</artifactId>
+      <version>${cdap.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>co.cask</groupId>
+          <artifactId>cdap-maven-plugin</artifactId>
+          <version>1.0.1</version>
+          <configuration>
+            <cdapArtifacts>
+              <parent>system:cdap-data-pipeline[5.1.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-streams[5.1.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
+            </cdapArtifacts>
+          </configuration>
+          <executions>
+            <execution>
+              <id>create-artifact-config</id>
+              <phase>prepare-package</phase>
+              <goals>
+                <goal>create-plugin-json</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.7.0</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.14.1</version>
+        <configuration>
+          <argLine>-Xmx3g -Djava.awt.headless=true -XX:MaxPermSize=256m -XX:+UseConcMarkSweepGC
+            -Djava.net.preferIPv4Stack=true
+          </argLine>
+          <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+          <reuseForks>false</reuseForks>
+          <reportFormat>plain</reportFormat>
+          <systemPropertyVariables>
+            <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
+          </systemPropertyVariables>
+          <includes>
+            <include>**/*TestsSuite.java</include>
+            <include>**/*TestSuite.java</include>
+            <include>**/Test*.java</include>
+            <include>**/*Test.java</include>
+            <include>**/*TestCase.java</include>
+          </includes>
+          <excludes>
+            <exclude>**/*TestRun.java</exclude>
+          </excludes>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit47</artifactId>
+            <version>2.14</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.10</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.doxia</groupId>
+            <artifactId>doxia-core</artifactId>
+            <version>1.6</version>
+            <exclusions>
+              <exclusion>
+                <groupId>xerces</groupId>
+                <artifactId>xercesImpl</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>rat-check</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>LICENSE*.txt</exclude>
+                <!-- This file should be not be there, but I am excluding it for now -->
+                <exclude>*.rst</exclude>
+                <exclude>*.md</exclude>
+                <exclude>**/*.cdap</exclude>
+                <exclude>**/*.yaml</exclude>
+                <exclude>**/*.md</exclude>
+                <exclude>logs/**</exclude>
+                <exclude>.git/**</exclude>
+                <exclude>.idea/**</exclude>
+                <exclude>**/grok/patterns/**</exclude>
+                <exclude>conf/**</exclude>
+                <exclude>data/**</exclude>
+                <exclude>plugins/**</exclude>
+                <exlcude>**/*.patch</exlcude>
+                <exclude>**/logrotate.d/**</exclude>
+                <exclude>**/limits.d/**</exclude>
+                <exclude>**/*.json</exclude>
+                <exclude>**/*.json.template</exclude>
+                <exclude>**/MANIFEST.MF</exclude>
+                <!-- exclude any hack classes -->
+                <exclude>**/org/apache/hadoop/**</exclude>
+                <!-- exclude resource files-->
+                <exclude>**/resources/**</exclude>
+              </excludes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>validate</id>
+            <phase>process-test-classes</phase>
+            <configuration>
+
+              <sourceDirectories>
+                <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+              </sourceDirectories>
+
+              <configLocation>checkstyle.xml</configLocation>
+              <suppressionsLocation>suppressions.xml</suppressionsLocation>
+              <encoding>UTF-8</encoding>
+              <consoleOutput>true</consoleOutput>
+              <failsOnError>true</failsOnError>
+              <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <excludes>**/org/apache/cassandra/**,**/org/apache/hadoop/**</excludes>
+            </configuration>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>6.19</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.3.0</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <_exportcontents>
+              co.cask.hydrator.*;
+            </_exportcontents>
+            <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
+            <Embed-Transitive>true</Embed-Transitive>
+            <Embed-Directory>lib</Embed-Directory>
+          </instructions>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>bundle</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>co.cask</groupId>
+        <artifactId>cdap-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.antlr</groupId>
+        <artifactId>antlr4-maven-plugin</artifactId>
+        <version>${antlr.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>antlr4</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
