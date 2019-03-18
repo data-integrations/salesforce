@@ -16,7 +16,7 @@
 
 package co.cask.hydrator.salesforce.authenticator;
 
-import co.cask.hydrator.salesforce.SalesforceUtils;
+import co.cask.hydrator.salesforce.SalesforceConstants;
 import com.google.gson.Gson;
 import com.sforce.ws.ConnectorConfig;
 import org.eclipse.jetty.client.HttpClient;
@@ -41,7 +41,7 @@ public class Authenticator {
       AuthResponse authResponse = oauthLogin(credentials);
       ConnectorConfig connectorConfig = new ConnectorConfig();
       connectorConfig.setSessionId(authResponse.getAccessToken());
-      String apiVersion = SalesforceUtils.API_VERSION;
+      String apiVersion = SalesforceConstants.API_VERSION;
       String restEndpoint = String.format("%s/services/async/%s", authResponse.getInstanceUrl(), apiVersion);
       String serviceEndPoint = String.format("%s/services/Soap/u/%s", authResponse.getInstanceUrl(), apiVersion);
       connectorConfig.setRestEndpoint(restEndpoint);
