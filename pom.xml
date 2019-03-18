@@ -33,13 +33,11 @@
     <cdap.version>6.0.0-SNAPSHOT</cdap.version>
     <junit.version>4.11</junit.version>
     <commons.io.version>2.6</commons.io.version>
-    <awaitility.version>3.1.6</awaitility.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.8.0</hadoop.version>
     <hydrator.version>2.2.0-SNAPSHOT</hydrator.version>
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>45.0.0</salesforce.api.version>
-    <salesforce.client.soap.version>1.1.0</salesforce.client.soap.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
     <antlr.version>4.5.3</antlr.version>
   </properties>
@@ -84,9 +82,9 @@
       <version>${salesforce.api.version}</version>
     </dependency>
     <dependency>
-      <groupId>it.dontesta.labs.liferay.salesforce.client.soap</groupId>
-      <artifactId>salesforce-client-soap</artifactId>
-      <version>${salesforce.client.soap.version}</version>
+      <groupId>com.force.api</groupId>
+      <artifactId>force-partner-api</artifactId>
+      <version>${salesforce.api.version}</version>
     </dependency>
     <dependency>
       <groupId>org.cometd.java</groupId>
