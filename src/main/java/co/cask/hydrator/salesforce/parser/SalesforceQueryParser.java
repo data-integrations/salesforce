@@ -67,6 +67,16 @@ public class SalesforceQueryParser {
     return fieldsList;
   }
 
+  /**
+   * Throws {@link co.cask.hydrator.salesforce.parser.SOQLParsingException}
+   * if query syntax is not valid.
+   *
+   * @param query SOQL query
+   */
+  public static void validateQuery(String query) {
+    getStatementContext(query);
+  }
+
   private static SOQLParser.StatementContext getStatementContext(String query) {
     SOQLLexer lexer = new SOQLLexer(new ANTLRInputStream(query));
     CommonTokenStream tokens = new CommonTokenStream(lexer);
