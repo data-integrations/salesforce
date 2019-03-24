@@ -25,7 +25,7 @@ To create Client Secret user needs to create a connected application in Salesfor
 
 **Login Url:** Salesforce OAuth2 login url.
 
-**SOQL Query:** A SOQL query to fetch data into source. Aliases in queries are not supported
+**SOQL Query:** A SOQL query to fetch data into source.
 
 Examples:
 

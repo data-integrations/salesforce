@@ -13,12 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce;
 
 import co.cask.cdap.api.data.schema.Schema;
-import co.cask.hydrator.salesforce.parser.SOQLParsingException;
-import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.FieldType;
 import org.junit.Assert;
@@ -26,51 +23,61 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SalesforceSchemaUtilTest {
 
   @Test
   public void testGetSchemaWithFields() {
-    List<String> fields = Arrays.asList(new String[]{"Id", "Name", "Amount", "Percent", "ConversionRate", "IsWon"});
-    Map<String, Field> nameToField = new HashMap<>();
-    nameToField.put("Id", getFieldWithType(FieldType._int));
-    nameToField.put("Name", getFieldWithType(FieldType.string));
-    nameToField.put("Amount", getFieldWithType(FieldType.currency));
-    nameToField.put("Percent", getFieldWithType(FieldType.percent));
-    nameToField.put("ConversionRate", getFieldWithType(FieldType._double));
-    nameToField.put("IsWon", getFieldWithType(FieldType._boolean));
+    String opportunity = "Opportunity";
+    String account = "Account";
 
-    Schema schema = SalesforceSchemaUtil.getSchemaWithFields(fields, nameToField);
+    List<SObjectDescriptor.FieldDescriptor> fieldDescriptors = Stream
+      .of("Id", "Name", "Amount", "Percent", "ConversionRate", "IsWon")
+      .map(SObjectDescriptor.FieldDescriptor::new)
+      .collect(Collectors.toList());
 
-    String exceptedSchema = "[{name: Id, schema: \"int\"}, {name: Name, schema: \"string\"}, " +
-      "{name: Amount, schema: \"double\"}, {name: Percent, schema: \"double\"}, " +
-      "{name: ConversionRate, schema: \"double\"}, {name: IsWon, schema: \"boolean\"}]";
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(Arrays.asList(account, "NumberOfEmployees")));
+    SObjectDescriptor sObjectDescriptor = new SObjectDescriptor(opportunity, fieldDescriptors);
 
-    Assert.assertEquals(exceptedSchema, schema.getFields().toString());
+    Map<String, Field> opportunityFields = new LinkedHashMap<>();
+    opportunityFields.put("Id", getFieldWithType(FieldType._long, false));
+    opportunityFields.put("Name", getFieldWithType(FieldType.string, false));
+    opportunityFields.put("Amount", getFieldWithType(FieldType.currency, true));
+    opportunityFields.put("Percent", getFieldWithType(FieldType.percent, true));
+    opportunityFields.put("ConversionRate", getFieldWithType(FieldType._double, true));
+    opportunityFields.put("IsWon", getFieldWithType(FieldType._boolean, false));
+
+    Map<String, Field> accountFields = new LinkedHashMap<>();
+    accountFields.put("NumberOfEmployees", getFieldWithType(FieldType._long, false));
+
+    Map<String, Map<String, Field>> holder = new HashMap<>();
+    holder.put(opportunity, opportunityFields);
+    holder.put(account, accountFields);
+    SObjectsDescribeResult describeResult = new SObjectsDescribeResult(holder);
+
+    Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult);
+
+    Schema expectedSchema = Schema.recordOf("output",
+      Schema.Field.of("Id", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("Amount", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+      Schema.Field.of("Percent", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+      Schema.Field.of("ConversionRate", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+      Schema.Field.of("IsWon", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Account.NumberOfEmployees", Schema.of(Schema.Type.LONG)));
+
+    Assert.assertEquals(expectedSchema, actualSchema);
   }
 
-  @Test
-  public void testSyntaxError() {
-    try {
-      SalesforceQueryParser.getFieldsFromQuery("SELECT Id");
-      Assert.fail("Was excepted to fail with parsing error");
-    } catch (SOQLParsingException ex) {
-      Assert.assertTrue(ex.getMessage().contains("mismatched input '<EOF>' expecting FROM"));
-    }
-
-    try {
-      SalesforceQueryParser.getFieldsFromQuery("SELECT Id FROM table something");
-      Assert.fail("Was excepted to fail with parsing error");
-    } catch (SOQLParsingException ex) {
-      Assert.assertTrue(ex.getMessage().contains("extraneous input 'something'"));
-    }
-  }
-
-  private Field getFieldWithType(FieldType type) {
+  private Field getFieldWithType(FieldType type, boolean isNillable) {
     Field field = new Field();
     field.setType(type);
+    field.setNillable(isNillable);
 
     return field;
   }
