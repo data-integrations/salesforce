@@ -58,7 +58,7 @@
           },
           "plugin-function": {
             "method": "POST",
-            "widget": "getSchema",
+            "widget": "outputSchema",
             "output-property": "schema",
             "plugin-method": "getSchema"
           }

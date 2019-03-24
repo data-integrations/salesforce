@@ -106,6 +106,7 @@ TRACKING            : T R A C K I N G ;
 VIEWSTAT            : V I E W S T A T ;
 TRUE                : T R U E ;
 FALSE               : F A L S E ;
+AS                  : A S ;
 
 REAL                : DIGIT+ '.' DIGIT+ ;
 
@@ -209,7 +210,7 @@ IDENTIFIER          : LETTER LETTER_OR_DIGIT* ;
  * Parser Rules
  */
 
-statement           : SELECT fieldList+
+statement           : SELECT fieldList
                       FROM objectList
                       (USING SCOPE filterScope)?
                       (WHERE conditionExpressions)?
@@ -226,7 +227,9 @@ statement           : SELECT fieldList+
                       EOF
                     ;
 
-fieldList           : '*' | (fieldElement (',' fieldElement)*) ;
+fieldList           : '*' # starElement
+                    | fieldElement (',' fieldElement)* # fieldElements
+                    ;
 
 fieldElement        : subquery
                     | fieldName
@@ -243,7 +246,7 @@ subquery            : '('
                         (OFFSET numberOfRowsToSkip)?
                       ')' ;
 
-fieldName           : field alias? ;
+fieldName           : field ;
 
 field               : id_or_keyword ('.' id_or_keyword)* ;
 
@@ -274,7 +277,7 @@ elseClause          : ELSE whenFieldList ;
 
 objectList          : objectType ( ',' objectType )* ;
 
-objectType          : id_or_keyword ('.' id_or_keyword)* ;
+objectType          : id_or_keyword ('.' id_or_keyword)* (AS? alias)? ;
 
 filterScope         : id_or_keyword ;
 

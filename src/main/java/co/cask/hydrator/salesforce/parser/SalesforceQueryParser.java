@@ -13,58 +13,32 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.parser;
 
-import org.antlr.v4.runtime.ANTLRInputStream;
+import co.cask.hydrator.salesforce.SObjectDescriptor;
+import org.antlr.v4.runtime.BaseErrorListener;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import soql.SOQLLexer;
 import soql.SOQLParser;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Methods to get fields and sObject from salesforce query
+ * Utility class that parsers SOQL query.
  */
 public class SalesforceQueryParser {
-  /**
-   * Get sObject from SOQL query
-   * Example for "SELECT Id FROM Opportunity" it returns "Opportunity".
-   * For nested queries returns top sObject
-   *
-   * @param query SOQL query
-   *
-   * @return sObject name
-   */
-  public static String getSObjectFromQuery(String query) {
-    SOQLParser.StatementContext statementContext = getStatementContext(query);
-    return statementContext.objectList().getText().toLowerCase(); // salesforce objects are case-insensitive
-  }
 
   /**
-   * Get field names from SOQL query
-   * Example for "SELECT Id, Name FROM Opportunity" it returns ["Id", "Name"].
+   * Parses given SOQL query and retrieves top sObject information and its fields information.
    *
    * @param query SOQL query
-   * @return list of field names
+   * @return sObject descriptor
    */
-  public static List<String> getFieldsFromQuery(String query) {
-    SOQLParser.StatementContext statementContext = getStatementContext(query);
-
-    List<SOQLParser.FieldListContext> fieldsContextList = statementContext.fieldList();
-    if (fieldsContextList.isEmpty()) {
-      throw new SOQLParsingException("No fields were found in SOQL query. Query=" + query);
-    }
-
-    List<SOQLParser.FieldElementContext> fieldElementsContextList = statementContext.fieldList().get(0).fieldElement();
-
-    List<String> fieldsList = new ArrayList<>();
-    for (SOQLParser.FieldElementContext fieldElementsContext : fieldElementsContextList) {
-      fieldsList.add(fieldElementsContext.getText());
-    }
-
-    return fieldsList;
+  public static SObjectDescriptor getObjectDescriptorFromQuery(String query) {
+    SOQLParser parser = initParser(query);
+    SalesforceQueryVisitor visitor = new SalesforceQueryVisitor();
+    return visitor.visit(parser.statement());
   }
 
   /**
@@ -74,15 +48,43 @@ public class SalesforceQueryParser {
    * @param query SOQL query
    */
   public static void validateQuery(String query) {
-    getStatementContext(query);
+    getObjectDescriptorFromQuery(query);
   }
 
-  private static SOQLParser.StatementContext getStatementContext(String query) {
-    SOQLLexer lexer = new SOQLLexer(new ANTLRInputStream(query));
+  private static SOQLParser initParser(String query) {
+    SOQLLexer lexer = new SOQLLexer(CharStreams.fromString(query));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(ThrowingErrorListener.INSTANCE);
+
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     SOQLParser parser = new SOQLParser(tokens);
-    parser.addErrorListener(new ThrowingErrorListener());
-    return parser.statement();
+    parser.removeErrorListeners();
+    parser.addErrorListener(ThrowingErrorListener.INSTANCE);
+
+    return parser;
+  }
+
+  /**
+   * Error listener which throws exception when parsing error happens, instead of just default writing to stderr.
+   */
+  private static class ThrowingErrorListener extends BaseErrorListener {
+
+    static final ThrowingErrorListener INSTANCE = new ThrowingErrorListener();
+
+    @Override
+    public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
+                            int line, int charPositionInLine, String msg, RecognitionException e) {
+      StringBuilder builder = new StringBuilder();
+      builder.append("Line [").append(line).append("]");
+      builder.append(", position [").append(charPositionInLine).append("]");
+      if (offendingSymbol != null) {
+        builder.append(", offending symbol ").append(offendingSymbol);
+      }
+      if (msg != null) {
+        builder.append(": ").append(msg);
+      }
+      throw new SOQLParsingException(builder.toString());
+    }
   }
 
 }

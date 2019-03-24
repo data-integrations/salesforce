@@ -16,7 +16,6 @@
 
 package co.cask.hydrator.salesforce;
 
-import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
@@ -87,8 +86,8 @@ public final class SalesforceBulkUtil {
   public static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query)
     throws AsyncApiException, IOException {
 
-    String sObject = SalesforceQueryParser.getSObjectFromQuery(query);
-    JobInfo job = createJob(bulkConnection, sObject);
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    JobInfo job = createJob(bulkConnection, sObjectDescriptor.getName());
 
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       bulkConnection.createBatchFromStream(job, bout);
