@@ -23,7 +23,7 @@ To create Client Id user needs to create a connected application in Salesforce f
 **Client Secret:** Application Client Secret. This is also called "Consumer Secret" in Salesforce UI.
 To create Client Secret user needs to create a connected application in Salesforce first.
 
-**Login Url:** Salesforce oauth2 login url.
+**Login Url:** Salesforce OAuth2 login url.
 
 **SOQL Query:** A SOQL query to fetch data into source. Aliases in queries are not supported
 

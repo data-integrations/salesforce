@@ -31,10 +31,10 @@ import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSource;
 import co.cask.cdap.etl.api.batch.BatchSourceContext;
 import co.cask.hydrator.common.LineageRecorder;
-import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
 import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
+import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
 import com.google.common.annotations.VisibleForTesting;
 import com.sforce.ws.ConnectionException;
 import org.apache.hadoop.conf.Configuration;
@@ -43,9 +43,10 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
-
 
 /**
  * Plugin returns records from Salesforce using provided by user SOQL query.
@@ -54,9 +55,9 @@ import javax.ws.rs.Path;
  */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
-@Description("Plugin to read data from Salesforce in batches.")
+@Description("Read data from Salesforce using bulk API.")
 public class SalesforceBatchSource extends BatchSource<String, String, StructuredRecord> {
-  static final String NAME = "SalesforceBatchSource";
+  static final String NAME = "SalesforceBulk";
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
 
   private final Config config;
@@ -110,6 +111,7 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
   @Override
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     config.validate(); // validate when macros are already substituted
+    this.schema = SalesforceSchemaUtil.getSchemaFromQuery(config.getAuthenticatorCredentials(), config.getQuery());
 
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
     lineageRecorder.createExternalDataset(schema);
@@ -127,7 +129,7 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
 
   @Override
   public void transform(KeyValue<String, String> input,
-                        Emitter<StructuredRecord> emitter) throws Exception {
+                        Emitter<StructuredRecord> emitter) {
     StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 
     String[] fieldNames = getValuesFromCSVRow(input.getKey());
@@ -186,7 +188,7 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
    * The format of Salesforce csv row is:
    * "value1","value2","value3"
    *
-   * So we are splitting by "\",\"" instead of by comma. Since quotes are not allowed without escaping
+   * So we are splitting by \",\" instead of by comma. Since quotes are not allowed without escaping
    * in values this works in any case.
    *
    *
@@ -226,6 +228,12 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
           return Math.toIntExact(LocalDate.parse(value).toEpochDay());
         case TIMESTAMP_MILLIS:
           return Instant.parse(value).toEpochMilli();
+        case TIMESTAMP_MICROS:
+          return TimeUnit.MILLISECONDS.toMicros(Instant.parse(value).toEpochMilli());
+        case TIME_MILLIS:
+          return Math.toIntExact(TimeUnit.NANOSECONDS.toMillis(LocalTime.parse(value).toNanoOfDay()));
+        case TIME_MICROS:
+          return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value).toNanoOfDay());
         default:
           throw new UnexpectedFormatException(String.format("Field '%s' is of unsupported type '%s'",
                                                             field.getName(), logicalType.getToken()));

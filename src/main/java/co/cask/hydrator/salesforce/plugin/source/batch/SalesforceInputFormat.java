@@ -54,7 +54,7 @@ public class SalesforceInputFormat extends InputFormat {
       batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, pluginConfig.getQuery());
 
     } catch (AsyncApiException | IOException e) {
-      throw new RuntimeException("Exception while communicating with Salesforce API", e);
+      throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
 
     for (BatchInfo batch: batches) {

@@ -22,7 +22,6 @@ import co.cask.cdap.api.dataset.lib.KeyValue;
 import co.cask.cdap.etl.api.Emitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.sforce.async.BulkConnection;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -84,6 +83,49 @@ public class SalesforceRecordReaderTest {
   }
 
   @Test
+  public void testKeysAndValuesDifferentNumber() throws Exception {
+    String csvString = "\"key1\",\"key2\",\"key3\"\n" +
+      "\"value1\",\"value2\",\"value3\",\"value4\"";
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("key1", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("key2", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("key3", Schema.of(Schema.Type.STRING))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
+
+    try {
+      assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+      Assert.fail("Expected to throw exception due to not different number of arguments");
+    } catch (IllegalArgumentException ex) {
+      // java.lang.IllegalArgumentException: Number of fields is not equal to the number of values
+    }
+  }
+
+  @Test
+  public void testInvalidCSV() throws Exception {
+    // this csv is invalid since values are not quoted
+    String csvString = "key1,key2,key3\n" +
+      "value1,value2,value3";
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("key1", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("key2", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("key3", Schema.of(Schema.Type.STRING))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
+
+    try {
+      assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+      Assert.fail("Expected to throw exception due to not different number of arguments");
+    } catch (IllegalStateException ex) {
+      // java.lang.IllegalStateException: Expected double-quote at the end of Salesforce csv.
+    }
+  }
+
+  @Test
   public void testLineBreakAndCommaInCSV() throws Exception {
     String csvString = "\"Id\",\"ShippingStreet\"\n" +
       "\"0061i000003XNcBAAW\",\"1301 Hoch Drive\"\n" +
@@ -138,10 +180,6 @@ public class SalesforceRecordReaderTest {
   private void assertRecordReaderOutputRecords(String csvString, Schema schema,
                                                List<Map<String, Object>> expectedRecords)
     throws Exception {
-
-    SalesforceSplit salesforceSplit = new SalesforceSplit("dummyJobId", "dummyBatchId");
-
-    BulkConnection mockBulkConnection = mock(BulkConnection.class);
     Emitter<StructuredRecord> emitter = mock(Emitter.class);
 
     SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(null);

@@ -84,8 +84,6 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return loginUrl;
   }
 
-
-
   public void validate() {
     if (containsMacro(PROPERTY_CLIENTID) || containsMacro(PROPERTY_CLIENT_SECRET) ||
         containsMacro(PROPERTY_USERNAME) || containsMacro(PROPERTY_PASSWORD) ||
@@ -96,7 +94,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     try {
       new PartnerConnection(Authenticator.createConnectorConfig(this.getAuthenticatorCredentials()));
     } catch (ConnectionException | IllegalArgumentException e) {
-      String errorMessage = "Cannot connect to Salesforce API with credentials specified in plugin config";
+      String errorMessage = "Cannot connect to Salesforce API with credentials specified";
       throw new IllegalArgumentException(errorMessage, e);
     }
   }
