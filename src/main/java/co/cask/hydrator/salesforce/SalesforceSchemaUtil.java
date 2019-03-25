@@ -137,6 +137,7 @@ public class SalesforceSchemaUtil {
       case _boolean:
         return Schema.of(Schema.Type.BOOLEAN);
       case _int:
+      case _long:
         return Schema.of(Schema.Type.LONG);
       case _double:
       case currency:
@@ -146,6 +147,8 @@ public class SalesforceSchemaUtil {
         return Schema.of(Schema.LogicalType.DATE);
       case datetime:
         return Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS);
+      case time:
+        return Schema.of(Schema.LogicalType.TIME_MILLIS);
       default:
         return Schema.of(Schema.Type.STRING);
     }

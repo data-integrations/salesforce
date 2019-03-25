@@ -48,6 +48,9 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
   private String key;
   private String value;
 
+  private long linesNumber;
+  private long processedLines;
+
   /**
    * Get csv from a single Salesforce batch
    *
@@ -74,8 +77,16 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
 
       queryReader = new BufferedReader(new StringReader(queryResponse));
       key = queryReader.readLine(); // first line of csv contains names of columns
+
+      // this should never happen, unless there is an issue on Salesforce server side
+      if (key == null) {
+        throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
+      }
+
+      linesNumber = countLines(queryResponse);
+      processedLines = 1;
     } catch (AsyncApiException e) {
-      throw new RuntimeException("Exception while communicating with Salesforce API", e);
+      throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
   }
 
@@ -90,13 +101,9 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
   public boolean nextKeyValue() throws IOException {
     StringBuilder result = new StringBuilder();
 
-    for (;;) {
-      String line = queryReader.readLine();
-
-      // end of response for this record reader
-      if (line == null) {
-        return false;
-      }
+    String line;
+    for (line = queryReader.readLine(); line != null; line = queryReader.readLine()) {
+      processedLines++;
 
       result.append(line);
 
@@ -111,7 +118,12 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
     }
 
     value = result.toString();
-    return true;
+
+    if (!value.isEmpty() && line == null) {
+      throw new IllegalStateException("Expected double-quote at the end of Salesforce csv.");
+    }
+
+    return (line != null);
   }
 
   @Override
@@ -126,7 +138,7 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
 
   @Override
   public float getProgress() {
-    return 0;
+    return processedLines / (float) linesNumber;
   }
 
   @Override
@@ -140,5 +152,10 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
   @VisibleForTesting
   void setQueryReader(BufferedReader queryReader) {
     this.queryReader = queryReader;
+  }
+
+  private static int countLines(String str) {
+    String[] lines = str.split("\r\n|\r|\n");
+    return  lines.length;
   }
 }
