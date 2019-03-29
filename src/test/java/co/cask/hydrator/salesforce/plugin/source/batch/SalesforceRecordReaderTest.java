@@ -83,6 +83,51 @@ public class SalesforceRecordReaderTest {
   }
 
   @Test
+  public void testUTF8InKeysAndValues() throws Exception {
+    String csvString = "\"Id\",\"IsDeleted\u0628\u0633\u0645\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\"\n" +
+      "\"0061i000003XNcBAAW\u0628\u0633\u0645\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\"";
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("IsDeleted\u0628\u0633\u0645", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcBAAW\u0628\u0633\u0645")
+             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put("ExpectedRevenue", 1500.0)
+             .put("LastModifiedDate", 1550819001000L)
+             .put("CloseDate", 17897)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcCAAW")
+             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put("ExpectedRevenue", 112500.0)
+             .put("LastModifiedDate", 1550819001000L)
+             .put("CloseDate", 17885)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcDAAW")
+             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put("ExpectedRevenue", 220000.0)
+             .put("LastModifiedDate", 1550819001000L)
+             .put("CloseDate", 17850)
+             .build()
+      )
+      .build();
+
+    assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+  }
+
+  @Test
   public void testKeysAndValuesDifferentNumber() throws Exception {
     String csvString = "\"key1\",\"key2\",\"key3\"\n" +
       "\"value1\",\"value2\",\"value3\",\"value4\"";
@@ -181,8 +226,11 @@ public class SalesforceRecordReaderTest {
                                                List<Map<String, Object>> expectedRecords)
     throws Exception {
     Emitter<StructuredRecord> emitter = mock(Emitter.class);
-
-    SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(null);
+    SalesforceBatchSource.Config config = new SalesforceBatchSource.Config("myReferenceName",
+                                                                           "myClientId", "myClientSecret", "myUsername",
+                                                                           "myPassword", "myLoginUrl", "Stop on error",
+                                                                           "myQuery");
+    SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(config);
     salesforceBatchSource.setSchema(schema);
 
     Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
