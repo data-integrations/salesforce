@@ -84,7 +84,8 @@ public class SalesforceRecordReaderTest {
 
   @Test
   public void testUTF8InKeysAndValues() throws Exception {
-    String csvString = "\"Id\",\"IsDeleted\u0628\u0633\u0645\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\"\n" +
+    String csvString = "\"Id\",\"IsDeleted\u0628\u0633\u0645\",\"ExpectedRevenue\"," +
+      "\"LastModifiedDate\",\"CloseDate\"\n" +
       "\"0061i000003XNcBAAW\u0628\u0633\u0645\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\"\n" +
       "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\"\n" +
       "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\"";
