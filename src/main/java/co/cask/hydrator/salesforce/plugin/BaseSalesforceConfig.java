@@ -25,7 +25,7 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 
 /**
- * Base configuration for salesforce Streaming and Batch plugins
+ * Base configuration for Salesforce Streaming and Batch plugins
  */
 public class BaseSalesforceConfig extends ReferencePluginConfig {
   private static final String PROPERTY_CLIENTID = "clientId";
@@ -33,6 +33,10 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   private static final String PROPERTY_USERNAME = "username";
   private static final String PROPERTY_PASSWORD = "password";
   private static final String PROPERTY_LOGINURL = "loginUrl";
+
+  public static final String ERROR_HANDLING_SKIP = "Skip on error";
+  public static final String ERROR_HANDLING_SEND = "Send to error";
+  public static final String ERROR_HANDLING_STOP = "Stop on error";
 
   @Description("Salesforce connected app's client ID")
   @Macro
@@ -54,14 +58,18 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Macro
   private final String loginUrl;
 
+  @Description("Strategy to handle erroneous records")
+  private final String errorHandling;
+
   public BaseSalesforceConfig(String referenceName, String clientId, String clientSecret,
-                              String username, String password, String loginUrl) {
+                              String username, String password, String loginUrl, String errorHandling) {
     super(referenceName);
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.username = username;
     this.password = password;
     this.loginUrl = loginUrl;
+    this.errorHandling = errorHandling;
   }
 
   public String getClientId() {
@@ -82,6 +90,10 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
 
   public String getLoginUrl() {
     return loginUrl;
+  }
+
+  public String getErrorHandling() {
+    return errorHandling;
   }
 
   public void validate() {

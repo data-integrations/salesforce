@@ -64,8 +64,27 @@
           }
         }
       ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "select",
+          "label": "Error Handling",
+          "name": "errorHandling",
+          "widget-attributes": {
+            "values": [
+              "Skip on error",
+              "Send to error",
+              "Stop on error"
+            ],
+            "default": "Skip on error"
+          }
+        }
+      ]
     }
   ],
+  "emit-errors": true,
   "outputs": [
     {
       "name": "schema",
@@ -79,7 +98,7 @@
           "float",
           "double",
           "bytes",
-          "string",
+          "string"
         ],
         "schema-default-type": "string",
         "property-watch": "format"
