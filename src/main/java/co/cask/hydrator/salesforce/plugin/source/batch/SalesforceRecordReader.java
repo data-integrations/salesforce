@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
- * RecordReader implementation, which reads a single salesforce batch from bulk job
+ * RecordReader implementation, which reads a single Salesforce batch from bulk job
  * provided in InputSplit
  */
 public class SalesforceRecordReader extends RecordReader<String, String> {

@@ -26,6 +26,7 @@ import co.cask.cdap.api.data.format.UnexpectedFormatException;
 import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.dataset.lib.KeyValue;
 import co.cask.cdap.etl.api.Emitter;
+import co.cask.cdap.etl.api.InvalidEntry;
 import co.cask.cdap.etl.api.PipelineConfigurer;
 import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSource;
@@ -60,8 +61,11 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
   static final String NAME = "SalesforceBulk";
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
 
+  private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";
+
   private final Config config;
   private Schema schema;
+  private Schema errorSchema;
 
   SalesforceBatchSource(Config config) throws ConnectionException {
     this.config = config;
@@ -74,11 +78,12 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
     @Macro
     private final String query;
 
+
     Config(Configuration conf) {
         super(null,
               conf.get(SalesforceConstants.CLIENT_ID), conf.get(SalesforceConstants.CLIENT_SECRET),
               conf.get(SalesforceConstants.USERNAME), conf.get(SalesforceConstants.PASSWORD),
-              conf.get(SalesforceConstants.LOGIN_URL));
+              conf.get(SalesforceConstants.LOGIN_URL), null);
 
         this.query = conf.get(SalesforceConstants.QUERY);
     }
@@ -100,6 +105,8 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
   @Override
   public void initialize(BatchRuntimeContext context) throws ConnectionException {
     this.schema = SalesforceSchemaUtil.getSchemaFromQuery(config.getAuthenticatorCredentials(), config.getQuery());
+    this.errorSchema = Schema.recordOf("error",
+                                       Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING)));
   }
 
   @Override
@@ -130,29 +137,46 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
   @Override
   public void transform(KeyValue<String, String> input,
                         Emitter<StructuredRecord> emitter) {
-    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    try {
+      StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 
-    String[] fieldNames = getValuesFromCSVRow(input.getKey());
-    String[] values = getValuesFromCSVRow(input.getValue());
+      String[] fieldNames = getValuesFromCSVRow(input.getKey());
+      String[] values = getValuesFromCSVRow(input.getValue());
 
-    if (fieldNames.length != values.length) {
-      throw new IllegalArgumentException("Number of fields is not equal to the number of values");
-    }
-
-    for (int i = 0; i < fieldNames.length; i++) {
-      String fieldName = fieldNames[i];
-      String value = values[i];
-
-      Schema.Field field = schema.getField(fieldName);
-
-      if (field == null) {
-        continue; // this field is not in schema
+      if (fieldNames.length != values.length) {
+        throw new IllegalArgumentException("Number of fields is not equal to the number of values");
       }
 
-      builder.set(fieldName, convertValue(value, field));
-    }
+      for (int i = 0; i < fieldNames.length; i++) {
+        String fieldName = fieldNames[i];
+        String value = values[i];
 
-    emitter.emit(builder.build());
+        Schema.Field field = schema.getField(fieldName);
+
+        if (field == null) {
+          continue; // this field is not in schema
+        }
+
+        builder.set(fieldName, convertValue(value, field));
+      }
+
+      emitter.emit(builder.build());
+    } catch (Exception ex) {
+      switch(config.getErrorHandling()) {
+        case Config.ERROR_HANDLING_SKIP:
+          break;
+        case Config.ERROR_HANDLING_SEND:
+          StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
+          builder.set(ERROR_SCHEMA_BODY_PROPERTY, input.getValue());
+          emitter.emitError(new InvalidEntry<StructuredRecord>(400, ex.getMessage(), builder.build()));
+          break;
+        case Config.ERROR_HANDLING_STOP:
+          throw ex;
+        default:
+          throw new UnexpectedFormatException(
+            String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
+      }
+    }
   }
 
   /**

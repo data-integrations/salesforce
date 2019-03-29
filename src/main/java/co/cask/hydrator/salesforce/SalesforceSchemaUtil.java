@@ -137,6 +137,7 @@ public class SalesforceSchemaUtil {
       case _boolean:
         return Schema.of(Schema.Type.BOOLEAN);
       case _int:
+        return Schema.of(Schema.Type.INT);
       case _long:
         return Schema.of(Schema.Type.LONG);
       case _double:
