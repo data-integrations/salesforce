@@ -78,7 +78,8 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
     @Macro
     private final String query;
 
-    Config(String referenceName, String clientId, String clientSecret, String username, String password, String loginUrl, String errorHandling, String query) {
+    Config(String referenceName, String clientId, String clientSecret,
+           String username, String password, String loginUrl, String errorHandling, String query) {
       super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling);
       this.query = query;
     }

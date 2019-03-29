@@ -44,7 +44,7 @@ public class SalesforceSchemaUtilTest {
 
     Schema schema = SalesforceSchemaUtil.getSchemaWithFields(fields, nameToField);
 
-    String exceptedSchema = "[{name: Id, schema: \"long\"}, {name: Name, schema: \"string\"}, " +
+    String exceptedSchema = "[{name: Id, schema: \"int\"}, {name: Name, schema: \"string\"}, " +
       "{name: Amount, schema: \"double\"}, {name: Percent, schema: \"double\"}, " +
       "{name: ConversionRate, schema: \"double\"}, {name: IsWon, schema: \"boolean\"}]";
 
