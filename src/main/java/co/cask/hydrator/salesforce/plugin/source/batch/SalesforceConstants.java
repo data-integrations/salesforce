@@ -26,4 +26,5 @@ public class SalesforceConstants {
   public static final String CLIENT_SECRET = "salesforce.client.secret";
   public static final String QUERY = "salesforce.query";
   public static final String LOGIN_URL = "salesforce.login.url";
+  public static final String ERROR_HANDLING = "salesforce.error.handling";
 }

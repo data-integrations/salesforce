@@ -91,7 +91,7 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
         super(null,
               conf.get(SalesforceConstants.CLIENT_ID), conf.get(SalesforceConstants.CLIENT_SECRET),
               conf.get(SalesforceConstants.USERNAME), conf.get(SalesforceConstants.PASSWORD),
-              conf.get(SalesforceConstants.LOGIN_URL), null);
+              conf.get(SalesforceConstants.LOGIN_URL), conf.get(SalesforceConstants.ERROR_HANDLING));
 
         this.query = conf.get(SalesforceConstants.QUERY);
     }

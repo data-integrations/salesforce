@@ -187,7 +187,8 @@ public class SalesforceRecordReaderTest {
       assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
       Assert.fail("Expected to throw exception due to not different number of arguments");
     } catch (IllegalStateException ex) {
-      Assert.assertTrue(ex.getMessage().contains("Empty response was received from Salesforce, but csv header was expected"));
+      Assert.assertTrue(ex.getMessage().
+        contains("Empty response was received from Salesforce, but csv header was expected"));
     }
   }
 
