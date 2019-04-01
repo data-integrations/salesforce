@@ -98,12 +98,12 @@ public class SalesforceSchemaUtil {
         }
 
         FieldType fieldType = salesforceField.getType();
-        Schema.Type schemaFieldType = fieldTypeToCdapSchemaType(fieldType);
+        fieldSchema = fieldTypeToCdapSchemaType(fieldType);
 
         if (salesforceField.isNillable()) {
-          fieldSchema = Schema.nullableOf(Schema.of(schemaFieldType));
+          fieldSchema = Schema.nullableOf(fieldSchema);
         } else {
-          fieldSchema = Schema.of(schemaFieldType);
+          fieldSchema = fieldSchema;
         }
       }
 
@@ -132,18 +132,26 @@ public class SalesforceSchemaUtil {
     return (fieldName.contains("(") || fieldName.contains("."));
   }
 
-  private static Schema.Type fieldTypeToCdapSchemaType(FieldType fieldType) {
+  private static Schema fieldTypeToCdapSchemaType(FieldType fieldType) {
     switch(fieldType) {
       case _boolean:
-        return Schema.Type.BOOLEAN;
+        return Schema.of(Schema.Type.BOOLEAN);
       case _int:
-        return Schema.Type.LONG;
+        return Schema.of(Schema.Type.INT);
+      case _long:
+        return Schema.of(Schema.Type.LONG);
       case _double:
       case currency:
       case percent:
-        return Schema.Type.DOUBLE;
+        return Schema.of(Schema.Type.DOUBLE);
+      case date:
+        return Schema.of(Schema.LogicalType.DATE);
+      case datetime:
+        return Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS);
+      case time:
+        return Schema.of(Schema.LogicalType.TIME_MILLIS);
       default:
-        return Schema.Type.STRING;
+        return Schema.of(Schema.Type.STRING);
     }
   }
 }
