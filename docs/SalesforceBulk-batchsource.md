@@ -33,6 +33,15 @@ Examples:
 
 ``SELECT Id FROM Contact WHERE Name LIKE 'A%' AND MailingCity = 'California'``
 
+**Error Handling:** Strategy used to handle erroneous records. Acceptable values are Skip on error,
+Send to error, Stop on error.
+
+| Value  | Description |
+| ------ | ----------- |
+| Skip on error | Ignores erroneous records  |
+| Send to error | Emits an error to error handler. Errors are records with a field 'body', containing erroneous row. |
+| Stop on error | Fails pipeline due to erroneous record |
+
 **Schema:** The schema of output objects.
 The Salesforce types will be automacitally mapped to schema types as shown below:
 

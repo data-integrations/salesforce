@@ -22,7 +22,12 @@ import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import com.google.common.annotations.VisibleForTesting;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.QuoteMode;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -32,21 +37,23 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Iterator;
 
 /**
  * RecordReader implementation, which reads a single Salesforce batch from bulk job
  * provided in InputSplit
  */
-public class SalesforceRecordReader extends RecordReader<String, String> {
+public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceRecordReader.class);
 
   private BulkConnection bulkConnection;
   private String jobId;
   private String batchId;
-  private BufferedReader queryReader = null;
+  private BufferedReader queryReader;
+  private CSVParser csvParser;
+  private Iterator<CSVRecord> parserIterator;
 
-  private String key;
-  private String value;
+  private CSVRecord value;
 
   private long linesNumber;
   private long processedLines;
@@ -75,13 +82,7 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       String queryResponse = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
 
-      queryReader = new BufferedReader(new StringReader(queryResponse));
-      key = queryReader.readLine(); // first line of csv contains names of columns
-
-      // this should never happen, unless there is an issue on Salesforce server side
-      if (key == null) {
-        throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
-      }
+      setupParser(queryResponse);
 
       linesNumber = countLines(queryResponse);
       processedLines = 1;
@@ -91,48 +92,28 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
   }
 
   /**
-   * Reads one row from csv. Sometimes the entries in csv can be multiline.
-   * That's why one row does not equal one text line.
+   * Reads single record from csv.
    *
    * @return returns false if no more data to read
    * @throws IOException exception from readLine from query csv
    */
   @Override
   public boolean nextKeyValue() throws IOException {
-    StringBuilder result = new StringBuilder();
-
-    String line;
-    for (line = queryReader.readLine(); line != null; line = queryReader.readLine()) {
-      processedLines++;
-
-      result.append(line);
-
-      // All values in Salesforce csv are always enquoted with double-quote. By looking for quote at the end of row
-      // we know that the line break is end
-      // of csv row and not just line break in value itself.
-      if (line.endsWith("\"")) {
-        break;
-      } else {
-        result.append("\n");
-      }
+    if (!parserIterator.hasNext()) {
+      return false;
     }
 
-    value = result.toString();
-
-    if (!value.isEmpty() && line == null) {
-      throw new IllegalStateException("Expected double-quote at the end of Salesforce csv.");
-    }
-
-    return (line != null);
+    value = parserIterator.next();
+    return true;
   }
 
   @Override
-  public String getCurrentKey() {
-    return key;
+  public NullWritable getCurrentKey() {
+    return null;
   }
 
   @Override
-  public String getCurrentValue() {
+  public CSVRecord getCurrentValue() {
     return value;
   }
 
@@ -143,19 +124,33 @@ public class SalesforceRecordReader extends RecordReader<String, String> {
 
   @Override
   public void close() throws IOException {
+    if (csvParser != null) {
+      csvParser.close();
+    }
     if (queryReader != null) {
       queryReader.close();
     }
   }
 
-  // for testing purposes only
-  @VisibleForTesting
-  void setQueryReader(BufferedReader queryReader) {
-    this.queryReader = queryReader;
-  }
-
   private static int countLines(String str) {
     String[] lines = str.split("\r\n|\r|\n");
     return  lines.length;
+  }
+
+  @VisibleForTesting
+  void setupParser(String queryResponse) throws IOException {
+    queryReader = new BufferedReader(new StringReader(queryResponse));
+
+    csvParser = CSVFormat.DEFAULT.
+      withHeader().
+      withQuoteMode(QuoteMode.ALL).
+      withAllowMissingColumnNames(false).
+      parse(queryReader);
+
+    if (csvParser.getHeaderMap().isEmpty()) {
+      throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
+    }
+
+    parserIterator = csvParser.iterator();
   }
 }

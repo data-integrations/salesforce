@@ -38,13 +38,16 @@ import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
 import com.google.common.annotations.VisibleForTesting;
 import com.sforce.ws.ConnectionException;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
@@ -57,7 +60,7 @@ import javax.ws.rs.Path;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
 @Description("Read data from Salesforce using bulk API.")
-public class SalesforceBatchSource extends BatchSource<String, String, StructuredRecord> {
+public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, StructuredRecord> {
   static final String NAME = "SalesforceBulk";
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
 
@@ -140,21 +143,21 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
   }
 
   @Override
-  public void transform(KeyValue<String, String> input,
+  public void transform(KeyValue<NullWritable, CSVRecord> input,
                         Emitter<StructuredRecord> emitter) {
     try {
       StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 
-      String[] fieldNames = getValuesFromCSVRow(input.getKey());
-      String[] values = getValuesFromCSVRow(input.getValue());
+      CSVRecord csvRecord = input.getValue();
 
-      if (fieldNames.length != values.length) {
-        throw new IllegalArgumentException("Number of fields is not equal to the number of values");
+      if (!csvRecord.isConsistent()) {
+        throw new IllegalArgumentException(String.format("CSV record '%s' is not consistent to a csv mapping",
+                                                         csvRecord));
       }
 
-      for (int i = 0; i < fieldNames.length; i++) {
-        String fieldName = fieldNames[i];
-        String value = values[i];
+      for (Map.Entry<String, String> entry : csvRecord.toMap().entrySet()) {
+        String fieldName = entry.getKey();
+        String value = entry.getValue();
 
         Schema.Field field = schema.getField(fieldName);
 
@@ -208,31 +211,6 @@ public class SalesforceBatchSource extends BatchSource<String, String, Structure
     return SalesforceSchemaUtil.getSchemaFromQuery(new AuthenticatorCredentials(request.username, request.password,
                                                                                 request.clientId, request.clientSecret,
                                                                                 request.loginUrl), request.query);
-  }
-
-  /**
-   * An advanced version of split csv row by comma. We cannot simply split by comma since some values may have comma
-   * inside them and Salesforce does not escape it.
-   *
-   * The format of Salesforce csv row is:
-   * "value1","value2","value3"
-   *
-   * So we are splitting by \",\" instead of by comma. Since quotes are not allowed without escaping
-   * in values this works in any case.
-   *
-   *
-   * @param csvRow one row in csv format with quoted values
-   * @return an array of values
-   */
-  private String[] getValuesFromCSVRow(String csvRow) {
-    String[] values = csvRow.split("\",\"");
-
-    values[0] = values[0].substring(1);
-
-    String last = values[values.length - 1];
-    values[values.length - 1] = last.substring(0, last.length() - 1);
-
-    return values;
   }
 
   private Object convertValue(String value, Schema.Field field) {
