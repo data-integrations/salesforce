@@ -22,7 +22,9 @@ import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -65,7 +67,7 @@ public class SalesforceInputFormat extends InputFormat {
   }
 
   @Override
-  public RecordReader<String, String> createRecordReader(
+  public RecordReader<NullWritable, CSVRecord> createRecordReader(
     InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
     return new SalesforceRecordReader();
   }

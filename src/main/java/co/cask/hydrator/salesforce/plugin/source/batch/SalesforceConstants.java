@@ -24,8 +24,6 @@ public class SalesforceConstants {
   public static final String PASSWORD = "salesforce.password";
   public static final String USERNAME = "salesforce.user";
   public static final String CLIENT_SECRET = "salesforce.client.secret";
-  public static final String OBJECT = "salesforce.object";
   public static final String QUERY = "salesforce.query";
-  public static final String API_VERSION = "salesforce.api.version";
   public static final String LOGIN_URL = "salesforce.login.url";
 }

@@ -58,7 +58,13 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Macro
   private final String loginUrl;
 
-  @Description("Strategy to handle erroneous records")
+  @Description("Strategy used to handle erroneous records. Acceptable values are Skip on error,\n" +
+    "Send to error, Stop on error.\n" +
+    "\n" +
+    "Skip on error - ignores erroneous record.\n" +
+    "Send to error - emits an error to error handler. " +
+    "Errors are records with a field 'body', containing erroneous row.\n" +
+    "Stop on error - fails pipeline due to erroneous record.")
   private final String errorHandling;
 
   public BaseSalesforceConfig(String referenceName, String clientId, String clientSecret,
