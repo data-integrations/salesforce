@@ -34,7 +34,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     .put(SalesforceConstants.CLIENT_ID, config.getClientId())
     .put(SalesforceConstants.CLIENT_SECRET, config.getClientSecret())
     .put(SalesforceConstants.QUERY, config.getQuery())
-    .put(SalesforceConstants.LOGIN_URL, config.getLoginUrl()).build();
+    .put(SalesforceConstants.LOGIN_URL, config.getLoginUrl())
+    .put(SalesforceConstants.ERROR_HANDLING, config.getErrorHandling()).build();
   }
 
   @Override
