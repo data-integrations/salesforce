@@ -7,6 +7,19 @@ Contains CDAP pipeline plugins for ServiceNow. Following plugins are available i
                                                                
 * [ServiceNow Batch Source](docs/ServiceNow-batchsource.md)
 
+# Integration tests
+
+By default all integration tests will be skipped, since Salesforce credentials are needed.
+
+Instructions to run the tests:
+ 1. Create/use existing Salesforce account
+ 2. Create connected application within the account to get clientId and clientSecret
+ 3. Run the tests using the command below:
+
+```
+mvn clean test -Dsalesforce.test.clientId= -Dsalesforce.test.clientSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
+```
+
 # Contact
 
 ## Mailing Lists
