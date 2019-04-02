@@ -25,7 +25,7 @@ import soql.SOQLLexer;
 import soql.SOQLParser;
 
 /**
- * Utility class that parsers SOQL query.
+ * Utility class that parses SOQL query.
  */
 public class SalesforceQueryParser {
 
