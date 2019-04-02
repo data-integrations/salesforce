@@ -18,10 +18,17 @@ package co.cask.hydrator.salesforce.etl;
 
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.schema.Schema;
+import com.google.common.collect.ImmutableList;
+import com.sforce.soap.partner.sobject.SObject;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.time.Instant;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -30,12 +37,30 @@ import java.util.List;
 public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTest {
   @Test
   public void testTypesConversion() throws Exception {
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+      .add(new SObjectBuilder()
+             .setType("Opportunity")
+             .put("Name", "testTypesConversion1")
+             .put("Probability", "50")
+             .put("Amount", "25000")
+             .put("StageName", "Proposal")
+             .put("CloseDate", Date.from(Instant.now()))
+             .put("TotalOpportunityQuantity", "25")
+             .build()
+      )
+      .build();
+
+    addSObjects(sObjects);
+
+
     String query = "SELECT Id, IsDeleted, Type, Probability, ExpectedRevenue, TotalOpportunityQuantity, " +
-      "LastActivityDate, LastModifiedDate FROM Opportunity";
+      "LastActivityDate, LastModifiedDate FROM Opportunity WHERE Name LIKE 'testTypesConversion%'";
     List<StructuredRecord> records = getResultsBySOQLQuery(query);
-    Assert.assertNotEquals(0, records.size());
+
+    Assert.assertEquals(sObjects.size(), records.size());
 
     StructuredRecord record = records.get(0);
+    Schema recordSchema = record.getSchema();
 
     Schema expectedSchema = Schema.recordOf("output",
                                             Schema.Field.of("Id",
@@ -56,33 +81,84 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
                                                             Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS))
     );
 
-    Assert.assertEquals(expectedSchema, record.getSchema());
+    Assert.assertEquals(expectedSchema, recordSchema);
   }
+
 
   @Test
   public void testValuesReturned() throws Exception {
-    String query = "SELECT OwnerId, Name, IsDeleted FROM Account"; // select only non-nillable fields
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+      .add(new SObjectBuilder()
+             .setType("Opportunity")
+             .put("Name", "testValuesReturned1")
+             .put("Amount", "25000")
+             .put("StageName", "Proposal")
+             .put("CloseDate", Date.from(Instant.now()))
+             .put("TotalOpportunityQuantity", "25")
+             .build()
+      )
+      .build();
+
+    addSObjects(sObjects);
+
+
+    String query = "SELECT StageName, IsDeleted, Type, TotalOpportunityQuantity, LastModifiedDate" +
+      " FROM Opportunity WHERE Name LIKE 'testValuesReturned%'";
     List<StructuredRecord> records = getResultsBySOQLQuery(query);
-    Assert.assertNotEquals(0, records.size());
+
+    Assert.assertEquals(sObjects.size(), records.size());
 
     StructuredRecord record = records.get(0);
-    Assert.assertFalse(((String) record.get("OwnerId")).isEmpty());
-    Assert.assertFalse(((String) record.get("Name")).isEmpty());
-    Assert.assertTrue(record.get("IsDeleted") instanceof Boolean);
+
+    Assert.assertEquals("Proposal", (String) record.get("StageName"));
+    Assert.assertEquals(false, (boolean) record.get("IsDeleted"));
+    Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
+    Assert.assertEquals(System.currentTimeMillis(), (long) record.get("LastModifiedDate"),
+                        TimeUnit.MINUTES.toMillis(30));
   }
 
   @Test
   public void testLikeClause() throws Exception {
-    String query = "SELECT Id, Name FROM Account WHERE Name LIKE '%'";
-    List<StructuredRecord> records = getResultsBySOQLQuery(query);
-    Assert.assertNotEquals(0, records.size());
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+      .add(new SObjectBuilder()
+             .setType("Account")
+             .put("Name", "testLikeClause1")
+             .build()
+      )
+      .add(new SObjectBuilder()
+             .setType("Account")
+             .put("Name", "testLikeClause2")
+             .build()
+      )
+      .add(new SObjectBuilder()
+             .setType("Account")
+             .put("Name", "testLikeClause3")
+             .build()
+      )
+      .build();
 
-    StructuredRecord record = records.get(0);
-    Assert.assertFalse(((String) record.get("Name")).isEmpty());
+    addSObjects(sObjects);
+
+    String query = "SELECT Id, Name FROM Account WHERE Name LIKE 'testLikeClause%'";
+    List<StructuredRecord> records = getResultsBySOQLQuery(query);
+
+    Assert.assertEquals(sObjects.size(), records.size());
+
+    Set<String> names = new HashSet<>();
+    names.add(records.get(0).get("Name"));
+    names.add(records.get(1).get("Name"));
+    names.add(records.get(2).get("Name"));
+
+    Set<String> expectedNames = new HashSet<>();
+    expectedNames.add("testLikeClause1");
+    expectedNames.add("testLikeClause2");
+    expectedNames.add("testLikeClause3");
+    Assert.assertEquals(expectedNames, names);
   }
 
   @Test
   public void testWhereClause() throws Exception {
+    // Login entry will be created automatically no need to create it
     String query = "SELECT UserId from LoginHistory WHERE LoginTime > " +
       "2000-09-20T22:16:30.000Z AND LoginTime < 9999-09-21T22:16:30.000Z";
     List<StructuredRecord> records = getResultsBySOQLQuery(query);
