@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-
 /**
  * {@inheritDoc}
  */
@@ -46,12 +45,10 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
              .put("StageName", "Proposal")
              .put("CloseDate", Date.from(Instant.now()))
              .put("TotalOpportunityQuantity", "25")
-             .build()
-      )
+             .build())
       .build();
 
     addSObjects(sObjects);
-
 
     String query = "SELECT Id, IsDeleted, Type, Probability, ExpectedRevenue, TotalOpportunityQuantity, " +
       "LastActivityDate, LastModifiedDate FROM Opportunity WHERE Name LIKE 'testTypesConversion%'";
@@ -84,7 +81,6 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertEquals(expectedSchema, recordSchema);
   }
 
-
   @Test
   public void testValuesReturned() throws Exception {
     List<SObject> sObjects = new ImmutableList.Builder<SObject>()
@@ -95,12 +91,10 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
              .put("StageName", "Proposal")
              .put("CloseDate", Date.from(Instant.now()))
              .put("TotalOpportunityQuantity", "25")
-             .build()
-      )
+             .build())
       .build();
 
     addSObjects(sObjects);
-
 
     String query = "SELECT StageName, IsDeleted, Type, TotalOpportunityQuantity, LastModifiedDate" +
       " FROM Opportunity WHERE Name LIKE 'testValuesReturned%'";
@@ -123,18 +117,15 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
       .add(new SObjectBuilder()
              .setType("Account")
              .put("Name", "testLikeClause1")
-             .build()
-      )
+             .build())
       .add(new SObjectBuilder()
              .setType("Account")
              .put("Name", "testLikeClause2")
-             .build()
-      )
+             .build())
       .add(new SObjectBuilder()
              .setType("Account")
              .put("Name", "testLikeClause3")
-             .build()
-      )
+             .build())
       .build();
 
     addSObjects(sObjects);

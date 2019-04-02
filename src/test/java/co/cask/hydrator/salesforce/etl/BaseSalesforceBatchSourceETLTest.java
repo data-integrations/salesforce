@@ -16,7 +16,6 @@
 
 package co.cask.hydrator.salesforce.etl;
 
-
 import co.cask.cdap.api.artifact.ArtifactSummary;
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.dataset.table.Table;
@@ -115,7 +114,6 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
 
     // add our plugins artifact with the artifact as its parent.
     // this will make our plugins available.
-
     addPluginArtifact(NamespaceId.DEFAULT.artifact("example-plugins", "1.0.0"),
                       parentArtifact,
                       SalesforceBatchSource.class);
@@ -126,11 +124,11 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
 
   @After
   public void clearSObjects() throws ConnectionException {
-    String[] ids = createdObjectsIds.
-      stream().
-      map(SaveResult::getId).
-      collect(Collectors.toList()).
-      toArray(new String[createdObjectsIds.size()]);
+    String[] ids = createdObjectsIds
+      .stream()
+      .map(SaveResult::getId)
+      .collect(Collectors.toList())
+      .toArray(new String[createdObjectsIds.size()]);
 
     partnerConnection.delete(ids);
   }
