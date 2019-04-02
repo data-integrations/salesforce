@@ -40,13 +40,16 @@ import java.util.stream.Collectors;
  */
 public class SObjectsDescribeResult {
 
+  // Salesforce limitation that we can describe only 100 sObjects at a time
+  private static final int DESCRIBE_SOBJECTS_LIMIT = 100;
+
   // key -> [sObject name], value -> [key -> field name,  value -> field]
-  private final Map<String, Map<String, Field>> holder = new HashMap<>();
+  private final Map<String, Map<String, Field>> objectToFieldMap = new HashMap<>();
 
   public SObjectsDescribeResult(PartnerConnection connection, Collection<String> sObjects) {
-    // Salesforce limitation that we can describe only 100 sObjects at a time
+
     // split the given sObjects into smaller partitions to ensure we don't exceed the limitation
-    Lists.partition(new ArrayList<>(sObjects), 100).stream()
+    Lists.partition(new ArrayList<>(sObjects), DESCRIBE_SOBJECTS_LIMIT).stream()
       .map(partition -> {
         try {
           return connection.describeSObjects(partition.toArray(new String[0]));
@@ -60,7 +63,7 @@ public class SObjectsDescribeResult {
 
   @VisibleForTesting
   SObjectsDescribeResult(Map<String, Map<String, Field>> holder) {
-    holder.forEach((key, value) -> this.holder.put(key.toLowerCase(), value));
+    holder.forEach((key, value) -> this.objectToFieldMap.put(key.toLowerCase(), value));
   }
 
   /**
@@ -69,7 +72,7 @@ public class SObjectsDescribeResult {
    * @return list of {@link Field}s
    */
   public List<Field> getFields() {
-    return holder.values().stream()
+    return objectToFieldMap.values().stream()
       .map(Map::values)
       .flatMap(Collection::stream)
       .collect(Collectors.toList());
@@ -83,7 +86,7 @@ public class SObjectsDescribeResult {
    * @return field instance if found, null otherwise
    */
   public Field getField(String sObjectName, String fieldName) {
-    Map<String, Field> fields = holder.get(sObjectName.toLowerCase());
+    Map<String, Field> fields = objectToFieldMap.get(sObjectName.toLowerCase());
     return fields == null ? null : fields.get(fieldName);
   }
 
@@ -96,6 +99,6 @@ public class SObjectsDescribeResult {
         LinkedHashMap::new)); // preserve field order for queries by sObject
     // sObjects names are case-insensitive
     // store them in lower case to ensure we obtain them case-insensitively
-    holder.put(sObjectDescribe.getName().toLowerCase(), fields);
+    objectToFieldMap.put(sObjectDescribe.getName().toLowerCase(), fields);
   }
 }

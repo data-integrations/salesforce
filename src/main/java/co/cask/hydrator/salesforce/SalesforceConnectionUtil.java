@@ -27,8 +27,8 @@ import com.sforce.ws.ConnectorConfig;
 public class SalesforceConnectionUtil {
 
   /**
-   * Based on given Salesforce credentials attempt to establish {@link PartnerConnection},
-   * primary is used to obtains sObjects describe results.
+   * Based on given Salesforce credentials, attempt to establish {@link PartnerConnection},
+   * mainly is used to obtains sObjects describe results.
    *
    * @param credentials Salesforce credentials
    * @return partner connection instance
