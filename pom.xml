@@ -39,7 +39,7 @@
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>45.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
-    <antlr.version>4.5.3</antlr.version>
+    <antlr.version>4.7.2</antlr.version>
     <mockito.version>1.10.19</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
   </properties>
@@ -455,6 +455,10 @@
         <groupId>org.antlr</groupId>
         <artifactId>antlr4-maven-plugin</artifactId>
         <version>${antlr.version}</version>
+        <configuration>
+          <listener>false</listener>
+          <visitor>true</visitor>
+        </configuration>
         <executions>
           <execution>
             <goals>

@@ -32,11 +32,13 @@ import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSource;
 import co.cask.cdap.etl.api.batch.BatchSourceContext;
 import co.cask.hydrator.common.LineageRecorder;
+
+import co.cask.hydrator.salesforce.SObjectDescriptor;
 import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
-import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
@@ -66,11 +68,13 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
 
   private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";
 
+  private static final Schema errorSchema = Schema.recordOf("error",
+    Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING)));
+
   private final Config config;
   private Schema schema;
-  private Schema errorSchema;
 
-  SalesforceBatchSource(Config config) throws ConnectionException {
+  SalesforceBatchSource(Config config) {
     this.config = config;
   }
 
@@ -111,35 +115,46 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
   }
 
   @Override
-  public void initialize(BatchRuntimeContext context) throws ConnectionException {
-    this.schema = SalesforceSchemaUtil.getSchemaFromQuery(config.getAuthenticatorCredentials(), config.getQuery());
-    this.errorSchema = Schema.recordOf("error",
-                                       Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING)));
-  }
-
-  @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     config.validate(); // validate when macros not yet substituted
+
+    if (config.containsMacro(Config.PROPERTY_QUERY)) {
+      pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
+      return;
+    }
+
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
+    try {
+      this.schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+    } catch (ConnectionException e) {
+      throw new RuntimeException(String.format("Unable to get schema from query '%s'", config.getQuery()), e);
+    }
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
 
   @Override
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     config.validate(); // validate when macros are already substituted
-    this.schema = SalesforceSchemaUtil.getSchemaFromQuery(config.getAuthenticatorCredentials(), config.getQuery());
+
+    if (schema == null) {
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
+      this.schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+    }
 
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
     lineageRecorder.createExternalDataset(schema);
+    lineageRecorder.recordRead("Read", "Read from Salesforce",
+      Preconditions.checkNotNull(schema.getFields()).stream()
+        .map(Schema.Field::getName)
+        .collect(Collectors.toList()));
 
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(config)));
+  }
 
-    if (schema != null) {
-      if (schema.getFields() != null) {
-        lineageRecorder.recordRead("Read", "Read from Salesforce",
-                                   schema.getFields().stream().map(Schema.Field::getName)
-                                     .collect(Collectors.toList()));
-      }
-    }
+  @Override
+  public void initialize(BatchRuntimeContext context) throws Exception {
+    this.schema = context.getOutputSchema();
+    super.initialize(context);
   }
 
   @Override
@@ -170,13 +185,13 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
 
       emitter.emit(builder.build());
     } catch (Exception ex) {
-      switch(config.getErrorHandling()) {
+      switch (config.getErrorHandling()) {
         case Config.ERROR_HANDLING_SKIP:
           break;
         case Config.ERROR_HANDLING_SEND:
           StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
           builder.set(ERROR_SCHEMA_BODY_PROPERTY, input.getValue());
-          emitter.emitError(new InvalidEntry<StructuredRecord>(400, ex.getMessage(), builder.build()));
+          emitter.emitError(new InvalidEntry<>(400, ex.getMessage(), builder.build()));
           break;
         case Config.ERROR_HANDLING_STOP:
           throw ex;
@@ -188,29 +203,16 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
   }
 
   /**
-   * Request object for retrieving schema from the Salesforce
-   */
-  class Request {
-    String query;
-    String username;
-    String password;
-    String clientId;
-    String clientSecret;
-    String loginUrl;
-  }
-
-  /**
    * Get Salesforce schema by query.
    *
-   * @param request request with credentials and query
+   * @param config Salesforce Source Batch config
    * @return schema calculated from query
-   * @throws Exception is thrown by httpclientlib
+   * @throws ConnectionException in case error when establishing connection
    */
   @Path("getSchema")
-  public Schema getSchema(Request request) throws Exception {
-    return SalesforceSchemaUtil.getSchemaFromQuery(new AuthenticatorCredentials(request.username, request.password,
-                                                                                request.clientId, request.clientSecret,
-                                                                                request.loginUrl), request.query);
+  public Schema getSchema(Config config) throws ConnectionException {
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
+    return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
   }
 
   private Object convertValue(String value, Schema.Field field) {
