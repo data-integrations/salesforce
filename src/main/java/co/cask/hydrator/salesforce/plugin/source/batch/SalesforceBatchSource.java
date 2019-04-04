@@ -17,7 +17,6 @@
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.annotation.Description;
-import co.cask.cdap.api.annotation.Macro;
 import co.cask.cdap.api.annotation.Name;
 import co.cask.cdap.api.annotation.Plugin;
 import co.cask.cdap.api.data.batch.Input;
@@ -35,13 +34,11 @@ import co.cask.hydrator.common.LineageRecorder;
 
 import co.cask.hydrator.salesforce.SObjectDescriptor;
 import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
-import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
-import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
+import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,54 +68,18 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
   private static final Schema errorSchema = Schema.recordOf("error",
     Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING)));
 
-  private final Config config;
+  private final SalesforceSourceConfig config;
   private Schema schema;
 
-  SalesforceBatchSource(Config config) {
+  public SalesforceBatchSource(SalesforceSourceConfig config) {
     this.config = config;
-  }
-
-  static final class Config extends BaseSalesforceConfig {
-    private static final String PROPERTY_QUERY = "query";
-
-    @Description("The SOQL query to retrieve results from")
-    @Macro
-    private final String query;
-
-    Config(String referenceName, String clientId, String clientSecret,
-           String username, String password, String loginUrl, String errorHandling, String query) {
-      super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling);
-      this.query = query;
-    }
-
-    Config(Configuration conf) {
-        super(null,
-              conf.get(SalesforceConstants.CLIENT_ID), conf.get(SalesforceConstants.CLIENT_SECRET),
-              conf.get(SalesforceConstants.USERNAME), conf.get(SalesforceConstants.PASSWORD),
-              conf.get(SalesforceConstants.LOGIN_URL), conf.get(SalesforceConstants.ERROR_HANDLING));
-
-        this.query = conf.get(SalesforceConstants.QUERY);
-    }
-
-    public String getQuery() {
-      return query;
-    }
-
-    @Override
-    public void validate() {
-      super.validate();
-
-      if (!containsMacro(PROPERTY_QUERY)) {
-        SalesforceQueryParser.validateQuery(query);
-      }
-    }
   }
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     config.validate(); // validate when macros not yet substituted
 
-    if (config.containsMacro(Config.PROPERTY_QUERY)) {
+    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)) {
       pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
       return;
     }
@@ -186,14 +147,14 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
       emitter.emit(builder.build());
     } catch (Exception ex) {
       switch (config.getErrorHandling()) {
-        case Config.ERROR_HANDLING_SKIP:
+        case SalesforceSourceConfig.ERROR_HANDLING_SKIP:
           break;
-        case Config.ERROR_HANDLING_SEND:
+        case SalesforceSourceConfig.ERROR_HANDLING_SEND:
           StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
           builder.set(ERROR_SCHEMA_BODY_PROPERTY, input.getValue());
           emitter.emitError(new InvalidEntry<>(400, ex.getMessage(), builder.build()));
           break;
-        case Config.ERROR_HANDLING_STOP:
+        case SalesforceSourceConfig.ERROR_HANDLING_STOP:
           throw ex;
         default:
           throw new UnexpectedFormatException(
@@ -210,7 +171,7 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
    * @throws ConnectionException in case error when establishing connection
    */
   @Path("getSchema")
-  public Schema getSchema(Config config) throws ConnectionException {
+  public Schema getSchema(SalesforceSourceConfig config) throws ConnectionException {
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
     return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
   }
