@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
  * {@inheritDoc}
  */
 public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTest {
+
   @Test
   public void testTypesConversion() throws Exception {
     List<SObject> sObjects = new ImmutableList.Builder<SObject>()
@@ -104,8 +105,8 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     StructuredRecord record = records.get(0);
 
-    Assert.assertEquals("Proposal", (String) record.get("StageName"));
-    Assert.assertEquals(false, (boolean) record.get("IsDeleted"));
+    Assert.assertEquals("Proposal", record.get("StageName"));
+    Assert.assertFalse((boolean) record.get("IsDeleted"));
     Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
     Assert.assertEquals(System.currentTimeMillis(), (long) record.get("LastModifiedDate"),
                         TimeUnit.MINUTES.toMillis(30));
@@ -156,7 +157,9 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertNotEquals(0, records.size());
 
     StructuredRecord record = records.get(0);
-    Assert.assertFalse(((String) record.get("UserId")).isEmpty());
+    String userId = record.get("UserId");
+    Assert.assertNotNull(userId);
+    Assert.assertFalse(userId.isEmpty());
   }
 
   @Test

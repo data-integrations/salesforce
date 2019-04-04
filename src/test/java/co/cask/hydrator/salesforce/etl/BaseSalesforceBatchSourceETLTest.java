@@ -36,10 +36,15 @@ import co.cask.cdap.test.ApplicationManager;
 import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.TestConfiguration;
 import co.cask.cdap.test.WorkflowManager;
+import co.cask.hydrator.common.Constants;
+import co.cask.hydrator.salesforce.SalesforceConstants;
 import co.cask.hydrator.salesforce.authenticator.Authenticator;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
+import co.cask.hydrator.salesforce.plugin.ErrorHandling;
 import co.cask.hydrator.salesforce.plugin.source.batch.SalesforceBatchSource;
+import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.collect.ImmutableMap;
+import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.SaveResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -142,13 +147,13 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
    */
   void addSObjects(List<SObject> sObjects) {
     try {
-      SaveResult[] results = partnerConnection.create(sObjects.toArray(new SObject[sObjects.size()]));
+      SaveResult[] results = partnerConnection.create(sObjects.toArray(new SObject[0]));
       createdObjectsIds.addAll(Arrays.asList(results));
 
       for (SaveResult saveResult : results) {
         if (!saveResult.getSuccess()) {
           String allErrors = Stream.of(saveResult.getErrors())
-            .map(result -> result.getMessage())
+            .map(Error::getMessage)
             .collect(Collectors.joining("\n"));
 
           throw new RuntimeException(allErrors);
@@ -161,17 +166,21 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   }
 
   protected List<StructuredRecord> getResultsBySOQLQuery(String query) throws Exception {
-    ImmutableMap.Builder<String, String> propsBulder = new ImmutableMap.Builder<String, String>()
-      .put("referenceName", "SalesforceBulk-input")
-      .put("clientId", CLIENT_ID)
-      .put("clientSecret", CLIENT_SECRET)
-      .put("username", USERNAME)
-      .put("password", PASSWORD)
-      .put("loginUrl", LOGIN_URL)
-      .put("errorHandling", "Stop on error")
-      .put("query", query);
+    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties()
+      .put(SalesforceSourceConstants.PROPERTY_QUERY, query);
 
-    return getPipelineResults(propsBulder.build());
+    return getPipelineResults(propsBuilder.build());
+  }
+
+  private ImmutableMap.Builder<String, String> getBaseProperties() {
+    return new ImmutableMap.Builder<String, String>()
+      .put(Constants.Reference.REFERENCE_NAME, "SalesforceBulk-input")
+      .put(SalesforceConstants.PROPERTY_CLIENT_ID, CLIENT_ID)
+      .put(SalesforceConstants.PROPERTY_CLIENT_SECRET, CLIENT_SECRET)
+      .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
+      .put(SalesforceConstants.PROPERTY_PASSWORD, PASSWORD)
+      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL)
+      .put(SalesforceConstants.PROPERTY_ERROR_HANDLING, ErrorHandling.STOP.getValue());
   }
 
   private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
@@ -195,8 +204,6 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
 
     DataSetManager<Table> outputManager = getDataset(outputDatasetName);
-    List<StructuredRecord> outputRecords = MockSink.readOutput(outputManager);
-
-    return outputRecords;
+    return MockSink.readOutput(outputManager);
   }
 }

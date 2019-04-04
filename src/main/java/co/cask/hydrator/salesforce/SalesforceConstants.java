@@ -13,19 +13,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce;
 
 /**
  * Constants related to Salesforce and configuration
  */
 public class SalesforceConstants {
+
   public static final String API_VERSION = "45.0";
+
+  public static final String PROPERTY_CLIENT_ID = "clientId";
+  public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
+  public static final String PROPERTY_USERNAME = "username";
+  public static final String PROPERTY_PASSWORD = "password";
+  public static final String PROPERTY_LOGIN_URL = "loginUrl";
+  public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
 
   public static final String CONFIG_CLIENT_ID = "mapred.salesforce.client.id";
   public static final String CONFIG_PASSWORD = "mapred.salesforce.password";
   public static final String CONFIG_USERNAME = "mapred.salesforce.user";
   public static final String CONFIG_CLIENT_SECRET = "mapred.salesforce.client.secret";
   public static final String CONFIG_LOGIN_URL = "mapred.salesforce.login.url";
-  public static final String CONFIG_ERROR_HANDLING = "mapred.salesforce.error.handling";
 }

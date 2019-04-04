@@ -28,9 +28,6 @@ public class SObjectBuilder {
   private String type;
   private Map<String, Object> fields = new HashMap<>();
 
-  public SObjectBuilder() {
-  }
-
   public SObjectBuilder setType(String name) {
     this.type = name;
     return this;
