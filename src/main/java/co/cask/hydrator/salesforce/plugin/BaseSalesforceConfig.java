@@ -19,9 +19,8 @@ package co.cask.hydrator.salesforce.plugin;
 import co.cask.cdap.api.annotation.Description;
 import co.cask.cdap.api.annotation.Macro;
 import co.cask.hydrator.common.ReferencePluginConfig;
-import co.cask.hydrator.salesforce.authenticator.Authenticator;
+import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 
 /**
@@ -110,7 +109,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     }
 
     try {
-      new PartnerConnection(Authenticator.createConnectorConfig(this.getAuthenticatorCredentials()));
+      SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException | IllegalArgumentException e) {
       String errorMessage = "Cannot connect to Salesforce API with credentials specified";
       throw new IllegalArgumentException(errorMessage, e);
@@ -118,8 +117,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   }
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
-    return new AuthenticatorCredentials(this.username, this.password,
-                                        this.clientId, this.clientSecret,
-                                        this.loginUrl);
+    return SalesforceConnectionUtil.getAuthenticatorCredentials(this.username, this.password,
+                                    this.clientId, this.clientSecret,
+                                    this.loginUrl);
   }
 }

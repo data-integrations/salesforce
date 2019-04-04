@@ -17,6 +17,7 @@
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.hydrator.salesforce.SalesforceBulkUtil;
+import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
 import co.cask.hydrator.salesforce.authenticator.Authenticator;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import com.google.common.annotations.VisibleForTesting;
@@ -75,10 +76,8 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord
     batchId = salesforceSplit.getBatchId();
 
     Configuration conf = taskAttemptContext.getConfiguration();
-    SalesforceBatchSource.Config pluginConfig = new SalesforceBatchSource.Config(conf);
-
     try {
-      AuthenticatorCredentials credentials = pluginConfig.getAuthenticatorCredentials();
+      AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       String queryResponse = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
 

@@ -47,11 +47,11 @@
       ]
     },
     {
-      "label": "Query",
+      "label": "SOQL Query",
       "properties": [
         {
           "widget-type": "textarea",
-          "label": "SOQL Query",
+          "label": "SOQL",
           "name": "query",
           "widget-attributes" : {
             "placeholder": "SELECT <offset field>, ... FROM <object> WHERE <offset field> > <offset> ORDER BY <offset field>"
@@ -61,6 +61,43 @@
             "widget": "outputSchema",
             "output-property": "schema",
             "plugin-method": "getSchema"
+          }
+        }
+      ]
+    },
+    {
+      "label": "SObject Query",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "SObject Name",
+          "name": "sObjectName",
+          "widget-attributes" : {
+            "placeholder": "Salesforce object name"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Datetime Filter",
+          "name": "datetimeFilter",
+          "widget-attributes" : {
+            "placeholder": "Datetime filter in SOQL Date or Date Literal format"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Duration",
+          "name": "duration",
+          "widget-attributes" : {
+            "default": "0"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Offset",
+          "name": "offset",
+          "widget-attributes" : {
+            "default": "0"
           }
         }
       ]

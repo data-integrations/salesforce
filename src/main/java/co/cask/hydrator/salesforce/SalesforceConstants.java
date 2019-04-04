@@ -17,8 +17,15 @@
 package co.cask.hydrator.salesforce;
 
 /**
- * Constants related to Salesforce
+ * Constants related to Salesforce and configuration
  */
 public class SalesforceConstants {
   public static final String API_VERSION = "45.0";
+
+  public static final String CONFIG_CLIENT_ID = "mapred.salesforce.client.id";
+  public static final String CONFIG_PASSWORD = "mapred.salesforce.password";
+  public static final String CONFIG_USERNAME = "mapred.salesforce.user";
+  public static final String CONFIG_CLIENT_SECRET = "mapred.salesforce.client.secret";
+  public static final String CONFIG_LOGIN_URL = "mapred.salesforce.login.url";
+  public static final String CONFIG_ERROR_HANDLING = "mapred.salesforce.error.handling";
 }
