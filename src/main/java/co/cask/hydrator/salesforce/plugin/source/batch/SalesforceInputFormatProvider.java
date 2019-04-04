@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.data.batch.InputFormatProvider;
@@ -37,7 +36,6 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
       .put(SalesforceConstants.CONFIG_CLIENT_ID, config.getClientId())
       .put(SalesforceConstants.CONFIG_CLIENT_SECRET, config.getClientSecret())
       .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
-      .put(SalesforceConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling())
       .put(SalesforceSourceConstants.CONFIG_QUERY, query)
       .build();
   }

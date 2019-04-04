@@ -13,13 +13,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin;
 
 import co.cask.cdap.api.annotation.Description;
 import co.cask.cdap.api.annotation.Macro;
+import co.cask.cdap.api.annotation.Name;
+import co.cask.cdap.etl.api.validation.InvalidConfigPropertyException;
 import co.cask.hydrator.common.ReferencePluginConfig;
 import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
+import co.cask.hydrator.salesforce.SalesforceConstants;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import com.sforce.ws.ConnectionException;
 
@@ -27,44 +29,41 @@ import com.sforce.ws.ConnectionException;
  * Base configuration for Salesforce Streaming and Batch plugins
  */
 public class BaseSalesforceConfig extends ReferencePluginConfig {
-  private static final String PROPERTY_CLIENTID = "clientId";
-  private static final String PROPERTY_CLIENT_SECRET = "clientSecret";
-  private static final String PROPERTY_USERNAME = "username";
-  private static final String PROPERTY_PASSWORD = "password";
-  private static final String PROPERTY_LOGINURL = "loginUrl";
 
-  public static final String ERROR_HANDLING_SKIP = "Skip on error";
-  public static final String ERROR_HANDLING_SEND = "Send to error";
-  public static final String ERROR_HANDLING_STOP = "Stop on error";
-
+  @Name(SalesforceConstants.PROPERTY_CLIENT_ID)
   @Description("Salesforce connected app's client ID")
   @Macro
   private String clientId;
 
+  @Name(SalesforceConstants.PROPERTY_CLIENT_SECRET)
   @Description("Salesforce connected app's client secret key")
   @Macro
   private String clientSecret;
 
+  @Name(SalesforceConstants.PROPERTY_USERNAME)
   @Description("Salesforce username")
   @Macro
   private String username;
 
+  @Name(SalesforceConstants.PROPERTY_PASSWORD)
   @Description("Salesforce password")
   @Macro
   private String password;
 
+  @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
-  private final String loginUrl;
+  private String loginUrl;
 
-  @Description("Strategy used to handle erroneous records. Acceptable values are Skip on error,\n" +
+  @Name(SalesforceConstants.PROPERTY_ERROR_HANDLING)
+  @Description("Strategy used to handle erroneous records. Acceptable values are Skip on error, " +
     "Send to error, Stop on error.\n" +
-    "\n" +
     "Skip on error - ignores erroneous record.\n" +
     "Send to error - emits an error to error handler. " +
     "Errors are records with a field 'body', containing erroneous row.\n" +
     "Stop on error - fails pipeline due to erroneous record.")
-  private final String errorHandling;
+  @Macro
+  private String errorHandling;
 
   public BaseSalesforceConfig(String referenceName, String clientId, String clientSecret,
                               String username, String password, String loginUrl, String errorHandling) {
@@ -97,15 +96,28 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return loginUrl;
   }
 
-  public String getErrorHandling() {
-    return errorHandling;
+  public ErrorHandling getErrorHandling() {
+    return ErrorHandling.fromValue(errorHandling)
+      .orElseThrow(() -> new InvalidConfigPropertyException("Unsupported error handling value: " + errorHandling,
+        SalesforceConstants.PROPERTY_ERROR_HANDLING));
   }
 
   public void validate() {
-    if (containsMacro(PROPERTY_CLIENTID) || containsMacro(PROPERTY_CLIENT_SECRET) ||
-        containsMacro(PROPERTY_USERNAME) || containsMacro(PROPERTY_PASSWORD) ||
-        containsMacro(PROPERTY_LOGINURL)) {
-        return;
+    validateConnection();
+    validateErrorHandling();
+  }
+
+  public AuthenticatorCredentials getAuthenticatorCredentials() {
+    return SalesforceConnectionUtil.getAuthenticatorCredentials(username, password, clientId, clientSecret, loginUrl);
+  }
+
+  private void validateConnection() {
+    if (containsMacro(SalesforceConstants.PROPERTY_CLIENT_ID)
+      || containsMacro(SalesforceConstants.PROPERTY_CLIENT_SECRET)
+      || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
+      || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
+      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)) {
+      return;
     }
 
     try {
@@ -116,9 +128,12 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     }
   }
 
-  public AuthenticatorCredentials getAuthenticatorCredentials() {
-    return SalesforceConnectionUtil.getAuthenticatorCredentials(this.username, this.password,
-                                                                this.clientId, this.clientSecret,
-                                                                this.loginUrl);
+  private void validateErrorHandling() {
+    if (containsMacro(SalesforceConstants.PROPERTY_ERROR_HANDLING)) {
+      return;
+    }
+
+    getErrorHandling();
   }
+
 }

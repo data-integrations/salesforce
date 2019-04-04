@@ -147,14 +147,14 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
       emitter.emit(builder.build());
     } catch (Exception ex) {
       switch (config.getErrorHandling()) {
-        case SalesforceSourceConfig.ERROR_HANDLING_SKIP:
+        case SKIP:
           break;
-        case SalesforceSourceConfig.ERROR_HANDLING_SEND:
+        case SEND:
           StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
           builder.set(ERROR_SCHEMA_BODY_PROPERTY, input.getValue());
           emitter.emitError(new InvalidEntry<>(400, ex.getMessage(), builder.build()));
           break;
-        case SalesforceSourceConfig.ERROR_HANDLING_STOP:
+        case STOP:
           throw ex;
         default:
           throw new UnexpectedFormatException(
@@ -234,7 +234,6 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
                       "double, binary and string'.", field.getSchema(), field.getName()));
   }
 
-  // testing purposes only
   @VisibleForTesting
   void setSchema(Schema schema) {
     this.schema = schema;
