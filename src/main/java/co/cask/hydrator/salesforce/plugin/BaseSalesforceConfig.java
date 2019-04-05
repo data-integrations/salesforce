@@ -118,7 +118,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     return SalesforceConnectionUtil.getAuthenticatorCredentials(this.username, this.password,
-                                    this.clientId, this.clientSecret,
-                                    this.loginUrl);
+                                                                this.clientId, this.clientSecret,
+                                                                this.loginUrl);
   }
 }

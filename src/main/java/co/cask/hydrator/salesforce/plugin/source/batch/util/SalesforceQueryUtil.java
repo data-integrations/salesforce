@@ -87,7 +87,7 @@ public class SalesforceQueryUtil {
    */
   private static String generateSObjectFilter(ZonedDateTime dateTime, long duration, long offset,
                                               String datetimeFilter) {
-    return Strings.isNullOrEmpty(datetimeFilter)
+    return Strings.isNullOrEmpty(datetimeFilter) || datetimeFilter.trim().isEmpty()
       ? generateRangeFilter(LAST_MODIFIED_DATE, dateTime, duration, offset)
       : generateIncrementalFilter(LAST_MODIFIED_DATE, datetimeFilter);
   }
@@ -130,9 +130,6 @@ public class SalesforceQueryUtil {
    * @return datetime filter or empty string if datetimeValue is blank
    */
   private static String generateIncrementalFilter(String fieldName, String datetimeValue) {
-    if (datetimeValue == null || datetimeValue.trim().isEmpty()) {
-      return NO_OP_FILTER;
-    }
     // extract first value from datetimeValue to avoid SQL injection. Delimiter is space.
     // Example: `   2018-01-01 OR Id LIKE '%'  ` replaced with `2018-01-01`
     String firstValue = datetimeValue.trim().split(" ", 2)[0];
