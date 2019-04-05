@@ -64,9 +64,9 @@ public class SalesforceConnectionUtil {
    */
   public static AuthenticatorCredentials getAuthenticatorCredentials(Configuration conf) {
     return getAuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
-                                        conf.get(SalesforceConstants.CONFIG_PASSWORD),
-                                        conf.get(SalesforceConstants.CONFIG_CLIENT_ID),
-                                        conf.get(SalesforceConstants.CONFIG_CLIENT_SECRET),
-                                        conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
+                                       conf.get(SalesforceConstants.CONFIG_PASSWORD),
+                                       conf.get(SalesforceConstants.CONFIG_CLIENT_ID),
+                                       conf.get(SalesforceConstants.CONFIG_CLIENT_SECRET),
+                                       conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
   }
 }

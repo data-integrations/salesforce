@@ -45,6 +45,20 @@ public class SalesforceQueryUtilTest {
   }
 
   @Test
+  public void testCreateSObjectQueryWithBlankDatetimeFilter() {
+    List<String> fields = Arrays.asList("Id", "Name", "SomeField");
+    String sObjectName = "sObjectName";
+    int duration = 0;
+    int offset = 0;
+    String datetimeFilter = "        ";
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
+
+    Assert.assertNotNull(sObjectQuery);
+    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName", sObjectQuery);
+  }
+
+  @Test
   public void testCreateSObjectQueryWithDateLiteral() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";

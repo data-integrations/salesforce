@@ -33,7 +33,7 @@ Examples:
 
 ``SELECT Id FROM Contact WHERE Name LIKE 'A%' AND MailingCity = 'California'``
 
-**SObject Name:** Salesforce object name to read. If value is provided plugin will get all fields for this object from 
+**SObject Name:** Salesforce object name to read. If value is provided, plugin will get all fields for this object from 
 Salesforce and generate SOQL query (`select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`). 
 Ignored if SOQL query is provided. 
 
@@ -58,13 +58,12 @@ field. Each literal is a range of time beginning with midnight (00:00:00). For e
 `LAST_MONTH` ...
 
 **Duration:** SObject query duration filter is applied to system field `LastModifiedDate` to allow range query. 
-For example, if duration is '6' (6 hours) and the pipeline runs at 9am, it will read data updated from 3am - 9am. 
-Ignored if `datetimeFilter` is provided.
+Duration units set to `hours`. For example, if duration is '6' (6 hours) and the pipeline runs at 9am, it will read data 
+updated from 3am - 9am. Ignored if `datetimeFilter` is provided.
 
 **Offset:** SObject query offset filter is applied to system field `LastModifiedDate` to allow range query. 
-For example, if duration is '6' (6 hours) and the offset is '1' (1 hour) and the pipeline runs at 9am, 
-it will read data updated from 2am - 8am.
-Ignored if `datetimeFilter` is provided.
+Offset units set to `hours`. For example, if duration is '6' (6 hours) and the offset is '1' (1 hour) and the pipeline 
+runs at 9am, it will read data updated from 2am - 8am. Ignored if `datetimeFilter` is provided.
 
 **Error Handling:** Strategy used to handle erroneous records. Acceptable values are Skip on error,
 Send to error, Stop on error.

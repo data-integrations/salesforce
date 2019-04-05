@@ -167,7 +167,7 @@ public class SalesforceSourceConfig extends BaseSalesforceConfig {
       return sObjectQuery;
     } catch (ConnectionException e) {
       throw new IllegalStateException(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName));
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
     }
   }
 }

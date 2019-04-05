@@ -46,11 +46,11 @@ public class SalesforceRecordReaderTest {
       "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\"";
 
     Schema schema = Schema.recordOf("output",
-                      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
-                      Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
-                      Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
-                      Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
-                      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
     );
 
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
@@ -92,11 +92,11 @@ public class SalesforceRecordReaderTest {
       "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\"";
 
     Schema schema = Schema.recordOf("output",
-                      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
-                      Schema.Field.of("IsDeleted\u0628\u0633\u0645", Schema.of(Schema.Type.BOOLEAN)),
-                      Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
-                      Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
-                      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("IsDeleted\u0628\u0633\u0645", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
     );
 
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
@@ -250,15 +250,15 @@ public class SalesforceRecordReaderTest {
     Emitter<StructuredRecord> emitter = mock(Emitter.class);
 
     SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
-                                                .setReferenceName("myReferenceName")
-                                                .setClientId("myClientId")
-                                                .setClientSecret("myClientSecret")
-                                                .setUsername("myUsername")
-                                                .setPassword("myPassword")
-                                                .setLoginUrl("myLoginUrl")
-                                                .setErrorHandling("Stop on error")
-                                                .setQuery("myQuery")
-                                                .build();
+      .setReferenceName("myReferenceName")
+      .setClientId("myClientId")
+      .setClientSecret("myClientSecret")
+      .setUsername("myUsername")
+      .setPassword("myPassword")
+      .setLoginUrl("myLoginUrl")
+      .setErrorHandling("Stop on error")
+      .setQuery("myQuery")
+      .build();
 
     SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(config);
     salesforceBatchSource.setSchema(schema);
