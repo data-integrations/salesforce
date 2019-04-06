@@ -37,18 +37,27 @@ import co.cask.cdap.test.DataSetManager;
 import co.cask.cdap.test.TestConfiguration;
 import co.cask.cdap.test.WorkflowManager;
 import co.cask.hydrator.common.Constants;
+import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
 import co.cask.hydrator.salesforce.SalesforceConstants;
-import co.cask.hydrator.salesforce.authenticator.Authenticator;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import co.cask.hydrator.salesforce.plugin.ErrorHandling;
 import co.cask.hydrator.salesforce.plugin.source.batch.SalesforceBatchSource;
 import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.collect.ImmutableMap;
+import com.sforce.soap.metadata.CustomField;
+import com.sforce.soap.metadata.CustomObject;
+import com.sforce.soap.metadata.DeploymentStatus;
+import com.sforce.soap.metadata.FieldType;
+import com.sforce.soap.metadata.Metadata;
+import com.sforce.soap.metadata.MetadataConnection;
+import com.sforce.soap.metadata.SharingModel;
 import com.sforce.soap.partner.Error;
+import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.SaveResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
+import com.sforce.ws.ConnectorConfig;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -99,15 +108,20 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   private static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
                                                              "https://login.salesforce.com/services/oauth2/token");
 
+  private static final String METADATA_LOGIN_URL = "https://login.salesforce.com/services/Soap/u/45.0";
+
   private List<SaveResult> createdObjectsIds = new ArrayList<>();
-  private static PartnerConnection partnerConnection;
+  private List<String> customObjects = new ArrayList<>();
+
+  protected static PartnerConnection partnerConnection;
+  protected static MetadataConnection metadataConnection;
 
   @BeforeClass
   public static void setupTestClass() throws Exception {
     try {
       Assume.assumeNotNull(CLIENT_ID, CLIENT_SECRET, USERNAME, PASSWORD, LOGIN_URL);
     } catch (AssumptionViolatedException e) {
-      LOG.info("WARNING: ETL tests are skipped. Please find the instructions on enabling it at" +
+      LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
                            "BaseSalesforceBatchSourceETLTest javadoc");
       throw e;
     }
@@ -123,32 +137,67 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
                       parentArtifact,
                       SalesforceBatchSource.class);
 
-    partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(
-      new AuthenticatorCredentials(USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL)));
+    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
+      USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL);
+
+    partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+    metadataConnection = createMetadataConnection();
   }
 
   @After
-  public void clearSObjects() throws ConnectionException {
-    String[] ids = createdObjectsIds
-      .stream()
-      .map(SaveResult::getId)
-      .collect(Collectors.toList())
-      .toArray(new String[createdObjectsIds.size()]);
-
-    partnerConnection.delete(ids);
+  public void cleanUp() throws ConnectionException {
+    clearSObjects();
+    deleteCustomObjects();
   }
 
   /**
-   * Adds sObjects to Salesforce.
-   * Checks the result response for errors.
-   * Saves the objects so that they can be deleted after method is run.
+   * Creates custom object with provided list of custom fields.
+   * Custom object full name will be saved in order to be deleted in the end of test run.
+   *
+   * @param baseName object base name (without `__c` suffix)
+   * @param fields list of custom fields
+   * @return object full name
+   */
+  protected String createCustomObject(String baseName, CustomField[] fields) throws ConnectionException {
+    CustomObject customObject = initCustomObject(baseName, fields);
+    String fullName = customObject.getFullName();
+    customObjects.add(fullName);
+
+    com.sforce.soap.metadata.SaveResult[] results = metadataConnection.createMetadata(new Metadata[]{customObject});
+    for (com.sforce.soap.metadata.SaveResult result : results) {
+      if (!result.isSuccess()) {
+        String errors = Stream.of(result.getErrors())
+          .map(com.sforce.soap.metadata.Error::getMessage)
+          .collect(Collectors.joining("\n"));
+        throw new RuntimeException("Failed to create custom object:\n" + errors);
+      }
+    }
+
+    return fullName;
+  }
+
+  /**
+   * Creates given sObjects and saves their IDs for deletion in the end of test run.
+   *
+   * @param sObjects list of sObjects to be created
+   */
+  protected void addSObjects(List<SObject> sObjects) {
+    addSObjects(sObjects, true);
+  }
+
+  /**
+   * Adds sObjects to Salesforce. Checks the result response for errors.
+   * If save flag is true, saves the objects so that they can be deleted after method is run.
    *
    * @param sObjects list of sobjects to create
+   * @param save if sObjects need to be saved for deletion
    */
-  void addSObjects(List<SObject> sObjects) {
+  protected void addSObjects(List<SObject> sObjects, boolean save) {
     try {
       SaveResult[] results = partnerConnection.create(sObjects.toArray(new SObject[0]));
-      createdObjectsIds.addAll(Arrays.asList(results));
+      if (save) {
+        createdObjectsIds.addAll(Arrays.asList(results));
+      }
 
       for (SaveResult saveResult : results) {
         if (!saveResult.getSuccess()) {
@@ -170,6 +219,76 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
       .put(SalesforceSourceConstants.PROPERTY_QUERY, query);
 
     return getPipelineResults(propsBuilder.build());
+  }
+
+  protected List<StructuredRecord> getResultsBySObjectQuery(String sObjectName,
+                                                            String datetimeFilter) throws Exception {
+    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties()
+      .put(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME, sObjectName);
+
+    if (datetimeFilter != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_DATETIME_FILTER, datetimeFilter);
+    }
+
+    return getPipelineResults(propsBuilder.build());
+  }
+
+  private static MetadataConnection createMetadataConnection() throws ConnectionException {
+    ConnectorConfig loginConfig = new ConnectorConfig();
+    loginConfig.setAuthEndpoint(METADATA_LOGIN_URL);
+    loginConfig.setServiceEndpoint(METADATA_LOGIN_URL);
+    loginConfig.setManualLogin(true);
+    LoginResult loginResult = new PartnerConnection(loginConfig).login(USERNAME, PASSWORD);
+
+    ConnectorConfig metadataConfig = new ConnectorConfig();
+    metadataConfig.setServiceEndpoint(loginResult.getMetadataServerUrl());
+    metadataConfig.setSessionId(loginResult.getSessionId());
+    return new MetadataConnection(metadataConfig);
+  }
+
+  private CustomObject initCustomObject(String baseName, CustomField[] fields) {
+    String fullName = baseName + "_" + System.currentTimeMillis() + "__c";
+    CustomObject customObject = new CustomObject();
+    customObject.setFullName(fullName);
+    customObject.setLabel(fullName);
+    customObject.setPluralLabel(fullName);
+    customObject.setDeploymentStatus(DeploymentStatus.Deployed);
+    customObject.setDescription("Created by the Metadata API for Integration Tests");
+    customObject.setEnableActivities(true);
+    customObject.setSharingModel(SharingModel.ReadWrite);
+
+    CustomField nameField = new CustomField();
+    nameField.setType(FieldType.Text);
+    nameField.setLabel(customObject.getFullName() + " Name Field");
+    customObject.setNameField(nameField);
+
+    if (fields != null) {
+      customObject.setFields(fields);
+    }
+    return customObject;
+  }
+
+
+  private void clearSObjects() throws ConnectionException {
+    if (createdObjectsIds.isEmpty()) {
+      return;
+    }
+
+    String[] ids = createdObjectsIds.stream()
+      .map(SaveResult::getId)
+      .toArray(String[]::new);
+    createdObjectsIds.clear();
+    partnerConnection.delete(ids);
+  }
+
+  private void deleteCustomObjects() throws ConnectionException {
+    if (customObjects.isEmpty()) {
+      return;
+    }
+
+    String[] fullNames = customObjects.toArray(new String[0]);
+    customObjects.clear();
+    metadataConnection.deleteMetadata("CustomObject", fullNames);
   }
 
   private ImmutableMap.Builder<String, String> getBaseProperties() {
