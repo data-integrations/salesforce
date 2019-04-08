@@ -210,22 +210,24 @@ IDENTIFIER          : LETTER LETTER_OR_DIGIT* ;
  * Parser Rules
  */
 
-statement           : SELECT fieldList
-                      FROM objectList
+statement           : SELECT fieldList fromStatement
+                      EOF
+                    ;
+
+fromStatement       : FROM objectList
                       (USING SCOPE filterScope)?
                       (WHERE conditionExpressions)?
                       (WITH ((DATA CATEGORY filteringExpression) | fieldExpression) )?
                       (GROUP BY (fieldGroupByList
                                 | ROLLUP '(' fieldSubtotalGroupByList ')'
                                 | CUBE '(' fieldSubtotalGroupByList ')' )
-                       (HAVING havingConditionExpression)? )?
+                      (HAVING havingConditionExpression)? )?
                       (ORDER BY fieldOrderByList)?
                       (LIMIT numberOfRowsToReturn)?
                       (OFFSET numberOfRowsToSkip)?
                       (FOR forClause)?
                       (UPDATE updateClause)?
-                      EOF
-                    ;
+                      ;
 
 fieldList           : '*' # starElement
                     | fieldElement (',' fieldElement)* # fieldElements

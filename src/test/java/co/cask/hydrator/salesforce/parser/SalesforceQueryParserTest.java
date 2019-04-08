@@ -120,4 +120,13 @@ public class SalesforceQueryParserTest {
       });
   }
 
+  @Test
+  public void testFromStatement() {
+    String fromStatement = "FROM Contact WHERE Account.Industry = 'media'";
+    String query = "SELECT Id, Name, Account.Name " + fromStatement;
+
+    String result = SalesforceQueryParser.getFromStatement(query);
+    Assert.assertEquals(fromStatement, result);
+  }
+
 }

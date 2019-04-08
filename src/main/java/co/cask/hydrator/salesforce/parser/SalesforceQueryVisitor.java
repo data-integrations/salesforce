@@ -19,6 +19,7 @@ package co.cask.hydrator.salesforce.parser;
 
 import co.cask.hydrator.salesforce.SObjectDescriptor;
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.misc.Interval;
 import soql.SOQLBaseVisitor;
 import soql.SOQLParser;
 
@@ -32,11 +33,11 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
 
   @Override
   public SObjectDescriptor visitStatement(SOQLParser.StatementContext ctx) {
-    List<SOQLParser.ObjectTypeContext> objectContexts = ctx.objectList().objectType();
+    List<SOQLParser.ObjectTypeContext> objectContexts = ctx.fromStatement().objectList().objectType();
 
     if (objectContexts.size() != 1) {
       throw new SOQLParsingException("Expecting only one top level object, instead received: "
-        + ctx.objectList().getText());
+        + ctx.fromStatement().objectList().getText());
     }
 
     SOQLParser.ObjectTypeContext objectTypeContext = objectContexts.get(0);
@@ -140,6 +141,21 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
     @Override
     public SObjectDescriptor.FieldDescriptor visitTypeOfClause(SOQLParser.TypeOfClauseContext ctx) {
       throw new SOQLParsingException("TypeOf clauses are not supported: " + ctx.getText());
+    }
+  }
+
+  /**
+   * Visits query statement and extracts from statement in the original representation.
+   */
+  public static class FromStatementVisitor extends SOQLBaseVisitor<String> {
+
+    @Override
+    public String visitStatement(SOQLParser.StatementContext ctx) {
+      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
+      Interval interval = new Interval(
+        fromStatementContext.start.getStartIndex(),
+        fromStatementContext.stop.getStopIndex());
+      return fromStatementContext.start.getInputStream().getText(interval);
     }
   }
 

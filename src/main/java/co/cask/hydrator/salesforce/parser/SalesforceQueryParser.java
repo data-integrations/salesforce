@@ -51,6 +51,18 @@ public class SalesforceQueryParser {
     getObjectDescriptorFromQuery(query);
   }
 
+  /**
+   * Returns part of SOQL query after select statement.
+   *
+   * @param query SOQL query
+   * @return from statement
+   */
+  public static String getFromStatement(String query) {
+    SOQLParser parser = initParser(query);
+    SalesforceQueryVisitor.FromStatementVisitor visitor = new SalesforceQueryVisitor.FromStatementVisitor();
+    return visitor.visit(parser.statement());
+  }
+
   private static SOQLParser initParser(String query) {
     SOQLLexer lexer = new SOQLLexer(CharStreams.fromString(query));
     lexer.removeErrorListeners();
