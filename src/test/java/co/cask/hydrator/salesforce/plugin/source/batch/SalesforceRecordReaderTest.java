@@ -248,10 +248,18 @@ public class SalesforceRecordReaderTest {
                                                List<Map<String, Object>> expectedRecords)
     throws Exception {
     Emitter<StructuredRecord> emitter = mock(Emitter.class);
-    SalesforceBatchSource.Config config = new SalesforceBatchSource.Config("myReferenceName",
-                                                                           "myClientId", "myClientSecret", "myUsername",
-                                                                           "myPassword", "myLoginUrl", "Stop on error",
-                                                                           "myQuery");
+
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setReferenceName("myReferenceName")
+      .setClientId("myClientId")
+      .setClientSecret("myClientSecret")
+      .setUsername("myUsername")
+      .setPassword("myPassword")
+      .setLoginUrl("myLoginUrl")
+      .setErrorHandling("Stop on error")
+      .setQuery("myQuery")
+      .build();
+
     SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(config);
     salesforceBatchSource.setSchema(schema);
 

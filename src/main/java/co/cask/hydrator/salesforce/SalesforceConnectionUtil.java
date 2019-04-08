@@ -20,6 +20,7 @@ import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Utility class which provides methods to establish connection with Salesforce.
@@ -40,4 +41,32 @@ public class SalesforceConnectionUtil {
     return new PartnerConnection(connectorConfig);
   }
 
+  /**
+   * Creates {@link AuthenticatorCredentials} instance based on given parameters.
+   *
+   * @param username Salesforce username
+   * @param password Salesforce password
+   * @param clientId Salesforce client id
+   * @param clientSecret Salesforce client secret
+   * @param loginUrl Salesforce authentication url
+   * @return authenticator credentials
+   */
+  public static AuthenticatorCredentials getAuthenticatorCredentials(String username, String password, String clientId,
+                                                                     String clientSecret, String loginUrl) {
+    return new AuthenticatorCredentials(username, password, clientId, clientSecret, loginUrl);
+  }
+
+  /**
+   * Creates {@link AuthenticatorCredentials} instance based on given {@link Configuration}.
+   *
+   * @param conf hadoop job configuration
+   * @return authenticator credentials
+   */
+  public static AuthenticatorCredentials getAuthenticatorCredentials(Configuration conf) {
+    return getAuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
+                                       conf.get(SalesforceConstants.CONFIG_PASSWORD),
+                                       conf.get(SalesforceConstants.CONFIG_CLIENT_ID),
+                                       conf.get(SalesforceConstants.CONFIG_CLIENT_SECRET),
+                                       conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
+  }
 }

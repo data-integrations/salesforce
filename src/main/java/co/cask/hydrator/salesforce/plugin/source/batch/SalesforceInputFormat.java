@@ -17,8 +17,10 @@
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.hydrator.salesforce.SalesforceBulkUtil;
+import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
 import co.cask.hydrator.salesforce.authenticator.Authenticator;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
+import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
@@ -34,8 +36,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Salesforce implementation of InputFormat for mapreduce
@@ -46,24 +49,20 @@ public class SalesforceInputFormat extends InputFormat {
   @Override
   public List<InputSplit> getSplits(JobContext jobContext) {
     Configuration conf = jobContext.getConfiguration();
-    SalesforceBatchSource.Config pluginConfig = new SalesforceBatchSource.Config(conf);
 
-    List<InputSplit> splits = new ArrayList<>();
-    BatchInfo[] batches = null;
     try {
-      AuthenticatorCredentials credentials = pluginConfig.getAuthenticatorCredentials();
+      AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, pluginConfig.getQuery());
+      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection,
+                                                            conf.get(SalesforceSourceConstants.CONFIG_QUERY));
+      LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
 
+      return Arrays.stream(batches)
+        .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId()))
+        .collect(Collectors.toList());
     } catch (AsyncApiException | IOException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
-
-    for (BatchInfo batch: batches) {
-      splits.add(new SalesforceSplit(batch.getJobId(), batch.getId()));
-    }
-
-    return splits;
   }
 
   @Override

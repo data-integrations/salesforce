@@ -17,6 +17,8 @@
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.data.batch.InputFormatProvider;
+import co.cask.hydrator.salesforce.SalesforceConstants;
+import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Map;
@@ -27,15 +29,17 @@ import java.util.Map;
 public class SalesforceInputFormatProvider implements InputFormatProvider {
   private final Map<String, String> conf;
 
-  SalesforceInputFormatProvider(SalesforceBatchSource.Config config) {
+  SalesforceInputFormatProvider(SalesforceSourceConfig config) {
+    String query = config.getQuery();
     this.conf = new ImmutableMap.Builder<String, String>()
-    .put(SalesforceConstants.USERNAME, config.getUsername())
-    .put(SalesforceConstants.PASSWORD, config.getPassword())
-    .put(SalesforceConstants.CLIENT_ID, config.getClientId())
-    .put(SalesforceConstants.CLIENT_SECRET, config.getClientSecret())
-    .put(SalesforceConstants.QUERY, config.getQuery())
-    .put(SalesforceConstants.LOGIN_URL, config.getLoginUrl())
-    .put(SalesforceConstants.ERROR_HANDLING, config.getErrorHandling()).build();
+      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
+      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
+      .put(SalesforceConstants.CONFIG_CLIENT_ID, config.getClientId())
+      .put(SalesforceConstants.CONFIG_CLIENT_SECRET, config.getClientSecret())
+      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
+      .put(SalesforceConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling())
+      .put(SalesforceSourceConstants.CONFIG_QUERY, query)
+      .build();
   }
 
   @Override
