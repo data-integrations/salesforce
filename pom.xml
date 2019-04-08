@@ -42,6 +42,7 @@
     <antlr.version>4.7.2</antlr.version>
     <mockito.version>1.10.19</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
+    <jackson.version>1.9.13</jackson.version>
   </properties>
 
   <dependencies>
@@ -205,6 +206,16 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
       <version>${commons.csv.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-core-asl</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.jackson</groupId>
+      <artifactId>jackson-mapper-asl</artifactId>
+      <version>${jackson.version}</version>
     </dependency>
 
 
