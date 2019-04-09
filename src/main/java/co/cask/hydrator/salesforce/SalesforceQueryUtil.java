@@ -13,9 +13,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce;
 
+import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import com.google.common.base.Strings;
 
 import java.time.ZoneOffset;
@@ -28,15 +28,17 @@ import java.util.List;
  */
 public class SalesforceQueryUtil {
   private static final String NO_OP_FILTER = "";
-  private static final String LAST_MODIFIED_DATE = "LastModifiedDate";
   private static final String LESS_THAN = "<";
   private static final String GREATER_THAN = ">";
+
   private static final String SELECT = "SELECT ";
   private static final String FROM = " FROM ";
   private static final String WHERE = " WHERE ";
   private static final String AND = " AND ";
 
-  public static final int INTERVAL_FILTER_MIN_VALUE = 0;
+
+  private static final String FIELD_LAST_MODIFIED_DATE = "LastModifiedDate";
+  private static final String FIELD_ID = "Id";
 
   /**
    * Creates SObject query with filter if provided. Uses current datetime in UTC timezone for range filter
@@ -79,6 +81,34 @@ public class SalesforceQueryUtil {
   }
 
   /**
+   * Checks if query length is less than SOQL max length limit.
+   *
+   * @param query SOQL
+   * @return true if SOQL length less than max allowed
+   */
+  public static boolean isQueryUnderLengthLimit(String query) {
+    return query.length() < SalesforceConstants.SOQL_MAX_LENGTH;
+  }
+
+  /**
+   * Creates SObject IDs query based on initial query. Replaces all query fields with {@link #FIELD_ID} in SELECT
+   * clause but leaves other clauses as is.
+   * <p/>
+   * Example:
+   * <ul>
+   *  <li>Initial query: `SELECT Name, LastModifiedDate FROM Opportunity WHERE Name LIKE 'S_%'`</li>
+   *  <li>Result query: `SELECT Id FROM Opportunity WHERE Name LIKE 'S_%'`</li>
+   * </ul>
+   *
+   * @param query initial query
+   * @return SObject IDs query
+   */
+  public static String createSObjectIdQuery(String query) {
+    String fromStatement = SalesforceQueryParser.getFromStatement(query);
+    return SELECT + FIELD_ID + " " + fromStatement;
+  }
+
+  /**
    * Generates SObject query filter based on provided values.
    *
    * @param dateTime       application start time
@@ -90,8 +120,8 @@ public class SalesforceQueryUtil {
   private static String generateSObjectFilter(ZonedDateTime dateTime, long duration, long offset,
                                               String datetimeFilter) {
     return Strings.isNullOrEmpty(datetimeFilter) || datetimeFilter.trim().isEmpty()
-      ? generateRangeFilter(LAST_MODIFIED_DATE, dateTime, duration, offset)
-      : generateIncrementalFilter(LAST_MODIFIED_DATE, datetimeFilter);
+      ? generateRangeFilter(FIELD_LAST_MODIFIED_DATE, dateTime, duration, offset)
+      : generateIncrementalFilter(FIELD_LAST_MODIFIED_DATE, datetimeFilter);
   }
 
   /**
@@ -114,7 +144,7 @@ public class SalesforceQueryUtil {
    */
   private static String generateRangeFilter(String fieldName, ZonedDateTime dateTime, long duration,
                                             long offset) {
-    if (duration <= INTERVAL_FILTER_MIN_VALUE) {
+    if (duration <= SalesforceConstants.INTERVAL_FILTER_MIN_VALUE) {
       // no filter is required
       return NO_OP_FILTER;
     }

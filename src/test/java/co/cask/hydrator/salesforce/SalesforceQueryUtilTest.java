@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce;
 
 import org.junit.Assert;
@@ -24,6 +23,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Tests for {@link SalesforceQueryUtil}.
@@ -145,5 +146,38 @@ public class SalesforceQueryUtilTest {
     Assert.assertNotNull(sObjectQuery);
     Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>LAST_WEEK",
                         sObjectQuery);
+  }
+
+  @Test
+  public void testIsQueryUnderLengthLimitTrue() {
+    boolean underLengthLimit = SalesforceQueryUtil.isQueryUnderLengthLimit(
+      "SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>LAST_WEEK");
+
+    Assert.assertTrue(underLengthLimit);
+  }
+
+  @Test
+  public void testIsQueryUnderLengthLimitFalse() {
+    String fieldPrefix = "field_";
+    // generate fields sequence separated by comma to exceed SOQL max length limit
+    String fields = IntStream.range(0, SalesforceConstants.SOQL_MAX_LENGTH / fieldPrefix.length())
+      .mapToObj(i -> fieldPrefix + i)
+      .collect(Collectors.joining(","));
+
+    boolean underLengthLimit = SalesforceQueryUtil.isQueryUnderLengthLimit(
+      String.format("SELECT %s FROM sObjectName WHERE LastModifiedDate>LAST_WEEK", fields));
+
+    Assert.assertFalse(underLengthLimit);
+  }
+
+  @Test
+  public void testCreateSObjectIdQuery() {
+    String selectClause = "SELECT Id,Name,SomeField ";
+    String fromClause = "FROM sObjectName WHERE LastModifiedDate>LAST_WEEK";
+    String query = selectClause + fromClause;
+
+    String sObjectIdQuery = SalesforceQueryUtil.createSObjectIdQuery(query);
+
+    Assert.assertEquals("SELECT Id " + fromClause, sObjectIdQuery);
   }
 }

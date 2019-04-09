@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch.util;
 
 /**
@@ -31,4 +30,5 @@ public class SalesforceSourceConstants {
 
   public static final int DURATION_DEFAULT = 0;
   public static final int OFFSET_DEFAULT = 0;
+  public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
 }

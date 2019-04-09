@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.hydrator.salesforce.SalesforceBulkUtil;
@@ -35,26 +34,22 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * RecordReader implementation, which reads a single Salesforce batch from bulk job
  * provided in InputSplit
  */
-public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord> {
+public class SalesforceRecordReader extends RecordReader<NullWritable, Map<String, String>> {
+
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceRecordReader.class);
 
-  private BulkConnection bulkConnection;
-  private String jobId;
-  private String batchId;
-  private BufferedReader queryReader;
   private CSVParser csvParser;
   private Iterator<CSVRecord> parserIterator;
 
-  private CSVRecord value;
+  private Map<String, String> value;
 
   private long linesNumber;
   private long processedLines;
@@ -72,13 +67,14 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord
     throws IOException, InterruptedException {
 
     SalesforceSplit salesforceSplit = (SalesforceSplit) inputSplit;
-    jobId = salesforceSplit.getJobId();
-    batchId = salesforceSplit.getBatchId();
+    String jobId = salesforceSplit.getJobId();
+    String batchId = salesforceSplit.getBatchId();
+    LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
 
     Configuration conf = taskAttemptContext.getConfiguration();
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       String queryResponse = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
 
       setupParser(queryResponse);
@@ -94,15 +90,14 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord
    * Reads single record from csv.
    *
    * @return returns false if no more data to read
-   * @throws IOException exception from readLine from query csv
    */
   @Override
-  public boolean nextKeyValue() throws IOException {
+  public boolean nextKeyValue() {
     if (!parserIterator.hasNext()) {
       return false;
     }
 
-    value = parserIterator.next();
+    value = parserIterator.next().toMap();
     return true;
   }
 
@@ -112,13 +107,13 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord
   }
 
   @Override
-  public CSVRecord getCurrentValue() {
+  public Map<String, String> getCurrentValue() {
     return value;
   }
 
   @Override
   public float getProgress() {
-    return processedLines / (float) linesNumber;
+    return linesNumber == 0 ? 0.0f : processedLines / (float) linesNumber;
   }
 
   @Override
@@ -126,25 +121,21 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, CSVRecord
     if (csvParser != null) {
       csvParser.close();
     }
-    if (queryReader != null) {
-      queryReader.close();
-    }
   }
 
   private static int countLines(String str) {
     String[] lines = str.split("\r\n|\r|\n");
-    return  lines.length;
+    return lines.length;
   }
 
   @VisibleForTesting
   void setupParser(String queryResponse) throws IOException {
-    queryReader = new BufferedReader(new StringReader(queryResponse));
-
-    csvParser = CSVFormat.DEFAULT.
+    CSVFormat csvFormat = CSVFormat.DEFAULT.
       withHeader().
       withQuoteMode(QuoteMode.ALL).
-      withAllowMissingColumnNames(false).
-      parse(queryReader);
+      withAllowMissingColumnNames(false);
+
+    csvParser = CSVParser.parse(queryResponse, csvFormat);
 
     if (csvParser.getHeaderMap().isEmpty()) {
       throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");

@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.annotation.Description;
@@ -36,8 +35,8 @@ import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
 import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.sforce.ws.ConnectionException;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +57,7 @@ import javax.ws.rs.Path;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
 @Description("Read data from Salesforce using bulk API.")
-public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, StructuredRecord> {
+public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String, String>, StructuredRecord> {
   static final String NAME = "SalesforceBulk";
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
 
@@ -118,19 +117,12 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
   }
 
   @Override
-  public void transform(KeyValue<NullWritable, CSVRecord> input,
+  public void transform(KeyValue<NullWritable, Map<String, String>> input,
                         Emitter<StructuredRecord> emitter) {
     try {
       StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 
-      CSVRecord csvRecord = input.getValue();
-
-      if (!csvRecord.isConsistent()) {
-        throw new IllegalArgumentException(String.format("CSV record '%s' is not consistent to a csv mapping",
-                                                         csvRecord));
-      }
-
-      for (Map.Entry<String, String> entry : csvRecord.toMap().entrySet()) {
+      for (Map.Entry<String, String> entry : input.getValue().entrySet()) {
         String fieldName = entry.getKey();
         String value = entry.getValue();
 
@@ -185,8 +177,8 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
 
     Schema.Type fieldSchemaType = fieldSchema.getType();
 
-    // empty string is considered null in csv, for all types but string.
-    if (value.isEmpty() && !fieldSchemaType.equals(Schema.Type.STRING)) {
+    // empty string is considered null in csv
+    if (Strings.isNullOrEmpty(value)) {
       return null;
     }
 
