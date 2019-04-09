@@ -20,7 +20,7 @@
 
 
   <name>Salesforce plugins</name>
-  <groupId>co.cask.hydrator</groupId>
+  <groupId>io.cdap.plugin</groupId>
   <artifactId>salesforce-plugins</artifactId>
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
@@ -45,21 +45,43 @@
     <jackson.version>1.9.13</jackson.version>
   </properties>
 
+  <distributionManagement>
+    <repository>
+      <id>sonatype.release</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+    <snapshotRepository>
+      <id>sonatype.snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>sonatype</id>
+      <url>https://oss.sonatype.org/content/groups/public</url>
+    </repository>
+    <repository>
+      <id>sonatype-snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-api</artifactId>
       <version>${cdap.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-etl-api</artifactId>
       <version>${cdap.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.hydrator</groupId>
+      <groupId>io.cdap.plugin</groupId>
       <artifactId>hydrator-common</artifactId>
       <version>${hydrator.version}</version>
     </dependency>
@@ -221,13 +243,13 @@
 
     <!-- tests -->
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-metadata-spi</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-common</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
@@ -243,19 +265,19 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-etl-proto</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>hydrator-test</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>co.cask.cdap</groupId>
+      <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-data-pipeline</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
@@ -278,9 +300,9 @@
     <pluginManagement>
       <plugins>
         <plugin>
-          <groupId>co.cask</groupId>
+          <groupId>io.cdap</groupId>
           <artifactId>cdap-maven-plugin</artifactId>
-          <version>1.0.1</version>
+          <version>1.1.0</version>
           <configuration>
             <cdapArtifacts>
               <parent>system:cdap-data-pipeline[5.1.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
@@ -442,7 +464,7 @@
         <configuration>
           <instructions>
             <_exportcontents>
-              co.cask.hydrator.*;
+              io.cdap.plugin.*;
             </_exportcontents>
             <Embed-Dependency>*;inline=false;scope=compile</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
@@ -459,7 +481,7 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>co.cask</groupId>
+        <groupId>io.cdap</groupId>
         <artifactId>cdap-maven-plugin</artifactId>
       </plugin>
       <plugin>
