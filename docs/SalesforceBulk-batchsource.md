@@ -80,16 +80,18 @@ Send to error, Stop on error.
 **Schema:** The schema of output objects.
 The Salesforce types will be automacitally mapped to schema types as shown below:
 
-    +-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+
-    | Schema type |                                                                                  Salesforce type                                                                                   |    Notes     |
-    +-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+
-    | bool        | _bool                                                                                                                                                                              |              |
-    | int         | _int                                                                                                                                                                               |              |
-    | long        | _long                                                                                                                                                                              |              |
-    | double      | _double, currency, percent                                                                                                                                                         |              |
-    | date        | date                                                                                                                                                                               |              |
-    | timestamp   | datetime                                                                                                                                                                           | Milliseconds |
-    | time        | time                                                                                                                                                                               | Milliseconds |
-    | string      | picklist, multipicklist, combobox, reference, base64, textarea, phone, id, url, email, encryptedstring, datacategorygroupreference, location, address, anyType, json, complexvalue |              |
-    +-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+
-
+    +-------------+----------------------------------------------------------------------------+--------------+
+    | Schema type |                              Salesforce type                               |    Notes     |
+    +-------------+----------------------------------------------------------------------------+--------------+
+    | bool        | _bool                                                                      |              |
+    | int         | _int                                                                       |              |
+    | long        | _long                                                                      |              |
+    | double      | _double, currency, percent                                                 |              |
+    | date        | date                                                                       |              |
+    | timestamp   | datetime                                                                   | Milliseconds |
+    | time        | time                                                                       | Milliseconds |
+    | string      | picklist, multipicklist, combobox, reference, base64,                      |              |
+    |             | textarea, phone, id, url, email, encryptedstring,                          |              |
+    |             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |
+    +-------------+----------------------------------------------------------------------------+--------------+
+    
