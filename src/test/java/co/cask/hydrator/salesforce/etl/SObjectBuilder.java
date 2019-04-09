@@ -13,13 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.etl;
 
 import com.sforce.soap.partner.sobject.SObject;
 
 import java.util.HashMap;
 import java.util.Map;
+import javax.xml.namespace.QName;
 
 /**
  * Builder class for {@link com.sforce.soap.partner.sobject.SObject}
@@ -44,6 +44,7 @@ public class SObjectBuilder {
     }
     SObject sobject = new SObject();
     sobject.setType(type);
+    sobject.setName(QName.valueOf(type));
 
     for (Map.Entry<String, Object> entry : fields.entrySet()) {
       sobject.setField(entry.getKey(), entry.getValue());

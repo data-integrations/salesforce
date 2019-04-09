@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.data.format.StructuredRecord;
@@ -127,27 +126,6 @@ public class SalesforceRecordReaderTest {
       .build();
 
     assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
-  }
-
-  @Test
-  public void testKeysAndValuesDifferentNumber() throws Exception {
-    String csvString = "\"key1\",\"key2\",\"key3\"\n" +
-      "\"value1\",\"value2\",\"value3\",\"value4\"";
-
-    Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("key1", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("key2", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("key3", Schema.of(Schema.Type.STRING))
-    );
-
-    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
-
-    try {
-      assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
-      Assert.fail("Expected to throw exception due to not different number of arguments");
-    } catch (IllegalArgumentException ex) {
-      Assert.assertTrue(ex.getMessage().contains("is not consistent to a csv mapping"));
-    }
   }
 
   @Test
@@ -272,7 +250,7 @@ public class SalesforceRecordReaderTest {
     ArgumentCaptor<StructuredRecord> argument = ArgumentCaptor.forClass(StructuredRecord.class);
 
     while (rr.nextKeyValue()) {
-      KeyValue<NullWritable, CSVRecord> keyValue = new KeyValue<>(null, rr.getCurrentValue());
+      KeyValue<NullWritable, Map<String, String>> keyValue = new KeyValue<>(null, rr.getCurrentValue());
       salesforceBatchSource.transform(keyValue, emitter);
     }
 

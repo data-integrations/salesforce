@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.cdap.api.annotation.Description;
@@ -21,6 +20,7 @@ import co.cask.cdap.api.annotation.Macro;
 import co.cask.cdap.api.annotation.Name;
 import co.cask.cdap.etl.api.validation.InvalidConfigPropertyException;
 import co.cask.hydrator.salesforce.SObjectDescriptor;
+import co.cask.hydrator.salesforce.SalesforceConstants;
 import co.cask.hydrator.salesforce.SalesforceQueryUtil;
 import co.cask.hydrator.salesforce.parser.SOQLParsingException;
 import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
@@ -96,10 +96,8 @@ public class SalesforceSourceConfig extends BaseSalesforceConfig {
   }
 
   public String getQuery() {
-    if (isSoqlQuery()) {
-      return query;
-    }
-    return getSObjectQuery();
+    String soql = isSoqlQuery() ? query : getSObjectQuery();
+    return Objects.requireNonNull(soql).trim();
   }
 
   @Nullable
@@ -151,10 +149,10 @@ public class SalesforceSourceConfig extends BaseSalesforceConfig {
   }
 
   private void validateSObjectFilter(String propertyName, int propertyValue) {
-    if (!containsMacro(propertyName) && propertyValue < SalesforceQueryUtil.INTERVAL_FILTER_MIN_VALUE) {
+    if (!containsMacro(propertyName) && propertyValue < SalesforceConstants.INTERVAL_FILTER_MIN_VALUE) {
       throw new InvalidConfigPropertyException(
         String.format("Invalid SObject '%s' value: '%d'. Value must be '%d' or greater", propertyName, propertyValue,
-                      SalesforceQueryUtil.INTERVAL_FILTER_MIN_VALUE), propertyName);
+                      SalesforceConstants.INTERVAL_FILTER_MIN_VALUE), propertyName);
     }
   }
 
