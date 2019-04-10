@@ -18,6 +18,7 @@ package co.cask.hydrator.salesforce.etl;
 
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.schema.Schema;
+import co.cask.hydrator.salesforce.soap.SObjectBuilder;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.metadata.CustomField;

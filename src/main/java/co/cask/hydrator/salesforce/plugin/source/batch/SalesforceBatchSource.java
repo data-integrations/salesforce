@@ -31,7 +31,6 @@ import co.cask.cdap.etl.api.batch.BatchRuntimeContext;
 import co.cask.cdap.etl.api.batch.BatchSource;
 import co.cask.cdap.etl.api.batch.BatchSourceContext;
 import co.cask.hydrator.common.LineageRecorder;
-
 import co.cask.hydrator.salesforce.SObjectDescriptor;
 import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
 import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -135,19 +134,20 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, CSVRecord, 
         String fieldName = entry.getKey();
         String value = entry.getValue();
 
-        Schema.Field field = schema.getField(fieldName);
+        Schema.Field field = schema.getField(fieldName, true);
 
         if (field == null) {
           continue; // this field is not in schema
         }
 
-        builder.set(fieldName, convertValue(value, field));
+        builder.set(field.getName(), convertValue(value, field));
       }
 
       emitter.emit(builder.build());
     } catch (Exception ex) {
       switch (config.getErrorHandling()) {
         case SKIP:
+          LOG.warn("Cannot process csv row '{}', skipping it.", input.getValue(), ex);
           break;
         case SEND:
           StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);

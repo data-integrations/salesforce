@@ -63,7 +63,15 @@ public class SObjectsDescribeResult {
 
   @VisibleForTesting
   SObjectsDescribeResult(Map<String, Map<String, Field>> holder) {
-    holder.forEach((key, value) -> this.objectToFieldMap.put(key.toLowerCase(), value));
+    for (Map.Entry<String, Map<String, Field>> holderEntry : holder.entrySet()) {
+      String sObjectName = holderEntry.getKey();
+      Map<String, Field> fieldsMap = holderEntry.getValue();
+
+      Map<String, Field> fieldsMapLowerCase = new LinkedHashMap<>();
+      fieldsMap.forEach((key, value) -> fieldsMapLowerCase.put(key.toLowerCase(), value));
+
+      this.objectToFieldMap.put(sObjectName.toLowerCase(), fieldsMapLowerCase);
+    }
   }
 
   /**
@@ -87,16 +95,17 @@ public class SObjectsDescribeResult {
    */
   public Field getField(String sObjectName, String fieldName) {
     Map<String, Field> fields = objectToFieldMap.get(sObjectName.toLowerCase());
-    return fields == null ? null : fields.get(fieldName);
+    return fields == null ? null : fields.get(fieldName.toLowerCase());
   }
 
   private void addSObjectDescribe(DescribeSObjectResult sObjectDescribe) {
     Map<String, Field> fields = Arrays.stream(sObjectDescribe.getFields())
       .collect(Collectors.toMap(
-        Field::getName,
+        field -> field.getName().toLowerCase(),
         Function.identity(),
         (o, n) -> n,
         LinkedHashMap::new)); // preserve field order for queries by sObject
+
     // sObjects names are case-insensitive
     // store them in lower case to ensure we obtain them case-insensitively
     objectToFieldMap.put(sObjectDescribe.getName().toLowerCase(), fields);
