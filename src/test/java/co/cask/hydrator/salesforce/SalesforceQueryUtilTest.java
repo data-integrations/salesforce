@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.hydrator.salesforce.plugin.source.batch.util;
+package co.cask.hydrator.salesforce;
 
 import org.junit.Assert;
 import org.junit.Test;

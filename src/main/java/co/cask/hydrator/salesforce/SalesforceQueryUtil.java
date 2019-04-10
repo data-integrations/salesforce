@@ -14,7 +14,7 @@
  * the License.
  */
 
-package co.cask.hydrator.salesforce.plugin.source.batch.util;
+package co.cask.hydrator.salesforce;
 
 import com.google.common.base.Strings;
 
@@ -35,6 +35,8 @@ public class SalesforceQueryUtil {
   private static final String FROM = " FROM ";
   private static final String WHERE = " WHERE ";
   private static final String AND = " AND ";
+
+  public static final int INTERVAL_FILTER_MIN_VALUE = 0;
 
   /**
    * Creates SObject query with filter if provided. Uses current datetime in UTC timezone for range filter
@@ -112,7 +114,7 @@ public class SalesforceQueryUtil {
    */
   private static String generateRangeFilter(String fieldName, ZonedDateTime dateTime, long duration,
                                             long offset) {
-    if (duration <= SalesforceSourceConstants.INTERVAL_FILTER_MIN_VALUE) {
+    if (duration <= INTERVAL_FILTER_MIN_VALUE) {
       // no filter is required
       return NO_OP_FILTER;
     }
