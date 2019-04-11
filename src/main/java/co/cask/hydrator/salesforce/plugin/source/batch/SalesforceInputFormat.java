@@ -13,18 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.plugin.source.batch;
 
 import co.cask.hydrator.salesforce.SalesforceBulkUtil;
 import co.cask.hydrator.salesforce.SalesforceConnectionUtil;
+import co.cask.hydrator.salesforce.SalesforceQueryUtil;
 import co.cask.hydrator.salesforce.authenticator.Authenticator;
 import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -53,8 +53,12 @@ public class SalesforceInputFormat extends InputFormat {
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection,
-                                                            conf.get(SalesforceSourceConstants.CONFIG_QUERY));
+      String query = conf.get(SalesforceSourceConstants.CONFIG_QUERY);
+      if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
+        LOG.debug("Wide object query detected. Query length '{}'", query.length());
+        query = SalesforceQueryUtil.createSObjectIdQuery(query);
+      }
+      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
 
       return Arrays.stream(batches)
@@ -66,8 +70,12 @@ public class SalesforceInputFormat extends InputFormat {
   }
 
   @Override
-  public RecordReader<NullWritable, CSVRecord> createRecordReader(
+  public RecordReader<NullWritable, Map<String, String>> createRecordReader(
     InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
-    return new SalesforceRecordReader();
+    Configuration conf = taskAttemptContext.getConfiguration();
+    String query = conf.get(SalesforceSourceConstants.CONFIG_QUERY);
+    return SalesforceQueryUtil.isQueryUnderLengthLimit(query)
+      ? new SalesforceRecordReader()
+      : new SalesforceWideRecordReader();
   }
 }

@@ -21,6 +21,7 @@ package co.cask.hydrator.salesforce;
 public class SalesforceConstants {
 
   public static final String API_VERSION = "45.0";
+  public static final String REFERENCE_NAME_DELIMITER = ".";
 
   public static final String PROPERTY_CLIENT_ID = "clientId";
   public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
@@ -34,4 +35,7 @@ public class SalesforceConstants {
   public static final String CONFIG_USERNAME = "mapred.salesforce.user";
   public static final String CONFIG_CLIENT_SECRET = "mapred.salesforce.client.secret";
   public static final String CONFIG_LOGIN_URL = "mapred.salesforce.login.url";
+
+  public static final int INTERVAL_FILTER_MIN_VALUE = 0;
+  public static final int SOQL_MAX_LENGTH = 20000;
 }

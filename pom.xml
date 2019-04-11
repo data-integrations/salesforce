@@ -46,6 +46,7 @@
     <jackson.version>1.9.13</jackson.version>
     <json.version>20180813</json.version>
     <awaitility.version>3.1.6</awaitility.version>
+    <commons-logging.version>1.2</commons-logging.version>
   </properties>
 
   <dependencies>
@@ -231,6 +232,13 @@
       <version>${json.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
+    </dependency>
+
+    <!-- Salesforce runtime dependencies to avoid NoClassDefFoundError -->
+    <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
       <version>${jackson.version}</version>
@@ -241,9 +249,9 @@
       <version>${jackson.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.awaitility</groupId>
-      <artifactId>awaitility</artifactId>
-      <version>${awaitility.version}</version>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>${commons-logging.version}</version>
     </dependency>
 
 

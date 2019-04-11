@@ -158,7 +158,7 @@ public class SObjectDescriptor {
       if (hasParents()) {
         List<String> nameParts = new ArrayList<>(parents);
         nameParts.add(name);
-        return String.join(".", nameParts);
+        return String.join(SalesforceConstants.REFERENCE_NAME_DELIMITER, nameParts);
       }
       return name;
     }
