@@ -16,6 +16,7 @@
 
 package co.cask.hydrator.salesforce.soap;
 
+import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.SaveResult;
 import com.sforce.soap.partner.sobject.SObject;
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Class which provides functions to work with sobjects
+ * Class which provides functions to work with sObjects.
  */
 public class SObjectUtil {
   /**
@@ -44,7 +45,7 @@ public class SObjectUtil {
     for (SaveResult saveResult : results) {
       if (!saveResult.getSuccess()) {
         String allErrors = Stream.of(saveResult.getErrors())
-          .map(result -> result.getMessage())
+          .map(Error::getMessage)
           .collect(Collectors.joining("\n"));
 
         throw new RuntimeException(allErrors);

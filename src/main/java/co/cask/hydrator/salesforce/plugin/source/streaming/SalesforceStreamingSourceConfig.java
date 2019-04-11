@@ -58,20 +58,19 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
 
   private static Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
 
-  @Description("Salesforce push topic name. Plugin will track updates from this topic. If topic does not exist," +
+  @Description("Salesforce push topic name. Plugin will track updates from this topic. If topic does not exist, " +
     "it will be automatically created. " +
     "To manually create pushTopic use Salesforce workbench or Apex code or API.")
   @Name(PROPERTY_PUSHTOPIC_NAME)
   @Macro
   private String pushTopicName;
 
-  @Description("Salesforce push topic query. The query is used by Salesforce to send updates to push topic." +
+  @Description("Salesforce push topic query. The query is used by Salesforce to send updates to push topic. " +
     "This field not required, if you are using an existing push topic.")
   @Nullable
   @Name(PROPERTY_PUSHTOPIC_QUERY)
   @Macro
   private String pushTopicQuery;
-
 
   @Description("Push topic property, which specifies if a create operation should generate a record.")
   @Nullable
@@ -87,7 +86,6 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
   @Nullable
   @Name("pushTopicNotifyDelete")
   private String pushTopicNotifyDelete;
-
 
   @Description("Salesforce SObject name used to automatically generate query. Example: Opportunity.")
   @Nullable
@@ -186,7 +184,7 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
 
         if (Strings.isNullOrEmpty(query)) {
           throw new InvalidConfigPropertyException("SOQL query or SObject name must be provided, unless " +
-                                                     "using against existing pushTopic",
+                                                     "existing pushTopic is used",
                                                    SalesforceStreamingSourceConfig.PROPERTY_PUSHTOPIC_QUERY);
         }
 
@@ -217,7 +215,7 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
         assertFieldValue(pushTopic, "NotifyForFields", getPushTopicNotifyForFields());
       }
     } catch (ConnectionException e) {
-      throw new InvalidStageException("Cannot connect to Salesforce API with credentials specified", e);
+      throw new InvalidStageException("Cannot connect to Salesforce API with credentials specified.", e);
     }
   }
 

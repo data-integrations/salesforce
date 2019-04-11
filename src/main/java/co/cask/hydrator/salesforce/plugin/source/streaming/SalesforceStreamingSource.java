@@ -50,7 +50,6 @@ import javax.ws.rs.Path;
 /**
  * Returns records in realtime created by Salesforce. To achieve this Salesforce Streaming API is used.
  * We use cometd server to subscribe to Salesforce Push Topics and receive realtime updates from there
- *
  */
 @Plugin(type = StreamingSource.PLUGIN_TYPE)
 @Name(SalesforceStreamingSource.NAME)
@@ -171,5 +170,3 @@ public class SalesforceStreamingSource extends ReferenceStreamingSource<Structur
                                    SObjectDescriptor.fromQuery(query));
   }
 }
-
-

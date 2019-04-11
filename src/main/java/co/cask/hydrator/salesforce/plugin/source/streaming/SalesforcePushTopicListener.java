@@ -48,7 +48,7 @@ public class SalesforcePushTopicListener {
    * Timeout of 110 seconds is enforced by Salesforce Streaming API and is not configurable.
    * So we enforce the same on client.
    */
-  private static final int CONNECTION_TIMEOUT = 110;
+  private static final int CONNECTION_TIMEOUT_SECONDS = 110;
   private static final long HANDSHAKE_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(110);
 
   private static final int HANDSHAKE_CHECK_INTERVAL_MS = 1000;
@@ -105,7 +105,7 @@ public class SalesforcePushTopicListener {
 
     // Set up a Jetty HTTP client to use with CometD
     HttpClient httpClient = new HttpClient(sslContextFactory);
-    httpClient.setConnectTimeout(CONNECTION_TIMEOUT);
+    httpClient.setConnectTimeout(CONNECTION_TIMEOUT_SECONDS);
     httpClient.start();
 
     Map<String, Object> options = new HashMap<>();
@@ -125,7 +125,6 @@ public class SalesforcePushTopicListener {
 
     return client;
   }
-
 
   private void waitForHandshake(BayeuxClient client,
                                 long timeoutInMilliseconds, long intervalInMilliseconds) {
