@@ -35,6 +35,7 @@
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
+    <spark2.version>2.1.3</spark2.version>
     <hydrator.version>2.2.0-SNAPSHOT</hydrator.version>
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>45.0.0</salesforce.api.version>
@@ -43,6 +44,8 @@
     <mockito.version>1.10.19</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
+    <json.version>20180813</json.version>
+    <awaitility.version>3.1.6</awaitility.version>
   </properties>
 
   <dependencies>
@@ -57,6 +60,11 @@
       <artifactId>cdap-etl-api</artifactId>
       <version>${cdap.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.cdap</groupId>
+      <artifactId>cdap-etl-api-spark</artifactId>
+      <version>${cdap.version}</version>
     </dependency>
     <dependency>
       <groupId>co.cask.hydrator</groupId>
@@ -175,7 +183,17 @@
         </exclusion>
       </exclusions>
     </dependency>
-
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming_2.11</artifactId>
+      <version>${spark2.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>co.cask.hydrator</groupId>
+      <artifactId>spark-plugins</artifactId>
+      <version>${hydrator.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -208,6 +226,11 @@
       <version>${commons.csv.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>${json.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-core-asl</artifactId>
       <version>${jackson.version}</version>
@@ -216,6 +239,11 @@
       <groupId>org.codehaus.jackson</groupId>
       <artifactId>jackson-mapper-asl</artifactId>
       <version>${jackson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <version>${awaitility.version}</version>
     </dependency>
 
 
@@ -279,6 +307,64 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-core_2.11</artifactId>
+        <version>${spark2.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.esotericsoftware.reflectasm</groupId>
+            <artifactId>reflectasm</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+          </exclusion>
+          <!-- excludes scala-compiler and scala-reflect to avoid conflicting with the one from spark-repl -->
+          <exclusion>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-compiler</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.eclipse.jetty.orbit</groupId>
+            <artifactId>javax.servlet</artifactId>
+          </exclusion>
+          <!--
+            Need to exclude this since Spark brings in an older version that makes
+            S3 not work in local sandbox. This doesn't affect distributed mode.
+          -->
+          <exclusion>
+            <groupId>net.java.dev.jets3t</groupId>
+            <artifactId>jets3t</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>asm</groupId>
+            <artifactId>asm</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
 
   <build>
     <pluginManagement>

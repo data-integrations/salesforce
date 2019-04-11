@@ -31,5 +31,4 @@ public class SalesforceSourceConstants {
 
   public static final int DURATION_DEFAULT = 0;
   public static final int OFFSET_DEFAULT = 0;
-  public static final int INTERVAL_FILTER_MIN_VALUE = 0;
 }

@@ -19,11 +19,11 @@ import co.cask.hydrator.salesforce.authenticator.AuthenticatorCredentials;
 import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import com.google.common.base.Preconditions;
 import com.sforce.soap.partner.Field;
+import com.sforce.soap.partner.FieldType;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 
 import java.util.ArrayList;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -44,19 +44,28 @@ public class SObjectDescriptor {
    *
    * @param name sObject name
    * @param credentials Salesforce connection credentials
+   * @param typesToSkip sobject fields of this type will be skipped.
    * @return sObject descriptor
    * @throws ConnectionException in case of errors when establishing connection to Salesforce
    */
-  public static SObjectDescriptor fromName(String name, AuthenticatorCredentials credentials)
+  public static SObjectDescriptor fromName(String name,
+                                           AuthenticatorCredentials credentials, Set<FieldType> typesToSkip)
     throws ConnectionException {
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     SObjectsDescribeResult describeResult = new SObjectsDescribeResult(
       partnerConnection, Collections.singletonList(name));
     List<FieldDescriptor> fields = describeResult.getFields().stream()
+      .filter(field -> !typesToSkip.contains(field.getType()))
       .map(Field::getName)
       .map(FieldDescriptor::new)
       .collect(Collectors.toList());
+
     return new SObjectDescriptor(name, fields);
+  }
+
+  public static SObjectDescriptor fromName(String name,
+                                           AuthenticatorCredentials credentials) throws ConnectionException {
+    return fromName(name, credentials, Collections.emptySet());
   }
 
   /**

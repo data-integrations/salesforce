@@ -21,10 +21,10 @@ import co.cask.cdap.api.annotation.Macro;
 import co.cask.cdap.api.annotation.Name;
 import co.cask.cdap.etl.api.validation.InvalidConfigPropertyException;
 import co.cask.hydrator.salesforce.SObjectDescriptor;
+import co.cask.hydrator.salesforce.SalesforceQueryUtil;
 import co.cask.hydrator.salesforce.parser.SOQLParsingException;
 import co.cask.hydrator.salesforce.parser.SalesforceQueryParser;
 import co.cask.hydrator.salesforce.plugin.BaseSalesforceConfig;
-import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceQueryUtil;
 import co.cask.hydrator.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
@@ -151,10 +151,10 @@ public class SalesforceSourceConfig extends BaseSalesforceConfig {
   }
 
   private void validateSObjectFilter(String propertyName, int propertyValue) {
-    if (!containsMacro(propertyName) && propertyValue < SalesforceSourceConstants.INTERVAL_FILTER_MIN_VALUE) {
+    if (!containsMacro(propertyName) && propertyValue < SalesforceQueryUtil.INTERVAL_FILTER_MIN_VALUE) {
       throw new InvalidConfigPropertyException(
         String.format("Invalid SObject '%s' value: '%d'. Value must be '%d' or greater", propertyName, propertyValue,
-                   SalesforceSourceConstants.INTERVAL_FILTER_MIN_VALUE), propertyName);
+                      SalesforceQueryUtil.INTERVAL_FILTER_MIN_VALUE), propertyName);
     }
   }
 
