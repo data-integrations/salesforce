@@ -13,16 +13,17 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.etl;
 
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.schema.Schema;
+import co.cask.hydrator.salesforce.SalesforceConstants;
+import co.cask.hydrator.salesforce.SalesforceQueryUtil;
 import co.cask.hydrator.salesforce.soap.SObjectBuilder;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.metadata.CustomField;
-import com.sforce.soap.metadata.FieldType;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.sobject.SObject;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -200,12 +202,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
   @Test
   public void testSObjectQuerySchema() throws Exception {
-    CustomField customField = new CustomField();
-    customField.setFullName("CustomField__c");
-    customField.setLabel("Custom Field Label");
-    customField.setType(FieldType.Text);
-    customField.setLength(50);
-    customField.setRequired(true);
+    CustomField customField = createTextCustomField("CustomField__c");
 
     String sObjectName = createCustomObject("IT_SObjectSchema", new CustomField[]{customField});
 
@@ -287,5 +284,51 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     Assert.assertEquals(1, results.size());
     Assert.assertEquals("Wilma", results.get(0).get("Name"));
+  }
+
+  @Test
+  public void testWideObjectQuery() throws Exception {
+    String nameTemplate = "%s__c";
+    CustomField[] customFields = IntStream.range(0, SalesforceConstants.SOQL_MAX_LENGTH / MAX_FIELD_NAME_LENGTH)
+      // generate field name like FFF..FF1__c
+      .mapToObj(i -> String.format(nameTemplate, Strings.padStart(String.valueOf(i), MAX_FIELD_NAME_LENGTH, 'F')))
+      .map(this::createTextCustomField)
+      .toArray(CustomField[]::new);
+
+    String sObjectName = createCustomObject("IT_WideObjectQuery", customFields);
+
+    String nameField = "Name";
+    SObject sObject = new SObjectBuilder()
+      .setType(sObjectName)
+      .put(nameField, "Barney")
+      .build();
+
+    addSObjects(Collections.singletonList(sObject), false);
+
+    List<String> customFieldNames = Stream.of(customFields)
+      .map(CustomField::getFullName)
+      .collect(Collectors.toList());
+
+    List<String> requestedFields = ImmutableList.<String>builder()
+      .add(nameField)
+      .addAll(customFieldNames)
+      .build();
+
+    String query = String.format("SELECT %s FROM %s", String.join(",", requestedFields), sObjectName);
+    Assert.assertFalse(SalesforceQueryUtil.isQueryUnderLengthLimit(query));
+
+    List<StructuredRecord> results = getResultsBySOQLQuery(query);
+
+    Assert.assertEquals(1, results.size());
+
+    StructuredRecord record = results.get(0);
+    List<Schema.Field> schemaFields = record.getSchema().getFields();
+
+    Assert.assertNotNull(schemaFields);
+    Assert.assertEquals(requestedFields.size(), schemaFields.size());
+    Assert.assertEquals(sObject.getField(nameField), record.get(nameField));
+
+    requestedFields.forEach(fieldName -> Assert.assertNotNull(
+      String.format("Field '%s' not found", fieldName), record.getSchema().getField(fieldName)));
   }
 }

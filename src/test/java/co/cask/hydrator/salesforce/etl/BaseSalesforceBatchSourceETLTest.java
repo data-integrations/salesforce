@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package co.cask.hydrator.salesforce.etl;
 
 import co.cask.cdap.api.artifact.ArtifactSummary;
@@ -99,6 +98,8 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   @Rule
   public TestName name = new TestName();
 
+  // Salesforce field name length limitation
+  protected static final int MAX_FIELD_NAME_LENGTH = 40;
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-pipeline", "3.2.0");
 
   private static final String CLIENT_ID = System.getProperty("salesforce.test.clientId");
@@ -135,7 +136,9 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     // this will make our plugins available.
     addPluginArtifact(NamespaceId.DEFAULT.artifact("example-plugins", "1.0.0"),
                       parentArtifact,
-                      SalesforceBatchSource.class);
+                      SalesforceBatchSource.class,
+                      SObject.class // should be loaded by Plugin ClassLoader to avoid SOAP deserialization issue
+    );
 
     AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
       USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL);
@@ -231,6 +234,19 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     }
 
     return getPipelineResults(propsBuilder.build());
+  }
+
+  protected CustomField createTextCustomField(String fullName) {
+    CustomField customField = new CustomField();
+    customField.setFullName(fullName);
+    // custom field name length can be 43 (max length + postfix `__c`)
+    // substring field name to be within the label length limit
+    customField.setLabel(fullName.substring(Math.max(0, fullName.length() - MAX_FIELD_NAME_LENGTH)));
+    customField.setType(FieldType.Text);
+    customField.setLength(50);
+    customField.setRequired(true);
+    customField.setDefaultValue("\"DefaultValue\"");
+    return customField;
   }
 
   private static MetadataConnection createMetadataConnection() throws ConnectionException {
