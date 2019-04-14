@@ -77,27 +77,31 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String,
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     config.validate(); // validate when macros not yet substituted
 
-    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)) {
+    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
+      // schema will be available later during `prepareRun` stage
       pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
       return;
     }
 
-    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
-    try {
-      this.schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
-    } catch (ConnectionException e) {
-      throw new RuntimeException(String.format("Unable to get schema from query '%s'", config.getQuery()), e);
+    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+      || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
+      || !config.canAttemptToEstablishConnection()) {
+      // some config properties required for schema generation are not available
+      // will validate schema later in `prepareRun` stage
+      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
+      return;
     }
+
+    schema = retrieveSchema();
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
 
   @Override
-  public void prepareRun(BatchSourceContext context) throws ConnectionException {
+  public void prepareRun(BatchSourceContext context) {
     config.validate(); // validate when macros are already substituted
 
     if (schema == null) {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
-      this.schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+      schema = retrieveSchema();
     }
 
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
@@ -160,12 +164,32 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String,
    *
    * @param config Salesforce Source Batch config
    * @return schema calculated from query
-   * @throws ConnectionException in case error when establishing connection
    */
   @Path("getSchema")
-  public Schema getSchema(SalesforceSourceConfig config) throws ConnectionException {
-    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(config.getQuery());
-    return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+  public Schema getSchema(SalesforceSourceConfig config) {
+    String query = config.getQuery();
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    try {
+      return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+    } catch (ConnectionException e) {
+      throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
+    }
+  }
+
+  /**
+   * Retrieves provided and actual schemas.
+   * If both schemas are available, validates their compatibility.
+   *
+   * @return provided schema if present, otherwise actual schema
+   */
+  private Schema retrieveSchema() {
+    Schema providedSchema = config.getSchema();
+    Schema actualSchema = getSchema(config);
+    if (providedSchema != null) {
+      SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
+      return providedSchema;
+    }
+    return actualSchema;
   }
 
   private Object convertValue(String value, Schema.Field field) {
@@ -188,12 +212,8 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String,
         case DATE:
           // date will be in yyyy-mm-dd format
           return Math.toIntExact(LocalDate.parse(value).toEpochDay());
-        case TIMESTAMP_MILLIS:
-          return Instant.parse(value).toEpochMilli();
         case TIMESTAMP_MICROS:
           return TimeUnit.MILLISECONDS.toMicros(Instant.parse(value).toEpochMilli());
-        case TIME_MILLIS:
-          return Math.toIntExact(TimeUnit.NANOSECONDS.toMillis(LocalTime.parse(value).toNanoOfDay()));
         case TIME_MICROS:
           return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value).toNanoOfDay());
         default:

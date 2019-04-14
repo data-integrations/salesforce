@@ -31,6 +31,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -90,28 +92,30 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
                                             Schema.Field.of("LastActivityDate",
                                                             Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
                                             Schema.Field.of("LastModifiedDate",
-                                                            Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS))
+                                                            Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))
     );
 
-    Assert.assertEquals(expectedSchema, recordSchema);
+    Assert.assertEquals(expectedSchema.toString(), recordSchema.toString());
   }
 
   @Test
   public void testValuesReturned() throws Exception {
+    Instant now = OffsetDateTime.now(ZoneOffset.UTC).toInstant();
+
     List<SObject> sObjects = new ImmutableList.Builder<SObject>()
       .add(new SObjectBuilder()
              .setType("Opportunity")
              .put("Name", "testValuesReturned1")
              .put("Amount", "25000")
              .put("StageName", "Proposal")
-             .put("CloseDate", Date.from(Instant.now()))
+             .put("CloseDate", Date.from(now))
              .put("TotalOpportunityQuantity", "25")
              .build())
       .build();
 
     addSObjects(sObjects);
 
-    String query = "SELECT StageName, IsDeleted, Type, TotalOpportunityQuantity, LastModifiedDate" +
+    String query = "SELECT StageName, IsDeleted, Type, TotalOpportunityQuantity, CloseDate" +
       " FROM Opportunity WHERE Name LIKE 'testValuesReturned%'";
     List<StructuredRecord> records = getResultsBySOQLQuery(query);
 
@@ -122,8 +126,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertEquals("Proposal", record.get("StageName"));
     Assert.assertFalse((boolean) record.get("IsDeleted"));
     Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
-    Assert.assertEquals(System.currentTimeMillis(), (long) record.get("LastModifiedDate"),
-                        TimeUnit.MINUTES.toMillis(30));
+    Assert.assertEquals(LocalDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate(), record.getDate("CloseDate"));
   }
 
   @Test
@@ -219,7 +222,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
       .map(Field::getName)
       .collect(Collectors.toList());
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
 
     Assert.assertEquals(1, results.size());
 
@@ -235,6 +238,28 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
   }
 
   @Test
+  public void testSObjectWithSchema() throws Exception {
+    String sObjectName = createCustomObject("IT_WithSchema", null);
+
+    SObject sObject = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Fred")
+      .build();
+
+    addSObjects(Collections.singletonList(sObject), false);
+
+    Schema providedSchema = Schema.recordOf("output",
+      Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
+
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, providedSchema.toString());
+
+    Assert.assertEquals(1, results.size());
+
+    Schema actualSchema = results.get(0).getSchema();
+    Assert.assertEquals(providedSchema.toString(), actualSchema.toString());
+  }
+
+  @Test
   public void testSObjectQueryNoFilters() throws Exception {
     String sObjectName = createCustomObject("IT_NoFilters", null);
     String nameField = "Name";
@@ -246,7 +271,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(sObjects, false);
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
 
     Assert.assertEquals(names.size(), results.size());
 
@@ -280,7 +305,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(Collections.singletonList(sObject2), false);
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, dateTimeFilter);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, dateTimeFilter, null);
 
     Assert.assertEquals(1, results.size());
     Assert.assertEquals("Wilma", results.get(0).get("Name"));

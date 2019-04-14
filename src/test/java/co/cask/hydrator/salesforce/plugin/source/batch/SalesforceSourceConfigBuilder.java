@@ -32,6 +32,7 @@ public class SalesforceSourceConfigBuilder {
   private String datetimeFilter;
   private Integer duration;
   private Integer offset;
+  private String schema;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -93,8 +94,13 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setSchema(String schema) {
+    this.schema = schema;
+    return this;
+  }
+
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, clientId, clientSecret, username, password, loginUrl,
-                                      errorHandling, query, sObjectName, datetimeFilter, duration, offset);
+                                      errorHandling, query, sObjectName, datetimeFilter, duration, offset, schema);
   }
 }
