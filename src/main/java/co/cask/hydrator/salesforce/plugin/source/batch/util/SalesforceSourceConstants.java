@@ -20,15 +20,18 @@ package co.cask.hydrator.salesforce.plugin.source.batch.util;
  */
 public class SalesforceSourceConstants {
 
-  public static final String PROPERTY_QUERY = "query";
-  public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
   public static final String PROPERTY_DATETIME_FILTER = "datetimeFilter";
   public static final String PROPERTY_DURATION = "duration";
   public static final String PROPERTY_OFFSET = "offset";
+  public static final String PROPERTY_SCHEMA = "schema";
+
+  public static final String PROPERTY_QUERY = "query";
+  public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
 
   public static final String CONFIG_QUERY = "mapred.salesforce.input.query";
 
   public static final int DURATION_DEFAULT = 0;
   public static final int OFFSET_DEFAULT = 0;
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
+
 }

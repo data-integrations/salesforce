@@ -82,8 +82,8 @@ The Salesforce types will be automatically mapped to schema types as shown below
 | long        | _long                                                                      |              |
 | double      | _double, currency, percent                                                 |              |
 | date        | date                                                                       |              |
-| timestamp   | datetime                                                                   | Milliseconds |
-| time        | time                                                                       | Milliseconds |
+| timestamp   | datetime                                                                   | Microseconds |
+| time        | time                                                                       | Microseconds |
 | string      | picklist, multipicklist, combobox, reference, base64,                      |              |
 |             | textarea, phone, id, url, email, encryptedstring,                          |              |
 |             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |

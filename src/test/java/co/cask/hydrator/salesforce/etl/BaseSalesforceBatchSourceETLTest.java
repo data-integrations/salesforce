@@ -225,12 +225,17 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   }
 
   protected List<StructuredRecord> getResultsBySObjectQuery(String sObjectName,
-                                                            String datetimeFilter) throws Exception {
+                                                            String datetimeFilter,
+                                                            String schema) throws Exception {
     ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties()
       .put(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME, sObjectName);
 
     if (datetimeFilter != null) {
       propsBuilder.put(SalesforceSourceConstants.PROPERTY_DATETIME_FILTER, datetimeFilter);
+    }
+
+    if (schema != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_SCHEMA, schema);
     }
 
     return getPipelineResults(propsBuilder.build());

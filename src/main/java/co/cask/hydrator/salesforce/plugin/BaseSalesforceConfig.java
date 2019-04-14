@@ -111,12 +111,25 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return SalesforceConnectionUtil.getAuthenticatorCredentials(username, password, clientId, clientSecret, loginUrl);
   }
 
-  private void validateConnection() {
+  /**
+   * Checks if current config does not contain macro for properties which are used
+   * to establish connection to Salesforce.
+   *
+   * @return true if none of the connection properties contains macro, false otherwise
+   */
+  public boolean canAttemptToEstablishConnection() {
     if (containsMacro(SalesforceConstants.PROPERTY_CLIENT_ID)
       || containsMacro(SalesforceConstants.PROPERTY_CLIENT_SECRET)
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
       || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)) {
+      return false;
+    }
+    return true;
+  }
+
+  private void validateConnection() {
+    if (!canAttemptToEstablishConnection()) {
       return;
     }
 

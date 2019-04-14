@@ -19,9 +19,9 @@ import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.schema.Schema;
 import co.cask.cdap.api.dataset.lib.KeyValue;
 import co.cask.cdap.etl.api.Emitter;
+import co.cask.hydrator.salesforce.plugin.ErrorHandling;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.csv.CSVRecord;
 import org.apache.hadoop.io.NullWritable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,7 +48,7 @@ public class SalesforceRecordReaderTest {
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
     );
 
@@ -57,7 +57,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcBAAW")
              .put("IsDeleted", false)
              .put("ExpectedRevenue", 1500.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17897)
              .build()
       )
@@ -65,7 +65,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcCAAW")
              .put("IsDeleted", false)
              .put("ExpectedRevenue", 112500.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17885)
              .build()
       )
@@ -73,7 +73,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcDAAW")
              .put("IsDeleted", false)
              .put("ExpectedRevenue", 220000.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17850)
              .build()
       )
@@ -94,7 +94,7 @@ public class SalesforceRecordReaderTest {
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("IsDeleted\u0628\u0633\u0645", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
     );
 
@@ -103,7 +103,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcBAAW\u0628\u0633\u0645")
              .put("IsDeleted\u0628\u0633\u0645", false)
              .put("ExpectedRevenue", 1500.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17897)
              .build()
       )
@@ -111,7 +111,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcCAAW")
              .put("IsDeleted\u0628\u0633\u0645", false)
              .put("ExpectedRevenue", 112500.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17885)
              .build()
       )
@@ -119,7 +119,7 @@ public class SalesforceRecordReaderTest {
              .put("Id", "0061i000003XNcDAAW")
              .put("IsDeleted\u0628\u0633\u0645", false)
              .put("ExpectedRevenue", 220000.0)
-             .put("LastModifiedDate", 1550819001000L)
+             .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17850)
              .build()
       )
@@ -234,7 +234,7 @@ public class SalesforceRecordReaderTest {
       .setUsername("myUsername")
       .setPassword("myPassword")
       .setLoginUrl("myLoginUrl")
-      .setErrorHandling("Stop on error")
+      .setErrorHandling(ErrorHandling.STOP.getValue())
       .setQuery("myQuery")
       .build();
 
