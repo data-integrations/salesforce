@@ -22,11 +22,13 @@ import co.cask.cdap.api.annotation.Plugin;
 import co.cask.cdap.api.data.format.StructuredRecord;
 import co.cask.cdap.api.data.format.UnexpectedFormatException;
 import co.cask.cdap.api.data.schema.Schema;
+import co.cask.cdap.api.dataset.DatasetProperties;
 import co.cask.cdap.etl.api.PipelineConfigurer;
 import co.cask.cdap.etl.api.streaming.StreamingContext;
 import co.cask.cdap.etl.api.streaming.StreamingSource;
 import co.cask.cdap.etl.api.validation.InvalidStageException;
-import co.cask.hydrator.plugin.spark.ReferenceStreamingSource;
+import co.cask.hydrator.common.Constants;
+import co.cask.hydrator.common.IdUtils;
 import co.cask.hydrator.salesforce.SObjectDescriptor;
 import co.cask.hydrator.salesforce.SalesforceSchemaUtil;
 import co.cask.hydrator.salesforce.authenticator.Authenticator;
@@ -54,7 +56,7 @@ import javax.ws.rs.Path;
 @Plugin(type = StreamingSource.PLUGIN_TYPE)
 @Name(SalesforceStreamingSource.NAME)
 @Description(SalesforceStreamingSource.DESCRIPTION)
-public class SalesforceStreamingSource extends ReferenceStreamingSource<StructuredRecord> {
+public class SalesforceStreamingSource extends StreamingSource<StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSource.class);
 
   static final String NAME = "SalesforceStreaming";
@@ -63,12 +65,15 @@ public class SalesforceStreamingSource extends ReferenceStreamingSource<Structur
   private Schema schema;
 
   public SalesforceStreamingSource(SalesforceStreamingSourceConfig config) {
-    super(config);
     this.config = config;
   }
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
+    // Verify that reference name meets dataset id constraints
+    IdUtils.validateId(config.referenceName);
+    pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
+
     try {
       config.validate(); // validate when macros are not substituted
       config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
