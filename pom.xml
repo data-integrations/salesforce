@@ -190,11 +190,6 @@
       <version>${spark2.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>co.cask.hydrator</groupId>
-      <artifactId>spark-plugins</artifactId>
-      <version>${hydrator.version}</version>
-    </dependency>
 
     <dependency>
       <groupId>org.apache.commons</groupId>
