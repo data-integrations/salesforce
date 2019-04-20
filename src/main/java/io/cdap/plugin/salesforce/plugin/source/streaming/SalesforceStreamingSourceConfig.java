@@ -1,0 +1,295 @@
+/*
+ * Copyright 2019 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package io.cdap.plugin.salesforce.plugin.source.streaming;
+
+import com.google.common.base.Strings;
+import com.sforce.soap.partner.FieldType;
+import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
+import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.ConnectionException;
+import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Macro;
+import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
+import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.SalesforceQueryUtil;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
+import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
+import io.cdap.plugin.salesforce.soap.SObjectBuilder;
+import io.cdap.plugin.salesforce.soap.SObjectUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.Nullable;
+
+/**
+ * Salesforce Streaming Source plugin config.
+ */
+public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceConfig.class);
+  private static final long serialVersionUID = 4218063781902315444L;
+
+  protected static final String ENABLED_KEYWORD = "Enabled";
+  protected static final String PROPERTY_PUSHTOPIC_NAME = "pushTopicName";
+  protected static final String PROPERTY_PUSHTOPIC_QUERY = "pushTopicQuery";
+  protected static final String PROPERTY_SOBJECT_NAME = "sObjectName";
+
+  private static Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
+
+  @Description("Salesforce push topic name. Plugin will track updates from this topic. If topic does not exist, " +
+    "it will be automatically created. " +
+    "To manually create pushTopic use Salesforce workbench or Apex code or API.")
+  @Name(PROPERTY_PUSHTOPIC_NAME)
+  @Macro
+  private String pushTopicName;
+
+  @Description("Salesforce push topic query. The query is used by Salesforce to send updates to push topic. " +
+    "This field not required, if you are using an existing push topic.")
+  @Nullable
+  @Name(PROPERTY_PUSHTOPIC_QUERY)
+  @Macro
+  private String pushTopicQuery;
+
+  @Description("Push topic property, which specifies if a create operation should generate a record.")
+  @Nullable
+  @Name("pushTopicNotifyCreate")
+  private String pushTopicNotifyCreate;
+
+  @Description("Push topic property, which specifies if a update operation should generate a record.")
+  @Nullable
+  @Name("pushTopicNotifyUpdate")
+  private String pushTopicNotifyUpdate;
+
+  @Description("Push topic property, which specifies if an delete operation should generate a record.")
+  @Nullable
+  @Name("pushTopicNotifyDelete")
+  private String pushTopicNotifyDelete;
+
+  @Description("Salesforce SObject name used to automatically generate query. Example: Opportunity.")
+  @Nullable
+  @Name(PROPERTY_SOBJECT_NAME)
+  @Macro
+  private String sObjectName;
+
+  @Description("Push topic property, which specifies how the record is evaluated against the PushTopic query.\n" +
+    "The NotifyForFields values are:\n" +
+    "All - Notifications are generated for all record field changes, provided the evaluated records match " +
+    "the criteria specified in the WHERE clause.\n" +
+    "Referenced (default) - Changes to fields referenced in the SELECT and WHERE clauses are evaluated. " +
+    "Notifications are generated for the evaluated " +
+    "records only if they match the criteria specified in the WHERE clause.\n" +
+    "Select - Changes to fields referenced in the SELECT clause are evaluated. Notifications are generated " +
+    "for the evaluated records only if they match the criteria specified in the WHERE clause.\n" +
+    "Where - Changes to fields referenced in the WHERE clause are evaluated. Notifications are generated " +
+    "for the evaluated records only if they match the criteria specified in the WHERE clause.")
+  @Nullable
+  @Name("pushTopicNotifyForFields")
+  private String pushTopicNotifyForFields;
+
+  public SalesforceStreamingSourceConfig(String referenceName, String clientId, String clientSecret,
+                                         String username, String password, String loginUrl,
+                                         String errorHandling, String pushTopicName, String sObjectName) {
+    super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling);
+    this.pushTopicName = pushTopicName;
+    this.sObjectName = sObjectName;
+  }
+
+  public String getPushTopicName() {
+    return pushTopicName;
+  }
+
+  public String getPushTopicQuery() {
+    return pushTopicQuery;
+  }
+
+  public Boolean isPushTopicNotifyCreate() {
+    return pushTopicNotifyCreate.equals(ENABLED_KEYWORD);
+  }
+
+  public Boolean isPushTopicNotifyUpdate() {
+    return pushTopicNotifyUpdate.equals(ENABLED_KEYWORD);
+  }
+
+  public Boolean isPushTopicNotifyDelete() {
+    return pushTopicNotifyDelete.equals(ENABLED_KEYWORD);
+  }
+
+  public String getPushTopicNotifyForFields() {
+    return pushTopicNotifyForFields;
+  }
+
+  @Nullable
+  public String getSObjectName() {
+    return sObjectName;
+  }
+
+  /**
+   * Get query to use, either pushTopicQuery or query generated using sObjectName.
+   *
+   * @return query or null if query was not specified via pushTopicQuery and sObjectName.
+   */
+  public String getQuery() {
+    if (!Strings.isNullOrEmpty(pushTopicQuery)) {
+      return pushTopicQuery;
+    } else if (!Strings.isNullOrEmpty(sObjectName)) {
+      return getSObjectQuery();
+    } else {
+      // If both are empty. Plugin will still work if pushTopic already exists.
+      return null;
+    }
+  }
+
+  /**
+   * Asserts that pushTopic on Salesforce server has the same parameters as specified in config.
+   * If they are different {@link java.lang.IllegalArgumentException} is thrown.
+   *
+   * If pushTopic does not exist it is created.
+   */
+  public void ensurePushTopicExistAndWithCorrectFields() {
+    if (containsMacro(PROPERTY_PUSHTOPIC_NAME) || containsMacro(PROPERTY_PUSHTOPIC_QUERY)) {
+      return;
+    }
+
+    try {
+      PartnerConnection partnerConnection = new PartnerConnection(
+        Authenticator.createConnectorConfig(this.getAuthenticatorCredentials()));
+
+      SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
+      String query = getQuery();
+
+      if (pushTopic == null) {
+        LOG.info("Creating PushTopic {}", pushTopicName);
+
+        if (Strings.isNullOrEmpty(query)) {
+          throw new InvalidConfigPropertyException("SOQL query or SObject name must be provided, unless " +
+                                                     "existing pushTopic is used",
+                                                   SalesforceStreamingSourceConfig.PROPERTY_PUSHTOPIC_QUERY);
+        }
+
+        pushTopic = new SObjectBuilder()
+          .setType("PushTopic")
+          .put("Name", pushTopicName)
+          .put("Query", query)
+          .put("NotifyForOperationCreate", isPushTopicNotifyCreate().toString())
+          .put("NotifyForOperationUpdate", isPushTopicNotifyUpdate().toString())
+          .put("NotifyForOperationDelete", isPushTopicNotifyDelete().toString())
+          .put("NotifyForFields", getPushTopicNotifyForFields())
+          .put("ApiVersion", SalesforceConstants.API_VERSION)
+          .build();
+
+        SObjectUtil.createSObjects(partnerConnection, new SObject[]{pushTopic});
+      } else {
+        if (!Strings.isNullOrEmpty(query)) {
+          assertFieldValue(pushTopic, "Query", query);
+        } else {
+          pushTopicQuery = (String) pushTopic.getField("Query");
+        }
+
+        // Ensure that pushTopic has the same parameters as user set in config.
+        // Otherwise it would be confusing for user if we continue
+        assertFieldValue(pushTopic, "NotifyForOperationCreate", isPushTopicNotifyCreate().toString());
+        assertFieldValue(pushTopic, "NotifyForOperationUpdate", isPushTopicNotifyUpdate().toString());
+        assertFieldValue(pushTopic, "NotifyForOperationDelete", isPushTopicNotifyDelete().toString());
+        assertFieldValue(pushTopic, "NotifyForFields", getPushTopicNotifyForFields());
+      }
+    } catch (ConnectionException e) {
+      throw new InvalidStageException("Cannot connect to Salesforce API with credentials specified.", e);
+    }
+  }
+
+  /**
+   * Returns pushTopic with given name from Salesforce server if present.
+   *
+   * @param partnerConnection a connection to Salesforce API
+   * @param pushTopicName a name of the push topic
+   * @return returns push topic or {@code null} if not found
+   * @throws ConnectionException occurs due to failure to connect to Salesforce API
+   */
+  public static SObject fetchPushTopicByName(PartnerConnection partnerConnection, String pushTopicName)
+    throws ConnectionException {
+    // in case somebody attempts SOQL injection
+    if (!isValidFieldName(pushTopicName)) {
+      throw new IllegalArgumentException(String.format(
+        "Push topic name '%s' can only contain latin letters.", pushTopicName));
+    }
+
+    QueryResult queryResult = partnerConnection.query(
+      String.format("SELECT Name, Query, NotifyForOperationCreate, " +
+                      "NotifyForOperationUpdate, NotifyForOperationDelete, " +
+                      "NotifyForFields FROM PushTopic WHERE Name = '%s'", pushTopicName));
+
+
+    SObject[] records = queryResult.getRecords();
+
+    switch(records.length) {
+      case 0:
+        return null;
+      case 1:
+        return records[0];
+      default:
+        throw new IllegalStateException(String.format("Excepted one or zero pushTopics with name = '%s' found %d",
+                                                      pushTopicName, records.length));
+    }
+  }
+  /**
+   * Supported character set for fields by Salesforce:
+   * A-Z, a-z, 0-9, '.', '-' And '_'
+   *
+   * @param name fieldName
+   * @return true fieldName is valid
+   */
+  private static boolean isValidFieldName(String name) {
+    Matcher m = isValidFieldNamePattern.matcher(name);
+    return m.matches();
+  }
+
+  private static void assertFieldValue(SObject pushTopic, String fieldName, Object expectedResult) {
+    Object actual = pushTopic.getField(fieldName);
+    if (!expectedResult.equals(actual)) {
+      throw new IllegalArgumentException(
+        String.format("Push topic field %s='%s', but existing value on server is '%s'",
+                      fieldName, expectedResult, actual));
+    }
+  }
+
+  private String getSObjectQuery() {
+    try {
+      // Text areas are not supported in streaming api queries that's why we are skipping them.
+      // Streaming API would respond with "large text area fields are not supported"
+      Set<FieldType> typesToSkip = Collections.singleton(FieldType.textarea);
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                       getAuthenticatorCredentials(), typesToSkip);
+
+      String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(sObjectDescriptor.getFieldsNames(), sObjectName,
+                                                                   0, 0, "");
+
+      LOG.debug("Generated SObject query: '{}'", sObjectQuery);
+      return sObjectQuery;
+    } catch (ConnectionException e) {
+      throw new IllegalStateException(
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
+    }
+  }
+}
