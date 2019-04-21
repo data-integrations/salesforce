@@ -48,15 +48,12 @@ import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.cdap.test.DataSetManager;
 import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.cdap.test.WorkflowManager;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchMultiSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.internal.AssumptionViolatedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,12 +62,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-
 /**
  * {@inheritDoc}
  */
 public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETLTest {
-  private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceBatchSourceETLTest.class);
 
   @ClassRule
   public static final TestConfiguration CONFIG = new TestConfiguration("explore.enabled", false);
@@ -88,14 +83,6 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
 
   @BeforeClass
   public static void setupTestClass() throws Exception {
-    try {
-      Assume.assumeNotNull(CLIENT_ID, CLIENT_SECRET, USERNAME, PASSWORD, LOGIN_URL);
-    } catch (AssumptionViolatedException e) {
-      LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
-                           "BaseSalesforceBatchSourceETLTest javadoc");
-      throw e;
-    }
-
     ArtifactId parentArtifact = NamespaceId.DEFAULT.artifact(APP_ARTIFACT.getName(), APP_ARTIFACT.getVersion());
 
     // add the artifact and mock plugins
@@ -106,6 +93,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     addPluginArtifact(NamespaceId.DEFAULT.artifact("example-plugins", "1.0.0"),
                       parentArtifact,
                       SalesforceBatchSource.class,
+                      SalesforceBatchMultiSource.class,
                       SObject.class // should be loaded by Plugin ClassLoader to avoid SOAP deserialization issue
     );
 
@@ -147,7 +135,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties(REFERENCE_NAME)
       .put(SalesforceSourceConstants.PROPERTY_QUERY, query);
 
-    return getPipelineResults(propsBuilder.build());
+    return getPipelineResults(propsBuilder.build(), SalesforceBatchSource.NAME, "SalesforceBatch");
   }
 
   protected List<StructuredRecord> getResultsBySObjectQuery(String sObjectName,
@@ -164,7 +152,22 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
       propsBuilder.put(SalesforceSourceConstants.PROPERTY_SCHEMA, schema);
     }
 
-    return getPipelineResults(propsBuilder.build());
+    return getPipelineResults(propsBuilder.build(), SalesforceBatchSource.NAME, "SalesforceBatch");
+  }
+
+  protected List<StructuredRecord> getResultsForMultiSObjects(String whiteList,
+                                                              String blackList) throws Exception {
+    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties(REFERENCE_NAME);
+
+    if (whiteList != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_WHITE_LIST, whiteList);
+    }
+
+    if (blackList != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_BLACK_LIST, blackList);
+    }
+
+    return getPipelineResults(propsBuilder.build(), SalesforceBatchMultiSource.NAME, "SalesforceBatchMulti");
   }
 
   protected CustomField createTextCustomField(String fullName) {
@@ -226,10 +229,11 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     metadataConnection.deleteMetadata("CustomObject", fullNames);
   }
 
-  private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
-    ETLStage source = new ETLStage("SalesforceReader", new ETLPlugin("Salesforce",
-                                                                     BatchSource.PLUGIN_TYPE,
-                                                                     sourceProperties, null));
+  private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties,
+                                                     String pluginName,
+                                                     String applicationPrefix) throws Exception {
+    ETLStage source = new ETLStage("SalesforceReader",
+      new ETLPlugin(pluginName, BatchSource.PLUGIN_TYPE, sourceProperties, null));
 
     String outputDatasetName = "output-batchsourcetest_" + testName.getMethodName();
     ETLStage sink = new ETLStage("sink", MockSink.getPlugin(outputDatasetName));
@@ -240,7 +244,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
       .addConnection(source.getName(), sink.getName())
       .build();
 
-    ApplicationId pipelineId = NamespaceId.DEFAULT.app("SalesforceBatchSource_" + testName.getMethodName());
+    ApplicationId pipelineId = NamespaceId.DEFAULT.app(applicationPrefix + "_" + testName.getMethodName());
     ApplicationManager appManager = deployApplication(pipelineId, new AppRequest<>(APP_ARTIFACT, etlConfig));
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);

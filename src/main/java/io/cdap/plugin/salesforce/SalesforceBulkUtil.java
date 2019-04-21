@@ -28,8 +28,6 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.OperationEnum;
 import com.sforce.async.QueryResultList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,7 +39,6 @@ import java.io.InputStreamReader;
  */
 public final class SalesforceBulkUtil {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBulkUtil.class);
   /**
    * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch
    */
@@ -93,9 +90,7 @@ public final class SalesforceBulkUtil {
       bulkConnection.createBatchFromStream(job, bout);
     }
 
-    BatchInfo[] batches = bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
-
-    return batches;
+    return bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
   }
 
   /**
@@ -122,15 +117,15 @@ public final class SalesforceBulkUtil {
           bulkConnection.getQueryResultList(jobId, batchId);
         String[] resultIds = list.getResult();
 
-        StringBuilder reponseBuilder = new StringBuilder();
+        StringBuilder responseBuilder = new StringBuilder();
         for (String resultId : resultIds) {
           try (InputStream queryResultStream = bulkConnection.getQueryResultStream(jobId, batchId, resultId)) {
             String response = CharStreams.toString(new InputStreamReader(queryResultStream, Charsets.UTF_8));
-            reponseBuilder.append(response);
+            responseBuilder.append(response);
           }
         }
 
-        return reponseBuilder.toString();
+        return responseBuilder.toString();
       } else if (info.getState() == BatchStateEnum.Failed) {
 
         throw new BulkAPIBatchException("Batch failed", info);

@@ -111,18 +111,16 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
         throw new SOQLParsingException("Invalid column name: " + ctx.getText());
       }
 
-      // if field contains alias, remove it to get actual field name
-      // Example:
-      // select Opportunity.Name from Opportunity -> Name
-      // select o.Name from Opportunity o -> Name
-      String topParent = nameParts.get(0);
-      if (topParent.equalsIgnoreCase(objectName) || topParent.equals(objectAlias)) {
-        // remove alias
-        nameParts = nameParts.subList(1, nameParts.size());
-      }
-
-      if (nameParts.isEmpty()) {
-        throw new SOQLParsingException("Invalid column name: " + ctx.getText());
+      if (nameParts.size() > 1) {
+        // if field contains alias, remove it to get actual field name
+        // Example:
+        // select Opportunity.Name from Opportunity -> Name
+        // select o.Name from Opportunity o -> Name
+        String topParent = nameParts.get(0);
+        if (topParent.equalsIgnoreCase(objectName) || topParent.equals(objectAlias)) {
+          // remove alias
+          nameParts = nameParts.subList(1, nameParts.size());
+        }
       }
 
       return new SObjectDescriptor.FieldDescriptor(nameParts);

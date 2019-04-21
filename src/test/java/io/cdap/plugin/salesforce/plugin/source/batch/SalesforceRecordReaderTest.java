@@ -19,22 +19,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.api.dataset.lib.KeyValue;
-import io.cdap.cdap.etl.api.Emitter;
-import io.cdap.plugin.salesforce.plugin.ErrorHandling;
-import org.apache.hadoop.io.NullWritable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class SalesforceRecordReaderTest {
   @Test
@@ -223,39 +215,20 @@ public class SalesforceRecordReaderTest {
 
 
   private void assertRecordReaderOutputRecords(String csvString, Schema schema,
-                                               List<Map<String, Object>> expectedRecords)
-    throws Exception {
-    Emitter<StructuredRecord> emitter = mock(Emitter.class);
-
-    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
-      .setReferenceName("myReferenceName")
-      .setClientId("myClientId")
-      .setClientSecret("myClientSecret")
-      .setUsername("myUsername")
-      .setPassword("myPassword")
-      .setLoginUrl("myLoginUrl")
-      .setErrorHandling(ErrorHandling.STOP.getValue())
-      .setQuery("myQuery")
-      .build();
-
-    SalesforceBatchSource salesforceBatchSource = new SalesforceBatchSource(config);
-    salesforceBatchSource.setSchema(schema);
+                                               List<Map<String, Object>> expectedRecords) throws Exception {
+    MapToRecordTransformer transformer = new MapToRecordTransformer();
+    SalesforceRecordReader reader = new SalesforceRecordReader(schema);
+    reader.setupParser(csvString);
 
     Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
     fieldsField.setAccessible(true);
 
-    SalesforceRecordReader rr = new SalesforceRecordReader();
-    rr.setupParser(csvString);
-
-    ArgumentCaptor<StructuredRecord> argument = ArgumentCaptor.forClass(StructuredRecord.class);
-
-    while (rr.nextKeyValue()) {
-      KeyValue<NullWritable, Map<String, String>> keyValue = new KeyValue<>(null, rr.getCurrentValue());
-      salesforceBatchSource.transform(keyValue, emitter);
+    List<StructuredRecord> records = new ArrayList<>();
+    while (reader.nextKeyValue()) {
+      Map<String, String> value = reader.getCurrentValue();
+      StructuredRecord record = transformer.transform(schema, value);
+      records.add(record);
     }
-
-    verify(emitter, times(expectedRecords.size())).emit(argument.capture());
-    List<StructuredRecord> records = argument.getAllValues();
 
     for (StructuredRecord record : records) {
       Map<String, Object> fields = (Map<String, Object>) fieldsField.get(record);

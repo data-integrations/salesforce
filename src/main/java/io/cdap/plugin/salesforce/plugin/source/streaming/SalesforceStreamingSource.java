@@ -117,7 +117,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
       map((Function<String, StructuredRecord>) this::getStructuredRecord).filter(Objects::nonNull);
   }
 
-  private StructuredRecord getStructuredRecord(String jsonMessage) throws ConnectionException {
+  private StructuredRecord getStructuredRecord(String jsonMessage) {
     try {
       StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 

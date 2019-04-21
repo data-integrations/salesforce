@@ -18,6 +18,7 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 import com.google.common.annotations.VisibleForTesting;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -27,7 +28,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -42,9 +42,11 @@ import java.util.Map;
  * RecordReader implementation, which reads a single Salesforce batch from bulk job
  * provided in InputSplit
  */
-public class SalesforceRecordReader extends RecordReader<NullWritable, Map<String, String>> {
+public class SalesforceRecordReader extends RecordReader<Schema, Map<String, String>> {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceRecordReader.class);
+
+  private final Schema schema;
 
   private CSVParser csvParser;
   private Iterator<CSVRecord> parserIterator;
@@ -53,6 +55,10 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, Map<Strin
 
   private long linesNumber;
   private long processedLines;
+
+  public SalesforceRecordReader(Schema schema) {
+    this.schema = schema;
+  }
 
   /**
    * Get csv from a single Salesforce batch
@@ -102,8 +108,8 @@ public class SalesforceRecordReader extends RecordReader<NullWritable, Map<Strin
   }
 
   @Override
-  public NullWritable getCurrentKey() {
-    return null;
+  public Schema getCurrentKey() {
+    return schema;
   }
 
   @Override
