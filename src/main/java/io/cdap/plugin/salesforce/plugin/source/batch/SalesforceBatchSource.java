@@ -15,20 +15,17 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
 import io.cdap.cdap.api.data.format.StructuredRecord;
-import io.cdap.cdap.api.data.format.UnexpectedFormatException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.dataset.lib.KeyValue;
 import io.cdap.cdap.etl.api.Emitter;
-import io.cdap.cdap.etl.api.InvalidEntry;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
@@ -37,37 +34,28 @@ import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
-import org.apache.hadoop.io.NullWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 
 /**
- * Plugin returns records from Salesforce using provided by user SOQL query.
- * Salesforce bulk API is used to run SOQL query. Bulk API returns data in batches.
- * Every batch is processed as a separate split by mapreduce.
+ * Plugin returns records from Salesforce using provided by user SOQL query or SObject.
+ * Reads data in batches, every batch is processed as a separate split by mapreduce.
  */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
-@Description("Reads data from Salesforce using bulk API.")
-public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String, String>, StructuredRecord> {
-  static final String NAME = "Salesforce";
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
+@Description("Read data from Salesforce.")
+public class SalesforceBatchSource extends BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
-  private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";
 
-  private static final Schema errorSchema = Schema.recordOf("error",
-    Schema.Field.of(ERROR_SCHEMA_BODY_PROPERTY, Schema.of(Schema.Type.STRING)));
+  public static final String NAME = "Salesforce";
 
   private final SalesforceSourceConfig config;
   private Schema schema;
+  private MapToRecordTransformer transformer;
+  private ErrorHandler errorHandler;
 
   public SalesforceBatchSource(SalesforceSourceConfig config) {
     this.config = config;
@@ -111,51 +99,27 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String,
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(config)));
+    String query = config.getQuery();
+    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(config,
+        Collections.singletonList(query), ImmutableMap.of(sObjectName, schema.toString()), null)));
   }
 
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
-    this.schema = context.getOutputSchema();
     super.initialize(context);
+    this.transformer = new MapToRecordTransformer();
+    this.errorHandler = new ErrorHandler(config.getErrorHandling());
   }
 
   @Override
-  public void transform(KeyValue<NullWritable, Map<String, String>> input,
-                        Emitter<StructuredRecord> emitter) {
+  public void transform(KeyValue<Schema, Map<String, String>> input,
+                        Emitter<StructuredRecord> emitter) throws Exception {
     try {
-      StructuredRecord.Builder builder = StructuredRecord.builder(schema);
-
-      for (Map.Entry<String, String> entry : input.getValue().entrySet()) {
-        String fieldName = entry.getKey();
-        String value = entry.getValue();
-
-        Schema.Field field = schema.getField(fieldName, true);
-
-        if (field == null) {
-          continue; // this field is not in schema
-        }
-
-        builder.set(field.getName(), convertValue(value, field));
-      }
-
-      emitter.emit(builder.build());
-    } catch (Exception ex) {
-      switch (config.getErrorHandling()) {
-        case SKIP:
-          LOG.warn("Cannot process csv row '{}', skipping it.", input.getValue(), ex);
-          break;
-        case SEND:
-          StructuredRecord.Builder builder = StructuredRecord.builder(errorSchema);
-          builder.set(ERROR_SCHEMA_BODY_PROPERTY, input.getValue());
-          emitter.emitError(new InvalidEntry<>(400, ex.getMessage(), builder.build()));
-          break;
-        case STOP:
-          throw ex;
-        default:
-          throw new UnexpectedFormatException(
-            String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
-      }
+      StructuredRecord record = transformer.transform(input.getKey(), input.getValue());
+      emitter.emit(record);
+    } catch (Exception e) {
+      errorHandler.handle(emitter, input.getValue(), e);
     }
   }
 
@@ -190,64 +154,5 @@ public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String,
       return providedSchema;
     }
     return actualSchema;
-  }
-
-  private Object convertValue(String value, Schema.Field field) {
-    Schema fieldSchema = field.getSchema();
-
-    if (fieldSchema.isNullable()) {
-      fieldSchema = fieldSchema.getNonNullable();
-    }
-
-    Schema.Type fieldSchemaType = fieldSchema.getType();
-
-    // empty string is considered null in csv
-    if (Strings.isNullOrEmpty(value)) {
-      return null;
-    }
-
-    Schema.LogicalType logicalType = fieldSchema.getLogicalType();
-    if (fieldSchema.getLogicalType() != null) {
-      switch (logicalType) {
-        case DATE:
-          // date will be in yyyy-mm-dd format
-          return Math.toIntExact(LocalDate.parse(value).toEpochDay());
-        case TIMESTAMP_MICROS:
-          return TimeUnit.MILLISECONDS.toMicros(Instant.parse(value).toEpochMilli());
-        case TIME_MICROS:
-          return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value).toNanoOfDay());
-        default:
-          throw new UnexpectedFormatException(String.format("Field '%s' is of unsupported type '%s'",
-                                                            field.getName(), logicalType.getToken()));
-      }
-    }
-
-    switch (fieldSchemaType) {
-      case NULL:
-        return null;
-      case BOOLEAN:
-        return Boolean.parseBoolean(value);
-      case INT:
-        return Integer.parseInt(value);
-      case LONG:
-        return Long.parseLong(value);
-      case FLOAT:
-        return Float.parseFloat(value);
-      case DOUBLE:
-        return Double.parseDouble(value);
-      case BYTES:
-        return Byte.parseByte(value);
-      case STRING:
-        return value;
-    }
-
-    throw new UnexpectedFormatException(
-      String.format("Unsupported schema type: '%s' for field: '%s'. Supported types are 'boolean, int, long, float," +
-                      "double, binary and string'.", field.getSchema(), field.getName()));
-  }
-
-  @VisibleForTesting
-  void setSchema(Schema schema) {
-    this.schema = schema;
   }
 }

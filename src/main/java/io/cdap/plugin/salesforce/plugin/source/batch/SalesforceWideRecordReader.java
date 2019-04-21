@@ -21,6 +21,7 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -53,9 +54,16 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceWideRecordReader.class);
   private static final ObjectWriter JSON_WRITER = new ObjectMapper().writer();
 
+  private final String query;
+
   private List<Map<String, String>> results;
   private Map<String, String> value;
   private int index;
+
+  public SalesforceWideRecordReader(Schema schema, String query) {
+    super(schema);
+    this.query = query;
+  }
 
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException,
@@ -68,10 +76,8 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
 
-      String query = conf.get(SalesforceSourceConstants.CONFIG_QUERY);
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       List<String> fieldsNames = sObjectDescriptor.getFieldsNames();
-
       String fields = String.join(",", fieldsNames);
       String sObjectName = sObjectDescriptor.getName();
 

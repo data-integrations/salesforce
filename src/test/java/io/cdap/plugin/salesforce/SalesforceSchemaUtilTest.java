@@ -112,7 +112,7 @@ public class SalesforceSchemaUtilTest {
   }
 
   @Test
-  public void checkCompatibilitySuccess() {
+  public void testCheckCompatibilitySuccess() {
     Schema actualSchema = Schema.recordOf("actualSchema",
       Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
       Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
@@ -167,7 +167,7 @@ public class SalesforceSchemaUtilTest {
   }
 
   @Test
-  public void checkCompatibilityIncorrectNullability() {
+  public void testCheckCompatibilityIncorrectNullability() {
     Schema actualSchema = Schema.recordOf("actualSchema",
       Schema.Field.of("Id", Schema.nullableOf(Schema.of(Schema.Type.INT))));
 

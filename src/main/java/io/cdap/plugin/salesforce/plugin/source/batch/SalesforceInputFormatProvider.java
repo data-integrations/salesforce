@@ -17,37 +17,51 @@
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.Gson;
 import io.cdap.cdap.api.data.batch.InputFormatProvider;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 
+import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * InputFormatProvider used by cdap to provide configurations to mapreduce job
  */
 public class SalesforceInputFormatProvider implements InputFormatProvider {
+
+  private static final Gson GSON = new Gson();
+
   private final Map<String, String> conf;
 
-  SalesforceInputFormatProvider(SalesforceSourceConfig config) {
-    String query = config.getQuery();
-    this.conf = new ImmutableMap.Builder<String, String>()
+  public SalesforceInputFormatProvider(SalesforceBaseSourceConfig config,
+                                       List<String> queries,
+                                       Map<String, String> schemas,
+                                       @Nullable String sObjectNameField) {
+    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
       .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
       .put(SalesforceConstants.CONFIG_CLIENT_ID, config.getClientId())
       .put(SalesforceConstants.CONFIG_CLIENT_SECRET, config.getClientSecret())
       .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
-      .put(SalesforceSourceConstants.CONFIG_QUERY, query)
-      .build();
-  }
+      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
+      .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
 
-  @Override
-  public String getInputFormatClassName() {
-    return SalesforceInputFormat.class.getName();
+    if (sObjectNameField != null) {
+      builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
+    }
+
+    this.conf = builder.build();
   }
 
   @Override
   public Map<String, String> getInputFormatConfiguration() {
     return conf;
+  }
+
+  @Override
+  public String getInputFormatClassName() {
+    return SalesforceInputFormat.class.getName();
   }
 }

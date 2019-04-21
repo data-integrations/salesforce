@@ -15,7 +15,6 @@
  */
 package io.cdap.plugin.salesforce;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.partner.Field;
@@ -146,8 +145,7 @@ public class SalesforceSchemaUtil {
     }
   }
 
-  @VisibleForTesting
-  static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor, SObjectsDescribeResult describeResult) {
+  public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor, SObjectsDescribeResult describeResult) {
     List<Schema.Field> schemaFields = new ArrayList<>();
 
     for (SObjectDescriptor.FieldDescriptor fieldDescriptor : sObjectDescriptor.getFields()) {
@@ -161,7 +159,7 @@ public class SalesforceSchemaUtil {
       schemaFields.add(schemaField);
     }
 
-    return Schema.recordOf("output",  schemaFields);
+    return Schema.recordOf("output", schemaFields);
   }
 
   private static Schema getCdapFieldSchema(Field field) {

@@ -15,9 +15,13 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
+import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
@@ -25,7 +29,6 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -35,47 +38,101 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * Salesforce implementation of InputFormat for mapreduce
+ * Input format class which generates input splits for each given query
+ * and initializes appropriate record reader.
  */
 public class SalesforceInputFormat extends InputFormat {
+
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceInputFormat.class);
 
-  @Override
-  public List<InputSplit> getSplits(JobContext jobContext) {
-    Configuration conf = jobContext.getConfiguration();
+  private static final Gson GSON = new Gson();
+  private static final Type QUERIES_TYPE = new TypeToken<List<String>>() { }.getType();
+  private static final Type SCHEMAS_TYPE = new TypeToken<Map<String, String>>() { }.getType();
 
+  @Override
+  public List<InputSplit> getSplits(JobContext context) {
+    Configuration configuration = context.getConfiguration();
+    List<String> queries = GSON.fromJson(configuration.get(SalesforceSourceConstants.CONFIG_QUERIES), QUERIES_TYPE);
+    BulkConnection bulkConnection = getBulkConnection(configuration);
+
+    return queries.parallelStream()
+      .map(query -> getQuerySplits(query, bulkConnection))
+      .flatMap(Collection::stream)
+      .collect(Collectors.toList());
+  }
+
+  @Override
+  public RecordReader createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
+    SalesforceSplit multiSplit = (SalesforceSplit) split;
+    String query = multiSplit.getQuery();
+
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    String sObjectName = sObjectDescriptor.getName();
+
+    Configuration configuration = context.getConfiguration();
+    String sObjectNameField = configuration.get(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD);
+    Map<String, String> schemas = GSON.fromJson(
+      configuration.get(SalesforceSourceConstants.CONFIG_SCHEMAS), SCHEMAS_TYPE);
+    Schema schema = Schema.parseJson(schemas.get(sObjectName));
+
+    RecordReader<Schema, Map<String, String>> delegate = SalesforceQueryUtil.isQueryUnderLengthLimit(query)
+      ? new SalesforceRecordReader(schema)
+      : new SalesforceWideRecordReader(schema, query);
+
+    return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, delegate);
+  }
+
+  private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection) {
+    return Stream.of(getBatches(query, bulkConnection))
+      .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
+      .collect(Collectors.toList());
+  }
+
+  /**
+   * Initializes bulk connection based on given Hadoop configuration.
+   *
+   * @param conf Hadoop configuration
+   * @return bulk connection instance
+   */
+  private BulkConnection getBulkConnection(Configuration conf) {
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      String query = conf.get(SalesforceSourceConstants.CONFIG_QUERY);
+      return new BulkConnection(Authenticator.createConnectorConfig(credentials));
+    } catch (AsyncApiException e) {
+      throw new RuntimeException("There was issue communicating with Salesforce", e);
+    }
+  }
+
+  /**
+   * Based on query length sends query to Salesforce to receive array of batch info.
+   * If query is within limit, executes original query. If not, switches to wide object logic,
+   * i.e. generates Id query to retrieve batch info for Ids only that will be used later
+   * to retrieve data using SOAP API.
+   *
+   * @param query SOQL query
+   * @param bulkConnection bulk connection
+   * @return array of batch info
+   */
+  private BatchInfo[] getBatches(String query, BulkConnection bulkConnection) {
+    try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
       BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
-
-      return Arrays.stream(batches)
-        .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId()))
-        .collect(Collectors.toList());
+      return batches;
     } catch (AsyncApiException | IOException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
   }
 
-  @Override
-  public RecordReader<NullWritable, Map<String, String>> createRecordReader(
-    InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
-    Configuration conf = taskAttemptContext.getConfiguration();
-    String query = conf.get(SalesforceSourceConstants.CONFIG_QUERY);
-    return SalesforceQueryUtil.isQueryUnderLengthLimit(query)
-      ? new SalesforceRecordReader()
-      : new SalesforceWideRecordReader();
-  }
 }

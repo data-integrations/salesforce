@@ -29,9 +29,13 @@ import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.ErrorHandling;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.internal.AssumptionViolatedException;
 import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,11 +59,12 @@ import java.util.stream.Stream;
  */
 public abstract class BaseSalesforceETLTest extends HydratorTestBase {
 
+  private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceETLTest.class);
+
   protected static final String CLIENT_ID = System.getProperty("salesforce.test.clientId");
   protected static final String CLIENT_SECRET = System.getProperty("salesforce.test.clientSecret");
   protected static final String USERNAME = System.getProperty("salesforce.test.username");
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
-
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
                                                              "https://login.salesforce.com/services/oauth2/token");
 
@@ -70,6 +75,14 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
 
   @BeforeClass
   public static void initializeTests() throws ConnectionException {
+    try {
+      Assume.assumeNotNull(CLIENT_ID, CLIENT_SECRET, USERNAME, PASSWORD, LOGIN_URL);
+    } catch (AssumptionViolatedException e) {
+      LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
+        "BaseSalesforceBatchSourceETLTest javadoc");
+      throw e;
+    }
+
     AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
       USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
