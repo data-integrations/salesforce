@@ -45,8 +45,12 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.Path;
 
 /**
@@ -137,7 +141,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
           continue; // this field is not in schema
         }
 
-        builder.set(field.getName(), value);
+        builder.set(field.getName(), convertValue(value, field));
       }
       return builder.build();
     } catch (Exception ex) {
@@ -152,6 +156,51 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
             String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
       }
     }
+  }
+
+  private Object convertValue(Object value, Schema.Field field) {
+    if (value == null) {
+      return null;
+    }
+
+    Schema fieldSchema = field.getSchema();
+
+    if (fieldSchema.isNullable()) {
+      fieldSchema = fieldSchema.getNonNullable();
+    }
+
+    Schema.Type fieldSchemaType = fieldSchema.getType();
+    Schema.LogicalType logicalType = fieldSchema.getLogicalType();
+
+    if (fieldSchema.getLogicalType() != null) {
+      String valueString = (String) value;
+      switch (logicalType) {
+        case DATE:
+          return Math.toIntExact(ChronoUnit.DAYS.between(Instant.EPOCH, Instant.parse(valueString)));
+        case TIMESTAMP_MICROS:
+          return TimeUnit.MILLISECONDS.toMicros(Instant.parse(valueString).toEpochMilli());
+        case TIME_MICROS:
+          return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(valueString).toNanoOfDay());
+        default:
+          throw new UnexpectedFormatException(String.format("Field '%s' is of unsupported type '%s'",
+                                                            field.getName(), logicalType.getToken()));
+      }
+    }
+
+    // Found a single field (Opportunity.Fiscal) which is documented as string and has a string type
+    // in describe result, however in Salesforce Streaming API reponse json is represented as json.
+    // Converting it and similar back to string, since it does not comply with generated schema.
+    if (value instanceof Map) {
+      if (fieldSchemaType.equals(Schema.Type.STRING)) {
+        return value.toString();
+      } else {
+        throw new UnexpectedFormatException(
+          String.format("Field '%s' is of type '%s', but value found is '%s'",
+                        field.getName(), fieldSchemaType.toString(), value.toString()));
+      }
+    }
+
+    return value;
   }
 
   @Path("outputSchema")
