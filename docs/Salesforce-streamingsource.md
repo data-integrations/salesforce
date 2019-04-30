@@ -23,7 +23,7 @@ Configuration
 
 **Username:** Salesforce username.
 
-**Password:** Saleforce password.
+**Password:** Salesforce password.
 
 **Client Id:** Application Client Id. This is also called "Consumer Key" in Salesforce UI.
 To create a Client Id, the user needs to create a connected application in Salesforce first.
