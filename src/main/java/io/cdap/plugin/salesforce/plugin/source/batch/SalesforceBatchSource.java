@@ -56,9 +56,9 @@ import javax.ws.rs.Path;
  */
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
-@Description("Read data from Salesforce using bulk API.")
+@Description("Reads data from Salesforce using bulk API.")
 public class SalesforceBatchSource extends BatchSource<NullWritable, Map<String, String>, StructuredRecord> {
-  static final String NAME = "SalesforceBulk";
+  static final String NAME = "Salesforce";
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
 
   private static final String ERROR_SCHEMA_BODY_PROPERTY = "body";

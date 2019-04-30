@@ -314,7 +314,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
 
   private ImmutableMap.Builder<String, String> getBaseProperties() {
     return new ImmutableMap.Builder<String, String>()
-      .put(Constants.Reference.REFERENCE_NAME, "SalesforceBulk-input")
+      .put(Constants.Reference.REFERENCE_NAME, "SalesforceBatchSource-input")
       .put(SalesforceConstants.PROPERTY_CLIENT_ID, CLIENT_ID)
       .put(SalesforceConstants.PROPERTY_CLIENT_SECRET, CLIENT_SECRET)
       .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
@@ -324,7 +324,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   }
 
   private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
-    ETLStage source = new ETLStage("SalesforceReader", new ETLPlugin("SalesforceBulk",
+    ETLStage source = new ETLStage("SalesforceReader", new ETLPlugin("Salesforce",
                                                                      BatchSource.PLUGIN_TYPE,
                                                                      sourceProperties, null));
 
@@ -337,7 +337,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
       .addConnection(source.getName(), sink.getName())
       .build();
 
-    ApplicationId pipelineId = NamespaceId.DEFAULT.app("SalesforceBulk_" + name.getMethodName());
+    ApplicationId pipelineId = NamespaceId.DEFAULT.app("SalesforceBatchSource_" + name.getMethodName());
     ApplicationManager appManager = deployApplication(pipelineId, new AppRequest<>(APP_ARTIFACT, etlConfig));
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
