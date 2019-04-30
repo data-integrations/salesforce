@@ -63,8 +63,8 @@ import javax.ws.rs.Path;
 public class SalesforceStreamingSource extends StreamingSource<StructuredRecord> {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSource.class);
 
-  static final String NAME = "SalesforceStreaming";
-  static final String DESCRIPTION = "Salesforce Streaming";
+  static final String NAME = "Salesforce";
+  static final String DESCRIPTION = "Streams data updates from Salesforce using Salesforce Streaming API";
   private SalesforceStreamingSourceConfig config;
   private Schema schema;
 
