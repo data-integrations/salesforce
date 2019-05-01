@@ -7,6 +7,7 @@ This source reads sObjects from Salesforce.
 Examples of sObjects are opportunities, contacts, accounts, leads, any custom object, etc.
 
 The data which should be read is specified using SOQL queries (Salesforce Object Query Language queries)
+or using sObject and incremental or range date filters.
 
 Configuration
 -------------

@@ -28,7 +28,13 @@ public class SalesforceSourceConstants {
   public static final String PROPERTY_QUERY = "query";
   public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
 
-  public static final String CONFIG_QUERY = "mapred.salesforce.input.query";
+  public static final String PROPERTY_WHITE_LIST = "whiteList";
+  public static final String PROPERTY_BLACK_LIST = "blackList";
+  public static final String PROPERTY_SOBJECT_NAME_FIELD = "sObjectNameField";
+
+  public static final String CONFIG_QUERIES = "mapred.salesforce.input.queries";
+  public static final String CONFIG_SCHEMAS = "mapred.salesforce.input.schemas";
+  public static final String CONFIG_SOBJECT_NAME_FIELD = "mapred.salesforce.input.sObjectNameField";
 
   public static final int DURATION_DEFAULT = 0;
   public static final int OFFSET_DEFAULT = 0;

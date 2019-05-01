@@ -29,36 +29,40 @@ import java.io.IOException;
 public class SalesforceSplit extends InputSplit implements Writable {
   private String jobId;
   private String batchId;
+  private String query;
 
   @SuppressWarnings("unused")
   public SalesforceSplit() {
     // For serialization
   }
 
-  public SalesforceSplit(String jobId, String batchId) {
+  public SalesforceSplit(String jobId, String batchId, String query) {
     this.jobId = jobId;
     this.batchId = batchId;
+    this.query = query;
   }
 
   @Override
   public void readFields(DataInput dataInput) throws IOException {
     jobId = dataInput.readUTF();
     batchId = dataInput.readUTF();
+    query = dataInput.readUTF();
   }
 
   @Override
   public void write(DataOutput dataOutput) throws IOException {
     dataOutput.writeUTF(jobId);
     dataOutput.writeUTF(batchId);
+    dataOutput.writeUTF(query);
   }
 
   @Override
-  public long getLength() throws IOException, InterruptedException {
+  public long getLength() {
     return 0;
   }
 
   @Override
-  public String[] getLocations() throws IOException, InterruptedException {
+  public String[] getLocations() {
     return new String[0];
   }
 
@@ -68,5 +72,9 @@ public class SalesforceSplit extends InputSplit implements Writable {
 
   public String getBatchId() {
     return batchId;
+  }
+
+  public String getQuery() {
+    return query;
   }
 }

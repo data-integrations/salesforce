@@ -74,6 +74,12 @@ public class SalesforceQueryParserTest {
     queries.put("SELECT UserId from LoginHistory WHERE LoginTime > " +
                   "2010-09-20T22:16:30.000Z AND LoginTime < 2010-09-21T22:16:30.000Z",
                 new Object[]{"LoginHistory", new String[]{"UserId"}});
+
+    queries.put("SELECT HoursUntilExpiration, Category, IsPublished FROM ActionLinkGroupTemplate",
+      new Object[]{"ActionLinkGroupTemplate", new String[]{"HoursUntilExpiration", "Category", "IsPublished"}});
+
+    queries.put("SELECT Id, Name, Domain FROM Domain",
+      new Object[]{"Domain", new String[]{"Id", "Name", "Domain"}});
   }
 
   @Test

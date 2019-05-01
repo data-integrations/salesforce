@@ -42,7 +42,7 @@ public class SalesforceWideRecordReaderTest {
 
   @Test
   public void testTransformToMap() {
-    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader();
+    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader(null, null);
     SObject campaign = new SObjectBuilder()
       .setType("Campaign")
       .put("Id", "testCampaignId")
@@ -72,7 +72,7 @@ public class SalesforceWideRecordReaderTest {
 
   @Test
   public void testTransformToMapCompoundField() throws JSONException {
-    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader();
+    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader(null, null);
 
     Address address = new Address();
     address.setCity("New York");
@@ -117,7 +117,7 @@ public class SalesforceWideRecordReaderTest {
 
   @Test
   public void testTransformToMapIncorrectReferenceField() {
-    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader();
+    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader(null, null);
     SObject opportunity = new SObjectBuilder()
       .setType("Opportunity")
       .put("Id", "testOpportunityId")
