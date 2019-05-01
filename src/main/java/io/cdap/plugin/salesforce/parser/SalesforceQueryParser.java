@@ -45,9 +45,10 @@ public class SalesforceQueryParser {
    * Throws {@link SOQLParsingException} if query syntax is not valid.
    *
    * @param query SOQL query
+   * @return sObject descriptor
    */
-  public static void validateQuery(String query) {
-    getObjectDescriptorFromQuery(query);
+  public static SObjectDescriptor validateQuery(String query) {
+    return getObjectDescriptorFromQuery(query);
   }
 
   /**

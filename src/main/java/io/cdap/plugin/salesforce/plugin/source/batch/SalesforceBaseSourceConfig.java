@@ -24,6 +24,7 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
+import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
@@ -96,6 +97,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   /**
    * Generates SOQL based on given sObject name metadata and filter properties.
    * Includes only those sObject fields which are present in the schema.
+   * Flattens all compound fields by adding individual fields and excludes compound fields names to handle
+   * Bulk API limitation.
    * This allows to avoid pulling data from Salesforce for the fields which are not needed.
    *
    * @param sObjectName Salesforce object name
@@ -105,7 +108,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
+                                                                       SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();
 

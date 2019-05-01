@@ -29,8 +29,6 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConsta
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,7 +48,6 @@ import java.util.stream.Collectors;
 public class SalesforceWideRecordReader extends SalesforceRecordReader {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceWideRecordReader.class);
-  private static final ObjectWriter JSON_WRITER = new ObjectMapper().writer();
 
   private final String query;
 
@@ -214,11 +209,7 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
    */
   private Object extractValue(XmlObject xmlObject, String name, List<String> children) {
     if (children.isEmpty()) {
-      Object value = xmlObject.getField(name);
-      if (value instanceof XmlObject) {
-        value = extractCompoundValue(name, (XmlObject) value);
-      }
-      return value;
+      return xmlObject.getField(name);
     }
     String childName = children.get(0);
     XmlObject child = xmlObject.getChild(childName);
@@ -229,26 +220,5 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
     }
     // remove higher level child from list and check remaining
     return extractValue(child, name, children.subList(1, children.size()));
-  }
-
-  /**
-   * Extracts compound values and retrieves value in JSON format.
-   *
-   * @param name field name
-   * @param compoundField compound field value holder
-   * @return compound value
-   */
-  private String extractCompoundValue(String name, XmlObject compoundField) {
-    Map<String, Object> map = new LinkedHashMap<>();
-    for (Iterator<XmlObject> it = compoundField.getChildren(); it.hasNext(); ) {
-      XmlObject compoundChild = it.next();
-      map.put(compoundChild.getName().getLocalPart(), compoundChild.getValue());
-    }
-    try {
-      return JSON_WRITER.writeValueAsString(map);
-    } catch (IOException e) {
-      throw new RuntimeException(
-        String.format("Cannot transform compound value for field '%s'. Compound value '%s'", name, compoundField), e);
-    }
   }
 }

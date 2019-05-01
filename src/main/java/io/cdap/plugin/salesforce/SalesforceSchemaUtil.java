@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
  */
 public class SalesforceSchemaUtil {
 
+  public static final Set<FieldType> COMPOUND_FIELDS = ImmutableSet.of(FieldType.address, FieldType.location);
+
   private static final Map<FieldType, Schema> SALESFORCE_TYPE_TO_CDAP_SCHEMA =
     new ImmutableMap.Builder<FieldType, Schema>()
     .put(FieldType._boolean, Schema.of(Schema.Type.BOOLEAN))

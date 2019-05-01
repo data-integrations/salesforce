@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Contains information about SObject, including its name and list of fields.
@@ -56,7 +57,6 @@ public class SObjectDescriptor {
       partnerConnection, Collections.singletonList(name));
     List<FieldDescriptor> fields = describeResult.getFields().stream()
       .filter(field -> !typesToSkip.contains(field.getType()))
-      .map(Field::getName)
       .map(FieldDescriptor::new)
       .collect(Collectors.toList());
 
@@ -130,11 +130,11 @@ public class SObjectDescriptor {
    */
   public static class FieldDescriptor {
 
-    private final String name;
+    private final Field field;
     private final List<String> parents;
 
-    public FieldDescriptor(String name) {
-      this.name = name;
+    public FieldDescriptor(Field field) {
+      this.field = field;
       this.parents = new ArrayList<>();
     }
 
@@ -142,11 +142,12 @@ public class SObjectDescriptor {
       Preconditions.checkState(nameParts != null && !nameParts.isEmpty(),
         "Given list of name parts must contain at least one element");
       this.parents = new ArrayList<>(nameParts);
-      this.name = parents.remove(nameParts.size() - 1);
+      this.field = new Field();
+      field.setName(parents.remove(nameParts.size() - 1));
     }
 
     public String getName() {
-      return name;
+      return field.getName();
     }
 
     /**
@@ -157,10 +158,10 @@ public class SObjectDescriptor {
     public String getFullName() {
       if (hasParents()) {
         List<String> nameParts = new ArrayList<>(parents);
-        nameParts.add(name);
+        nameParts.add(field.getName());
         return String.join(SalesforceConstants.REFERENCE_NAME_DELIMITER, nameParts);
       }
-      return name;
+      return field.getName();
     }
 
     /**
@@ -186,9 +187,14 @@ public class SObjectDescriptor {
       return hasParents() ? parents.get(parents.size() - 1) : null;
     }
 
+    @Nullable
+    public FieldType getFieldType() {
+      return field.getType();
+    }
+
     @Override
     public String toString() {
-      return "FieldDescriptor{" + "name='" + name + '\'' + ", parents=" + parents + '}';
+      return "FieldDescriptor{" + "name='" + field.getName() + '\'' + ", parents=" + parents + '}';
     }
   }
 
