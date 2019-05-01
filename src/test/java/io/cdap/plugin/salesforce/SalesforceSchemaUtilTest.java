@@ -43,6 +43,11 @@ public class SalesforceSchemaUtilTest {
 
     List<SObjectDescriptor.FieldDescriptor> fieldDescriptors = Stream
       .of("Id", "Name", "Amount", "Percent", "ConversionRate", "IsWon", "CreatedDate", "CreatedDateTime", "CreatedTime")
+      .map(name -> {
+        Field field = new Field();
+        field.setName(name);
+        return field;
+      })
       .map(SObjectDescriptor.FieldDescriptor::new)
       .collect(Collectors.toList());
 

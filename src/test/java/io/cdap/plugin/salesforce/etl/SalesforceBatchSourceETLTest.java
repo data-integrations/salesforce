@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.Field;
+import com.sforce.soap.partner.Location;
 import com.sforce.soap.partner.sobject.SObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
@@ -354,5 +355,45 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     requestedFields.forEach(fieldName -> Assert.assertNotNull(
       String.format("Field '%s' not found", fieldName), record.getSchema().getField(fieldName)));
+  }
+
+  @Test
+  public void testSObjectQueryWithCompoundField() throws Exception {
+    CustomField customField = createLocationCustomField("CustomField__c");
+
+    String sObjectName = createCustomObject("IT_CompoundField", new CustomField[]{customField});
+
+    SObject sObject = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Bamm-Bamm")
+      // CustomField__c can be set through individual fields
+      .put("CustomField__Latitude__s", 3.33) // location individual field Latitude
+      .put("CustomField__Longitude__s", 55.779) // location individual field Longitude
+      .build();
+
+    addSObjects(Collections.singletonList(sObject), false);
+
+    DescribeSObjectResult describeResult = partnerConnection.describeSObject(sObjectName);
+    List<String> expectedFieldNames = Stream.of(describeResult.getFields())
+      .map(Field::getName)
+      .filter(name -> !customField.getFullName().equals(name)) // exclude compound field name
+      .collect(Collectors.toList());
+
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
+
+    Assert.assertEquals(1, results.size());
+
+    List<Schema.Field> fields = results.get(0).getSchema().getFields();
+    Assert.assertNotNull(fields);
+
+    List<String> actualFieldNames = fields.stream()
+      .map(Schema.Field::getName)
+      .collect(Collectors.toList());
+
+    // field order should match
+    Assert.assertEquals(expectedFieldNames, actualFieldNames);
+    Assert.assertEquals("Bamm-Bamm", results.get(0).get("Name"));
+    Assert.assertEquals(3.33, (double) results.get(0).get("CustomField__Latitude__s"), 0.0);
+    Assert.assertEquals(55.779, (double) results.get(0).get("CustomField__Longitude__s"), 0.0);
   }
 }
