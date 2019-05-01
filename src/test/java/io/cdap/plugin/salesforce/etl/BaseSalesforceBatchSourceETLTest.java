@@ -22,11 +22,10 @@ import com.sforce.soap.metadata.DeploymentStatus;
 import com.sforce.soap.metadata.FieldType;
 import com.sforce.soap.metadata.Metadata;
 import com.sforce.soap.metadata.MetadataConnection;
+import com.sforce.soap.metadata.SaveResult;
 import com.sforce.soap.metadata.SharingModel;
-import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.soap.partner.SaveResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
@@ -37,7 +36,6 @@ import io.cdap.cdap.datapipeline.DataPipelineApp;
 import io.cdap.cdap.datapipeline.SmartWorkflow;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.mock.batch.MockSink;
-import io.cdap.cdap.etl.mock.test.HydratorTestBase;
 import io.cdap.cdap.etl.proto.v2.ETLBatchConfig;
 import io.cdap.cdap.etl.proto.v2.ETLPlugin;
 import io.cdap.cdap.etl.proto.v2.ETLStage;
@@ -50,71 +48,42 @@ import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.cdap.test.DataSetManager;
 import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.cdap.test.WorkflowManager;
-import io.cdap.plugin.common.Constants;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
-import io.cdap.plugin.salesforce.SalesforceConstants;
-import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import io.cdap.plugin.salesforce.plugin.ErrorHandling;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 /**
- * Methods to run ETL with Salesforce Bulk plugin as source, and a mock plugin as a sink.
- *
- * By default all tests will be skipped, since Salesforce credentials are needed.
- *
- * Instructions to enable the tests:
- * 1. Create/use existing Salesforce account
- * 2. Create connected application within the account to get clientId and clientSecret
- * 3. Run the tests using the command below:
- *
- * mvn clean test
- * -Dsalesforce.test.clientId= -Dsalesforce.test.clientSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
- *
+ * {@inheritDoc}
  */
-public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase {
+public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETLTest {
   private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceBatchSourceETLTest.class);
 
   @ClassRule
   public static final TestConfiguration CONFIG = new TestConfiguration("explore.enabled", false);
 
-  @Rule
-  public TestName name = new TestName();
-
   // Salesforce field name length limitation
   protected static final int MAX_FIELD_NAME_LENGTH = 40;
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-pipeline", "3.2.0");
 
-  private static final String CLIENT_ID = System.getProperty("salesforce.test.clientId");
-  private static final String CLIENT_SECRET = System.getProperty("salesforce.test.clientSecret");
-  private static final String USERNAME = System.getProperty("salesforce.test.username");
-  private static final String PASSWORD = System.getProperty("salesforce.test.password");
-  private static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
-                                                             "https://login.salesforce.com/services/oauth2/token");
-
+  private static final String REFERENCE_NAME = "SalesforceBatchSource-input";
   private static final String METADATA_LOGIN_URL = "https://login.salesforce.com/services/Soap/u/45.0";
 
-  private List<SaveResult> createdObjectsIds = new ArrayList<>();
   private List<String> customObjects = new ArrayList<>();
 
-  protected static PartnerConnection partnerConnection;
   protected static MetadataConnection metadataConnection;
 
   @BeforeClass
@@ -140,16 +109,11 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
                       SObject.class // should be loaded by Plugin ClassLoader to avoid SOAP deserialization issue
     );
 
-    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
-      USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL);
-
-    partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     metadataConnection = createMetadataConnection();
   }
 
   @After
   public void cleanUp() throws ConnectionException {
-    clearSObjects();
     deleteCustomObjects();
   }
 
@@ -166,8 +130,8 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     String fullName = customObject.getFullName();
     customObjects.add(fullName);
 
-    com.sforce.soap.metadata.SaveResult[] results = metadataConnection.createMetadata(new Metadata[]{customObject});
-    for (com.sforce.soap.metadata.SaveResult result : results) {
+    SaveResult[] results = metadataConnection.createMetadata(new Metadata[]{customObject});
+    for (SaveResult result : results) {
       if (!result.isSuccess()) {
         String errors = Stream.of(result.getErrors())
           .map(com.sforce.soap.metadata.Error::getMessage)
@@ -179,46 +143,8 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     return fullName;
   }
 
-  /**
-   * Creates given sObjects and saves their IDs for deletion in the end of test run.
-   *
-   * @param sObjects list of sObjects to be created
-   */
-  protected void addSObjects(List<SObject> sObjects) {
-    addSObjects(sObjects, true);
-  }
-
-  /**
-   * Adds sObjects to Salesforce. Checks the result response for errors.
-   * If save flag is true, saves the objects so that they can be deleted after method is run.
-   *
-   * @param sObjects list of sobjects to create
-   * @param save if sObjects need to be saved for deletion
-   */
-  protected void addSObjects(List<SObject> sObjects, boolean save) {
-    try {
-      SaveResult[] results = partnerConnection.create(sObjects.toArray(new SObject[0]));
-      if (save) {
-        createdObjectsIds.addAll(Arrays.asList(results));
-      }
-
-      for (SaveResult saveResult : results) {
-        if (!saveResult.getSuccess()) {
-          String allErrors = Stream.of(saveResult.getErrors())
-            .map(Error::getMessage)
-            .collect(Collectors.joining("\n"));
-
-          throw new RuntimeException(allErrors);
-        }
-      }
-
-    } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
-    }
-  }
-
   protected List<StructuredRecord> getResultsBySOQLQuery(String query) throws Exception {
-    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties()
+    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties(REFERENCE_NAME)
       .put(SalesforceSourceConstants.PROPERTY_QUERY, query);
 
     return getPipelineResults(propsBuilder.build());
@@ -227,7 +153,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   protected List<StructuredRecord> getResultsBySObjectQuery(String sObjectName,
                                                             String datetimeFilter,
                                                             String schema) throws Exception {
-    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties()
+    ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties(REFERENCE_NAME)
       .put(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME, sObjectName);
 
     if (datetimeFilter != null) {
@@ -255,6 +181,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
   }
 
   private static MetadataConnection createMetadataConnection() throws ConnectionException {
+
     ConnectorConfig loginConfig = new ConnectorConfig();
     loginConfig.setAuthEndpoint(METADATA_LOGIN_URL);
     loginConfig.setServiceEndpoint(METADATA_LOGIN_URL);
@@ -289,19 +216,6 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     return customObject;
   }
 
-
-  private void clearSObjects() throws ConnectionException {
-    if (createdObjectsIds.isEmpty()) {
-      return;
-    }
-
-    String[] ids = createdObjectsIds.stream()
-      .map(SaveResult::getId)
-      .toArray(String[]::new);
-    createdObjectsIds.clear();
-    partnerConnection.delete(ids);
-  }
-
   private void deleteCustomObjects() throws ConnectionException {
     if (customObjects.isEmpty()) {
       return;
@@ -312,23 +226,12 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
     metadataConnection.deleteMetadata("CustomObject", fullNames);
   }
 
-  private ImmutableMap.Builder<String, String> getBaseProperties() {
-    return new ImmutableMap.Builder<String, String>()
-      .put(Constants.Reference.REFERENCE_NAME, "SalesforceBatchSource-input")
-      .put(SalesforceConstants.PROPERTY_CLIENT_ID, CLIENT_ID)
-      .put(SalesforceConstants.PROPERTY_CLIENT_SECRET, CLIENT_SECRET)
-      .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
-      .put(SalesforceConstants.PROPERTY_PASSWORD, PASSWORD)
-      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL)
-      .put(SalesforceConstants.PROPERTY_ERROR_HANDLING, ErrorHandling.STOP.getValue());
-  }
-
   private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties) throws Exception {
     ETLStage source = new ETLStage("SalesforceReader", new ETLPlugin("Salesforce",
                                                                      BatchSource.PLUGIN_TYPE,
                                                                      sourceProperties, null));
 
-    String outputDatasetName = "output-batchsourcetest_" + name.getMethodName();
+    String outputDatasetName = "output-batchsourcetest_" + testName.getMethodName();
     ETLStage sink = new ETLStage("sink", MockSink.getPlugin(outputDatasetName));
 
     ETLBatchConfig etlConfig = ETLBatchConfig.builder()
@@ -337,7 +240,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends HydratorTestBase 
       .addConnection(source.getName(), sink.getName())
       .build();
 
-    ApplicationId pipelineId = NamespaceId.DEFAULT.app("SalesforceBatchSource_" + name.getMethodName());
+    ApplicationId pipelineId = NamespaceId.DEFAULT.app("SalesforceBatchSource_" + testName.getMethodName());
     ApplicationManager appManager = deployApplication(pipelineId, new AppRequest<>(APP_ARTIFACT, etlConfig));
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);

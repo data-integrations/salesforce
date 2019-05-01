@@ -235,10 +235,10 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
         "Push topic name '%s' can only contain latin letters.", pushTopicName));
     }
 
-    QueryResult queryResult = partnerConnection.query(
-      String.format("SELECT Name, Query, NotifyForOperationCreate, " +
-                      "NotifyForOperationUpdate, NotifyForOperationDelete, " +
-                      "NotifyForFields FROM PushTopic WHERE Name = '%s'", pushTopicName));
+    QueryResult queryResult =
+      runQuery(partnerConnection, String.format("SELECT Id, Name, Query, NotifyForOperationCreate, " +
+                                                  "NotifyForOperationUpdate, NotifyForOperationDelete, " +
+                                                  "NotifyForFields FROM PushTopic WHERE Name = '%s'", pushTopicName));
 
 
     SObject[] records = queryResult.getRecords();
@@ -253,6 +253,40 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
                                                       pushTopicName, records.length));
     }
   }
+
+  /**
+   * For integration tests it will wrap the actual SOQL query call with change of classloaders,
+   * for production will do nothing else but run query.
+   *
+   * Some context:
+   * Salesforce query method uses isAssignableFrom to check if received data is of correct class.
+   * However the fact that in integration tests we use multiple different classloaders, makes Salesforce
+   * think that there is a value of wrong class supplied, while in reality the class is the same but loaded with
+   * different instance of class loader.
+   * Unfortunately this behavior cannot be mocked, due to need to mock classes in non-main class loader.
+   *
+   * @param query a SOQL query
+   * @return query result
+   */
+  private static QueryResult runQuery(PartnerConnection partnerConnection, String query) throws ConnectionException {
+    ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
+    ClassLoader classClassLoader = SalesforceStreamingSourceConfig.class.getClassLoader();
+
+    // will always be false for production runs and true for integration tests
+    boolean usesDifferentClassLoaders = !threadClassLoader.equals(classClassLoader);
+
+    try {
+      if (usesDifferentClassLoaders) {
+        Thread.currentThread().setContextClassLoader(classClassLoader);
+      }
+      return partnerConnection.query(query);
+    } finally {
+      if (usesDifferentClassLoaders) {
+        Thread.currentThread().setContextClassLoader(threadClassLoader);
+      }
+    }
+  }
+
   /**
    * Supported character set for fields by Salesforce:
    * A-Z, a-z, 0-9, '.', '-' And '_'
