@@ -85,7 +85,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
       String query = config.getQuery();
 
       if (!Strings.isNullOrEmpty(query)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSHTOPIC_QUERY)
+        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)) {
 
         Schema schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
@@ -106,7 +106,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
     if (this.schema == null) { // if was not set in configurePipeline due to fields containing macro
       this.schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
-                                                   SObjectDescriptor.fromQuery(config.getPushTopicQuery()));
+                                                   SObjectDescriptor.fromQuery(config.getQuery()));
     }
     LOG.debug("Schema is {}", schema);
 
@@ -117,15 +117,14 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
       map((Function<String, StructuredRecord>) this::getStructuredRecord).filter(Objects::nonNull);
   }
 
-  private StructuredRecord getStructuredRecord(String jsonMessage) throws ConnectionException {
+  private StructuredRecord getStructuredRecord(String jsonMessage) {
     try {
       StructuredRecord.Builder builder = StructuredRecord.builder(schema);
 
       JSONObject sObjectFields;
       try {
         sObjectFields = new JSONObject(jsonMessage) // throws a JSONException if failed to decode
-          .getJSONObject("data") // throws a JSONException if not found
-          .getJSONObject("sobject");
+          .getJSONObject("sobject"); // throws a JSONException if not found
       } catch (JSONException e) {
         throw new IllegalStateException(
           String.format("Cannot retrieve /data/sobject from json message %s", jsonMessage), e);
