@@ -118,14 +118,11 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
    * @return true if none of the connection properties contains macro, false otherwise
    */
   public boolean canAttemptToEstablishConnection() {
-    if (containsMacro(SalesforceConstants.PROPERTY_CLIENT_ID)
+    return !(containsMacro(SalesforceConstants.PROPERTY_CLIENT_ID)
       || containsMacro(SalesforceConstants.PROPERTY_CLIENT_SECRET)
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
-      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)) {
-      return false;
-    }
-    return true;
+      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL));
   }
 
   private void validateConnection() {

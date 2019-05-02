@@ -55,7 +55,7 @@ public class SalesforceReceiver extends Receiver<String> {
         .setNameFormat(RECEIVER_THREAD_NAME + "-%d")
         .build();
 
-    Executors.newSingleThreadExecutor(namedThreadFactory).submit(() -> receive());
+    Executors.newSingleThreadExecutor(namedThreadFactory).submit(this::receive);
   }
 
   @Override
