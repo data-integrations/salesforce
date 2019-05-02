@@ -51,39 +51,36 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceConfig.class);
   private static final long serialVersionUID = 4218063781902315444L;
 
-  protected static final String ENABLED_KEYWORD = "Enabled";
-  protected static final String PROPERTY_PUSHTOPIC_NAME = "pushTopicName";
-  protected static final String PROPERTY_PUSHTOPIC_QUERY = "pushTopicQuery";
-  protected static final String PROPERTY_SOBJECT_NAME = "sObjectName";
+  private static final Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
 
-  private static Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
+  protected static final String ENABLED_KEYWORD = "Enabled";
+  protected static final String PROPERTY_PUSH_TOPIC_NAME = "pushTopicName";
+  protected static final String PROPERTY_PUSH_TOPIC_QUERY = "pushTopicQuery";
+  protected static final String PROPERTY_SOBJECT_NAME = "sObjectName";
 
   @Description("Salesforce push topic name. Plugin will track updates from this topic. If topic does not exist, " +
     "it will be automatically created. " +
     "To manually create pushTopic use Salesforce workbench or Apex code or API.")
-  @Name(PROPERTY_PUSHTOPIC_NAME)
+  @Name(PROPERTY_PUSH_TOPIC_NAME)
   @Macro
   private String pushTopicName;
 
   @Description("Salesforce push topic query. The query is used by Salesforce to send updates to push topic. " +
     "This field not required, if you are using an existing push topic.")
   @Nullable
-  @Name(PROPERTY_PUSHTOPIC_QUERY)
+  @Name(PROPERTY_PUSH_TOPIC_QUERY)
   @Macro
   private String pushTopicQuery;
 
   @Description("Push topic property, which specifies if a create operation should generate a record.")
-  @Nullable
   @Name("pushTopicNotifyCreate")
   private String pushTopicNotifyCreate;
 
   @Description("Push topic property, which specifies if a update operation should generate a record.")
-  @Nullable
   @Name("pushTopicNotifyUpdate")
   private String pushTopicNotifyUpdate;
 
   @Description("Push topic property, which specifies if an delete operation should generate a record.")
-  @Nullable
   @Name("pushTopicNotifyDelete")
   private String pushTopicNotifyDelete;
 
@@ -104,7 +101,6 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
     "for the evaluated records only if they match the criteria specified in the WHERE clause.\n" +
     "Where - Changes to fields referenced in the WHERE clause are evaluated. Notifications are generated " +
     "for the evaluated records only if they match the criteria specified in the WHERE clause.")
-  @Nullable
   @Name("pushTopicNotifyForFields")
   private String pushTopicNotifyForFields;
 
@@ -140,16 +136,12 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
     return pushTopicNotifyForFields;
   }
 
-  @Nullable
-  public String getSObjectName() {
-    return sObjectName;
-  }
-
   /**
    * Get query to use, either pushTopicQuery or query generated using sObjectName.
    *
    * @return query or null if query was not specified via pushTopicQuery and sObjectName.
    */
+  @Nullable
   public String getQuery() {
     if (!Strings.isNullOrEmpty(pushTopicQuery)) {
       return pushTopicQuery;
@@ -168,7 +160,8 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
    * If pushTopic does not exist it is created.
    */
   public void ensurePushTopicExistAndWithCorrectFields() {
-    if (containsMacro(PROPERTY_PUSHTOPIC_NAME) || containsMacro(PROPERTY_PUSHTOPIC_QUERY)) {
+    if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
+      containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !canAttemptToEstablishConnection()) {
       return;
     }
 
@@ -185,7 +178,7 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
         if (Strings.isNullOrEmpty(query)) {
           throw new InvalidConfigPropertyException("SOQL query or SObject name must be provided, unless " +
                                                      "existing pushTopic is used",
-                                                   SalesforceStreamingSourceConfig.PROPERTY_PUSHTOPIC_QUERY);
+                                                   SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY);
         }
 
         pushTopic = new SObjectBuilder()
@@ -308,7 +301,12 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
     }
   }
 
+  @Nullable
   private String getSObjectQuery() {
+    if (!canAttemptToEstablishConnection()) {
+      return null;
+    }
+
     try {
       // Text areas are not supported in streaming api queries that's why we are skipping them.
       // Streaming API would respond with "large text area fields are not supported"

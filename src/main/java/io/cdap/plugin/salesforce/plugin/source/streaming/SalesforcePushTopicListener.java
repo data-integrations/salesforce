@@ -23,7 +23,10 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.cometd.client.BayeuxClient;
+import org.cometd.client.transport.ClientTransport;
 import org.cometd.client.transport.LongPollingTransport;
+import org.cometd.common.JSONContext;
+import org.cometd.common.JacksonJSONContextClient;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -59,6 +62,8 @@ public class SalesforcePushTopicListener {
   private final AuthenticatorCredentials credentials;
   private final String topic;
 
+  private JSONContext.Client jsonContext;
+
   public SalesforcePushTopicListener(AuthenticatorCredentials credentials, String topic) {
     this.credentials = credentials;
     this.topic = topic;
@@ -74,7 +79,7 @@ public class SalesforcePushTopicListener {
       waitForHandshake(bayeuxClient, HANDSHAKE_TIMEOUT_MS, HANDSHAKE_CHECK_INTERVAL_MS);
       LOG.debug("Client handshake done");
       bayeuxClient.getChannel("/topic/" + topic).subscribe((channel, message) -> {
-        messagesQueue.add(message.getJSON());
+        messagesQueue.add(jsonContext.getGenerator().generate(message.getDataAsMap()));
       });
 
     } catch (Exception e) {
@@ -108,10 +113,15 @@ public class SalesforcePushTopicListener {
     httpClient.setConnectTimeout(CONNECTION_TIMEOUT_SECONDS);
     httpClient.start();
 
-    Map<String, Object> options = new HashMap<>();
+    // Use the Jackson implementation
+    jsonContext = new JacksonJSONContextClient();
+
+    Map<String, Object> transportOptions = new HashMap<>();
+    transportOptions.put(ClientTransport.JSON_CONTEXT_OPTION, jsonContext);
+
     // Adds the OAuth header in LongPollingTransport
     LongPollingTransport transport = new LongPollingTransport(
-      options, httpClient) {
+      transportOptions, httpClient) {
       @Override
       protected void customize(Request exchange) {
         super.customize(exchange);
