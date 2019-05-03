@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -52,9 +54,6 @@ public class SalesforceRecordReader extends RecordReader<Schema, Map<String, Str
   private Iterator<CSVRecord> parserIterator;
 
   private Map<String, String> value;
-
-  private long linesNumber;
-  private long processedLines;
 
   public SalesforceRecordReader(Schema schema) {
     this.schema = schema;
@@ -81,12 +80,8 @@ public class SalesforceRecordReader extends RecordReader<Schema, Map<String, Str
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      String queryResponse = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
-
-      setupParser(queryResponse);
-
-      linesNumber = countLines(queryResponse);
-      processedLines = 1;
+      InputStream queryResponseStream = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
+      setupParser(queryResponseStream);
     } catch (AsyncApiException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
@@ -119,29 +114,25 @@ public class SalesforceRecordReader extends RecordReader<Schema, Map<String, Str
 
   @Override
   public float getProgress() {
-    return linesNumber == 0 ? 0.0f : processedLines / (float) linesNumber;
+    return 0.0f;
   }
 
   @Override
   public void close() throws IOException {
     if (csvParser != null) {
+      // this also closes the inputStream
       csvParser.close();
     }
   }
 
-  private static int countLines(String str) {
-    String[] lines = str.split("\r\n|\r|\n");
-    return lines.length;
-  }
-
   @VisibleForTesting
-  void setupParser(String queryResponse) throws IOException {
+  void setupParser(InputStream queryResponseStream) throws IOException {
     CSVFormat csvFormat = CSVFormat.DEFAULT.
       withHeader().
       withQuoteMode(QuoteMode.ALL).
       withAllowMissingColumnNames(false);
 
-    csvParser = CSVParser.parse(queryResponse, csvFormat);
+    csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
 
     if (csvParser.getHeaderMap().isEmpty()) {
       throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");

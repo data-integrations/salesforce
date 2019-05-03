@@ -16,9 +16,7 @@
 
 package io.cdap.plugin.salesforce;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
-import com.google.common.io.CharStreams;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
@@ -32,7 +30,10 @@ import com.sforce.async.QueryResultList;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.SequenceInputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Class which provides functions to submit jobs to bulk api and read resulting batches
@@ -99,14 +100,13 @@ public final class SalesforceBulkUtil {
    * @param bulkConnection bulk connection instance
    * @param jobId a job id
    * @param batchId a batch id
-   * @return result as a string with with a bunch of lines in csv format.
+   * @return an input stream which represents a current batch response, which is a bunch of lines in csv format.
    *
-   * @throws IOException exception while reading from job input stream
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws InterruptedException sleep interrupted
    */
-  public static String waitForBatchResults(BulkConnection bulkConnection, String jobId, String batchId)
-    throws IOException, AsyncApiException, InterruptedException {
+  public static InputStream waitForBatchResults(BulkConnection bulkConnection, String jobId, String batchId)
+    throws AsyncApiException, InterruptedException {
 
     BatchInfo info = null;
     for (int i = 0; i < GET_BATCH_RESULTS_TRIES; i++) {
@@ -117,15 +117,12 @@ public final class SalesforceBulkUtil {
           bulkConnection.getQueryResultList(jobId, batchId);
         String[] resultIds = list.getResult();
 
-        StringBuilder responseBuilder = new StringBuilder();
+        List<InputStream> streams = new ArrayList<>(resultIds.length);
         for (String resultId : resultIds) {
-          try (InputStream queryResultStream = bulkConnection.getQueryResultStream(jobId, batchId, resultId)) {
-            String response = CharStreams.toString(new InputStreamReader(queryResultStream, Charsets.UTF_8));
-            responseBuilder.append(response);
-          }
+          streams.add(bulkConnection.getQueryResultStream(jobId, batchId, resultId));
         }
 
-        return responseBuilder.toString();
+        return new SequenceInputStream(Collections.enumeration(streams));
       } else if (info.getState() == BatchStateEnum.Failed) {
 
         throw new BulkAPIBatchException("Batch failed", info);
