@@ -122,7 +122,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       SObjectDescriptor queryDescriptor;
       try {
-        queryDescriptor = SalesforceQueryParser.validateQuery(query);
+        queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
       } catch (SOQLParsingException e) {
         throw new InvalidConfigPropertyException(String.format("Invalid SOQL query: '%s", query), e,
                                                  SalesforceSourceConstants.PROPERTY_QUERY);
@@ -161,8 +161,11 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         .collect(Collectors.toList());
       if (!compoundFieldNames.isEmpty()) {
         throw new InvalidConfigPropertyException(
-          String.format("Compound fields %s cannot be fetched via Bulk API. Please specify the individual "
-                          + "attributes instead of compound field name in SOQL query", compoundFieldNames),
+          String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
+                          + "Please specify the individual attributes instead of compound field name in SOQL query. "
+                          + "For example, instead of 'Select BillingAddress ...', use "
+                          + "'Select BillingCountry, BillingCity, BillingStreet ...'",
+            compoundFieldNames),
           SalesforceSourceConstants.PROPERTY_QUERY);
       }
     } catch (ConnectionException e) {
