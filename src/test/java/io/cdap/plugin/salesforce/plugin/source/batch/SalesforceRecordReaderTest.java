@@ -22,8 +22,10 @@ import io.cdap.cdap.api.data.schema.Schema;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -218,7 +220,7 @@ public class SalesforceRecordReaderTest {
                                                List<Map<String, Object>> expectedRecords) throws Exception {
     MapToRecordTransformer transformer = new MapToRecordTransformer();
     SalesforceRecordReader reader = new SalesforceRecordReader(schema);
-    reader.setupParser(csvString);
+    reader.setupParser(new ByteArrayInputStream(csvString.getBytes(StandardCharsets.UTF_8)));
 
     Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
     fieldsField.setAccessible(true);
