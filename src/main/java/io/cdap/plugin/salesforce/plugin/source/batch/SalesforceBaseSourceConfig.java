@@ -22,17 +22,25 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 /**
@@ -42,23 +50,29 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBaseSourceConfig.class);
 
-  @Name(SalesforceSourceConstants.PROPERTY_DATETIME_FILTER)
-  @Description("Salesforce SObject query datetime filter. Example: 2019-03-12T11:29:52Z, LAST_WEEK")
+  @Name(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER)
+  @Description("Salesforce SObject query datetime filter. Example: 2019-03-12T11:29:52Z")
   @Nullable
   @Macro
-  private String datetimeFilter;
+  private String datetimeAfter;
+
+  @Name(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE)
+  @Description("Salesforce SObject query datetime filter. Example: 2019-03-12T11:29:52Z")
+  @Nullable
+  @Macro
+  private String datetimeBefore;
 
   @Name(SalesforceSourceConstants.PROPERTY_DURATION)
-  @Description("Salesforce SObject query duration. Time unit: hours. Default value: 0")
+  @Description("Salesforce SObject query duration.")
   @Nullable
   @Macro
-  private Integer duration;
+  private String duration;
 
   @Name(SalesforceSourceConstants.PROPERTY_OFFSET)
-  @Description("Salesforce SObject query offset. Time unit: hours. Default value: 0")
+  @Description("Salesforce SObject query offset.")
   @Nullable
   @Macro
-  private Integer offset;
+  private String offset;
 
   protected SalesforceBaseSourceConfig(String referenceName,
                                        String consumerKey,
@@ -66,31 +80,40 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        String username,
                                        String password,
                                        String loginUrl,
-                                       @Nullable String datetimeFilter,
-                                       @Nullable Integer duration,
-                                       @Nullable Integer offset) {
+                                       @Nullable String datetimeAfter,
+                                       @Nullable String datetimeBefore,
+                                       @Nullable String duration,
+                                       @Nullable String offset) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl);
-    this.datetimeFilter = datetimeFilter;
+    this.datetimeAfter = datetimeAfter;
+    this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
   }
 
-  public int getDuration() {
-    return Objects.isNull(duration) ? SalesforceSourceConstants.DURATION_DEFAULT : duration;
+  public Map<ChronoUnit, Integer> getDuration() {
+    return extractRangeValue(SalesforceSourceConstants.PROPERTY_DURATION, duration);
   }
 
-  public int getOffset() {
-    return Objects.isNull(offset) ? SalesforceSourceConstants.OFFSET_DEFAULT : offset;
+  public Map<ChronoUnit, Integer> getOffset() {
+    return extractRangeValue(SalesforceSourceConstants.PROPERTY_OFFSET, offset);
   }
 
   @Nullable
-  public String getDatetimeFilter() {
-    return datetimeFilter;
+  public String getDatetimeAfter() {
+    return datetimeAfter;
+  }
+
+  @Nullable
+  public String getDatetimeBefore() {
+    return datetimeBefore;
   }
 
   protected void validateFilters() {
-    validateSObjectFilter(SalesforceSourceConstants.PROPERTY_DURATION, getDuration());
-    validateSObjectFilter(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
+    validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
+    validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE, getDatetimeBefore());
+    validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_DURATION, getDuration());
+    validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
   }
 
   /**
@@ -101,11 +124,11 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    * This allows to avoid pulling data from Salesforce for the fields which are not needed.
    *
    * @param sObjectName Salesforce object name
-   * @param schema CDAP schema
-   *
+   * @param schema      CDAP schema
+   * @param logicalStartTime   application start time
    * @return SOQL generated based on sObject metadata and given filters
    */
-  protected String getSObjectQuery(String sObjectName, Schema schema) {
+  protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
     try {
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
@@ -127,8 +150,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
         }
       }
 
-      String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fieldNames, sObjectName,
-        getDuration(), getOffset(), getDatetimeFilter());
+      SObjectFilterDescriptor filterDescriptor = getSObjectFilterDescriptor(logicalStartTime);
+      String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fieldNames, sObjectName, filterDescriptor);
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
       return sObjectQuery;
     } catch (ConnectionException e) {
@@ -137,11 +160,95 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     }
   }
 
-  private void validateSObjectFilter(String propertyName, int propertyValue) {
-    if (!containsMacro(propertyName) && propertyValue < SalesforceConstants.INTERVAL_FILTER_MIN_VALUE) {
-      throw new InvalidConfigPropertyException(
-        String.format("Invalid SObject '%s' value: '%d'. Value must be '%d' or greater", propertyName, propertyValue,
-          SalesforceConstants.INTERVAL_FILTER_MIN_VALUE), propertyName);
+  private SObjectFilterDescriptor getSObjectFilterDescriptor(long logicalStartTime) {
+    SObjectFilterDescriptor filterDescriptor;
+    ZonedDateTime start = parseDatetime(datetimeAfter);
+    ZonedDateTime end = parseDatetime(datetimeBefore);
+
+    filterDescriptor = (start != null || end != null)
+      ? SObjectFilterDescriptor.interval(start, end)
+      : SObjectFilterDescriptor.range(logicalStartTime, getDuration(), getOffset());
+    return filterDescriptor;
+  }
+
+  @Nullable
+  private void validateIntervalFilterProperty(String propertyName, String datetime) {
+    if (containsMacro(propertyName)) {
+      return;
     }
+    try {
+      parseDatetime(datetime);
+    } catch (DateTimeParseException e) {
+      throw new InvalidConfigPropertyException(
+        String.format("Invalid SObject '%s' value: '%s'. Value must be in Salesforce Date Formats. For example, "
+                        + "2019-01-01T23:01:01Z", propertyName, datetime), propertyName);
+    }
+  }
+
+  private void validateRangeFilterProperty(String propertyName, Map<ChronoUnit, Integer> rangeValue) {
+    if (containsMacro(propertyName) || rangeValue.isEmpty()) {
+      return;
+    }
+    List<Map.Entry<ChronoUnit, Integer>> invalidValues = rangeValue.entrySet().stream()
+      .filter(e -> e.getValue() < SalesforceConstants.RANGE_FILTER_MIN_VALUE)
+      .collect(Collectors.toList());
+
+    if (!invalidValues.isEmpty()) {
+      throw new InvalidConfigPropertyException(
+        String.format("Invalid SObject '%s' values: '%s'. Values must be '%d' or greater", propertyName,
+                      invalidValues, SalesforceConstants.RANGE_FILTER_MIN_VALUE), propertyName);
+    }
+  }
+
+  private Map<ChronoUnit, Integer> extractRangeValue(String propertyName, String rangeValue) {
+    if (StringUtils.isBlank(rangeValue)) {
+      return Collections.emptyMap();
+    }
+    return Stream.of(rangeValue.split(","))
+      .map(String::trim)
+      .map(s -> s.split(" ", 2))
+      .peek(keyValue -> validateUnitKeyValue(propertyName, rangeValue, keyValue))
+      .collect(Collectors.toMap(
+        keyValue -> parseUnitType(propertyName, keyValue[1]),
+        keyValue -> parseUnitValue(propertyName, keyValue[0]),
+        (o, n) -> {
+          throw new InvalidConfigPropertyException(
+            String.format("'%s' has duplicate unit types '%s'",
+                          propertyName, rangeValue), propertyName);
+        }
+      ));
+  }
+
+  private void validateUnitKeyValue(String propertyName, String rangeValue, String[] keyValue) {
+    if (keyValue.length < 2) {
+      throw new InvalidConfigPropertyException(
+        String.format("'%s' has invalid format '%s'. "
+                        + "Expected format is <VALUE_1> <TYPE_1>,<VALUE_2> <TYPE_2>... . "
+                        + "For example, '1 days, 2 hours, 30 minutes'", propertyName, rangeValue), propertyName);
+    }
+  }
+
+  private ChronoUnit parseUnitType(String propertyName, String value) {
+
+    try {
+      return ChronoUnit.valueOf(value.trim().toUpperCase());
+    } catch (IllegalArgumentException e) {
+      throw new InvalidConfigPropertyException(
+        String.format("'%s' has invalid unit type '%s'", propertyName, value), e, propertyName);
+    }
+  }
+
+  private int parseUnitValue(String propertyName, String value) {
+    try {
+      return Integer.parseInt(value.trim());
+    } catch (NumberFormatException e) {
+      throw new InvalidConfigPropertyException(
+        String.format("'%s' has invalid unit value '%s'", propertyName, value), e, propertyName);
+    }
+  }
+
+  @Nullable
+  private ZonedDateTime parseDatetime(String datetime) throws DateTimeParseException {
+    return StringUtils.isBlank(datetime) ? null : ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
   }
 }

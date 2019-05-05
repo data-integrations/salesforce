@@ -66,7 +66,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   @Override
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     config.validate();
-    List<String> queries = config.getQueries();
+    List<String> queries = config.getQueries(context.getLogicalStartTime());
     Map<String, Schema> schemas = config.getSObjectsSchemas(queries);
 
     // propagate schema for each SObject for multi sink plugin

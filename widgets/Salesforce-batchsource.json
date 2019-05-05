@@ -78,26 +78,56 @@
         },
         {
           "widget-type": "textbox",
-          "label": "Datetime Filter",
-          "name": "datetimeFilter",
+          "label": "Last Modified After",
+          "name": "datetimeAfter",
           "widget-attributes" : {
-            "placeholder": "Datetime filter in SOQL Date or Date Literal format"
+            "placeholder": "YYYY-MM-DDThh:mm:ssZ (ex: 2019-01-01T00:00:00Z)"
           }
         },
         {
           "widget-type": "textbox",
+          "label": "Last Modified Before",
+          "name": "datetimeBefore",
+          "widget-attributes" : {
+            "placeholder": "YYYY-MM-DDThh:mm:ssZ (ex: 2019-01-01T00:00:00Z)"
+          }
+        },
+        {
+          "widget-type": "keyvalue-dropdown",
           "label": "Duration",
           "name": "duration",
-          "widget-attributes" : {
-            "default": "0"
+          "widget-attributes": {
+            "showDelimiter": "false",
+            "delimiter": ",",
+            "kv-delimiter": " ",
+            "dropdownOptions": [
+              "SECONDS",
+              "MINUTES",
+              "HOURS",
+              "DAYS",
+              "MONTHS",
+              "YEARS"
+            ],
+            "key-placeholder": "Duration"
           }
         },
         {
-          "widget-type": "textbox",
+          "widget-type": "keyvalue-dropdown",
           "label": "Offset",
           "name": "offset",
-          "widget-attributes" : {
-            "default": "0"
+          "widget-attributes": {
+            "showDelimiter": "false",
+            "delimiter": ",",
+            "kv-delimiter": " ",
+            "dropdownOptions": [
+              "SECONDS",
+              "MINUTES",
+              "HOURS",
+              "DAYS",
+              "MONTHS",
+              "YEARS"
+            ],
+            "key-placeholder": "Offset"
           }
         }
       ]

@@ -68,12 +68,13 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                 String loginUrl,
                                 @Nullable String query,
                                 @Nullable String sObjectName,
-                                @Nullable String datetimeFilter,
-                                @Nullable Integer duration,
-                                @Nullable Integer offset,
+                                @Nullable String datetimeAfter,
+                                @Nullable String datetimeBefore,
+                                @Nullable String duration,
+                                @Nullable String offset,
                                 @Nullable String schema) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-      datetimeFilter, duration, offset);
+          datetimeAfter, datetimeBefore, duration, offset);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;
@@ -83,10 +84,11 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
    * Returns SOQL to retrieve data from Salesforce. If user has provided SOQL, returns given SOQL.
    * If user has provided sObject name, generates SOQL based on sObject metadata and provided filters.
    *
+   * @param logicalStartTime application start time
    * @return SOQL query
    */
-  public String getQuery() {
-    String soql = isSoqlQuery() ? query : getSObjectQuery(sObjectName, getSchema());
+  public String getQuery(long logicalStartTime) {
+    String soql = isSoqlQuery() ? query : getSObjectQuery(sObjectName, getSchema(), logicalStartTime);
     return Objects.requireNonNull(soql).trim();
   }
 

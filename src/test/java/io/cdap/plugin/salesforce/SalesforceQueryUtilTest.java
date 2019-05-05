@@ -15,13 +15,16 @@
  */
 package io.cdap.plugin.salesforce;
 
+import com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,11 +38,9 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithoutFilter() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    int duration = 0;
-    int offset = 0;
-    String datetimeFilter = null;
 
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName,
+                                                                 SObjectFilterDescriptor.noOp());
 
     Assert.assertNotNull(sObjectQuery);
     Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName", sObjectQuery);
@@ -49,64 +50,122 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithBlankDatetimeFilter() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    int duration = 0;
-    int offset = 0;
-    String datetimeFilter = "        ";
 
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.interval(null, null);
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
 
     Assert.assertNotNull(sObjectQuery);
     Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName", sObjectQuery);
   }
 
   @Test
-  public void testCreateSObjectQueryWithDateLiteral() {
+  public void testCreateSObjectQueryWithBlankDatetimeAndZeroRangeFilters() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    int duration = 0;
-    int offset = 0;
-    String datetimeFilter = "YESTERDAY";
 
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
+      System.currentTimeMillis(),
+      Collections.singletonMap(ChronoUnit.HOURS, 0),
+      Collections.singletonMap(ChronoUnit.HOURS, 0));
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
 
     Assert.assertNotNull(sObjectQuery);
-    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>YESTERDAY",
+    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName", sObjectQuery);
+  }
+
+  @Test
+  public void testCreateSObjectQueryWithDatetimeAfterFilter() {
+    List<String> fields = Arrays.asList("Id", "Name", "SomeField");
+    String sObjectName = "sObjectName";
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.interval(
+      ZonedDateTime.parse("2019-04-12T23:23:23Z", DateTimeFormatter.ISO_DATE_TIME), null);
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
+
+    Assert.assertNotNull(sObjectQuery);
+    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z",
                         sObjectQuery);
   }
 
   @Test
-  public void testCreateSObjectQueryWithDateLiteralFilterSkipSqlInjection() {
+  public void testCreateSObjectQueryWithDatetimeBeforeFilter() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    int duration = 0;
-    int offset = 0;
-    String datetimeFilter = "YESTERDAY OR Id LIKE '%'";
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.interval(
+      null, ZonedDateTime.parse("2019-04-22T01:01:01Z", DateTimeFormatter.ISO_DATE_TIME));
 
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
 
     Assert.assertNotNull(sObjectQuery);
-    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>YESTERDAY",
+    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate<2019-04-22T01:01:01Z",
                         sObjectQuery);
   }
 
   @Test
-  public void testCreateSObjectQueryWithDuration() {
+  public void testCreateSObjectQueryWithDatetimeAfterAndBeforeFilters() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime dateTime = ZonedDateTime.now(ZoneOffset.UTC);
-    int duration = 6;
-    int offset = 0;
-    String datetimeFilter = null;
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, dateTime, duration, offset,
-                                                                 datetimeFilter);
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.interval(
+      ZonedDateTime.parse("2019-04-12T23:23:23Z", DateTimeFormatter.ISO_DATE_TIME),
+      ZonedDateTime.parse("2019-04-22T01:01:01Z", DateTimeFormatter.ISO_DATE_TIME));
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
+
+    Assert.assertNotNull(sObjectQuery);
+    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE " +
+                          "LastModifiedDate>=2019-04-12T23:23:23Z AND LastModifiedDate<2019-04-22T01:01:01Z",
+                        sObjectQuery);
+  }
+
+
+  @Test
+  public void testCreateSObjectQueryWithDurationOnly() {
+    List<String> fields = Arrays.asList("Id", "Name", "SomeField");
+    String sObjectName = "sObjectName";
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    long currentTimeMillis = now.toInstant().toEpochMilli();
+
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
+      currentTimeMillis,
+      Collections.singletonMap(ChronoUnit.HOURS, 6),
+      Collections.singletonMap(ChronoUnit.HOURS, 0));
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
+
 
     Assert.assertNotNull(sObjectQuery);
     String expected = String.format("SELECT Id,Name,SomeField "
                                       + "FROM sObjectName "
                                       + "WHERE "
-                                      + "LastModifiedDate>%s AND LastModifiedDate<%s",
-                                    dateTime.minusHours(duration).format(DateTimeFormatter.ISO_DATE_TIME),
-                                    dateTime.format(DateTimeFormatter.ISO_DATE_TIME));
+                                      + "LastModifiedDate>=%s AND LastModifiedDate<%s",
+                                    now.minusHours(6).format(DateTimeFormatter.ISO_DATE_TIME),
+                                    now.format(DateTimeFormatter.ISO_DATE_TIME));
+    Assert.assertEquals(expected, sObjectQuery);
+  }
+
+  @Test
+  public void testCreateSObjectQueryWithOffsetOnly() {
+    List<String> fields = Arrays.asList("Id", "Name", "SomeField");
+    String sObjectName = "sObjectName";
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    long currentTimeMillis = now.toInstant().toEpochMilli();
+
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
+      currentTimeMillis,
+      Collections.singletonMap(ChronoUnit.HOURS, 0),
+      Collections.singletonMap(ChronoUnit.DAYS, 1));
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
+
+
+    Assert.assertNotNull(sObjectQuery);
+    String expected = String.format("SELECT Id,Name,SomeField "
+                                      + "FROM sObjectName "
+                                      + "WHERE "
+                                      + "LastModifiedDate<%s",
+                                    now.minusDays(1).format(DateTimeFormatter.ISO_DATE_TIME));
     Assert.assertEquals(expected, sObjectQuery);
   }
 
@@ -114,44 +173,32 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithDurationAndOffset() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime dateTime = ZonedDateTime.now(ZoneOffset.UTC);
-    int duration = 6;
-    int offset = 1;
-    String datetimeFilter = null;
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, dateTime, duration, offset,
-                                                                 datetimeFilter);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    long currentTimeMillis = now.toInstant().toEpochMilli();
+
+    SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
+      currentTimeMillis,
+      ImmutableMap.of(ChronoUnit.HOURS, 6, ChronoUnit.MINUTES, 10),
+      Collections.singletonMap(ChronoUnit.HOURS, 1));
+
+    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, filterDescriptor);
+
 
     Assert.assertNotNull(sObjectQuery);
-    String fromDate = dateTime.minusHours(duration).minusHours(offset).format(DateTimeFormatter.ISO_DATE_TIME);
-    String toDate = dateTime.minusHours(offset).format(DateTimeFormatter.ISO_DATE_TIME);
     String expected = String.format("SELECT Id,Name,SomeField "
                                       + "FROM sObjectName "
                                       + "WHERE "
-                                      + "LastModifiedDate>%s AND LastModifiedDate<%s",
-                                    fromDate, toDate);
-
+                                      + "LastModifiedDate>=%s AND LastModifiedDate<%s",
+                                    now.minusHours(6).minusHours(1).minusMinutes(10)
+                                      .format(DateTimeFormatter.ISO_DATE_TIME),
+                                    now.minusHours(1).format(DateTimeFormatter.ISO_DATE_TIME));
     Assert.assertEquals(expected, sObjectQuery);
-  }
-
-  @Test
-  public void testCreateSObjectQueryWithAllFiltersProvided() {
-    List<String> fields = Arrays.asList("Id", "Name", "SomeField");
-    String sObjectName = "sObjectName";
-    int duration = 10;
-    int offset = 5;
-    String datetimeFilter = "LAST_WEEK";
-
-    String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fields, sObjectName, duration, offset, datetimeFilter);
-
-    Assert.assertNotNull(sObjectQuery);
-    Assert.assertEquals("SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>LAST_WEEK",
-                        sObjectQuery);
   }
 
   @Test
   public void testIsQueryUnderLengthLimitTrue() {
     boolean underLengthLimit = SalesforceQueryUtil.isQueryUnderLengthLimit(
-      "SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>LAST_WEEK");
+      "SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>2019-04-12T23:23:23Z");
 
     Assert.assertTrue(underLengthLimit);
   }
@@ -165,7 +212,7 @@ public class SalesforceQueryUtilTest {
       .collect(Collectors.joining(","));
 
     boolean underLengthLimit = SalesforceQueryUtil.isQueryUnderLengthLimit(
-      String.format("SELECT %s FROM sObjectName WHERE LastModifiedDate>LAST_WEEK", fields));
+      String.format("SELECT %s FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z", fields));
 
     Assert.assertFalse(underLengthLimit);
   }
@@ -173,7 +220,7 @@ public class SalesforceQueryUtilTest {
   @Test
   public void testCreateSObjectIdQuery() {
     String selectClause = "SELECT Id,Name,SomeField ";
-    String fromClause = "FROM sObjectName WHERE LastModifiedDate>LAST_WEEK";
+    String fromClause = "FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z";
     String query = selectClause + fromClause;
 
     String sObjectIdQuery = SalesforceQueryUtil.createSObjectIdQuery(query);

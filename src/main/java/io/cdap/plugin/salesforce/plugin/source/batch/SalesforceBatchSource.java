@@ -38,7 +38,6 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConsta
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.ws.rs.Path;
 
 /**
  * Plugin returns records from Salesforce using provided by user SOQL query or SObject.
@@ -98,7 +97,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    String query = config.getQuery();
+    String query = config.getQuery(context.getLogicalStartTime());
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(config,
         Collections.singletonList(query), ImmutableMap.of(sObjectName, schema.toString()), null)));
@@ -123,9 +122,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    * @param config Salesforce Source Batch config
    * @return schema calculated from query
    */
-  @Path("getSchema")
-  public Schema getSchema(SalesforceSourceConfig config) {
-    String query = config.getQuery();
+  private Schema getSchema(SalesforceSourceConfig config) {
+    String query = config.getQuery(System.currentTimeMillis());
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
       return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);

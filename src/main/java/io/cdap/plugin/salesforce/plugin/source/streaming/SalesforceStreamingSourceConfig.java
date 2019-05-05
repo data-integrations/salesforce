@@ -28,6 +28,7 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -315,7 +316,7 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
                                                                        getAuthenticatorCredentials(), typesToSkip);
 
       String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(sObjectDescriptor.getFieldsNames(), sObjectName,
-                                                                   0, 0, "");
+                                                                   SObjectFilterDescriptor.noOp());
 
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
       return sObjectQuery;

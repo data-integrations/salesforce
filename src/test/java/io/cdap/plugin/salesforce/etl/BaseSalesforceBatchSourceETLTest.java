@@ -139,13 +139,18 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
   }
 
   protected List<StructuredRecord> getResultsBySObjectQuery(String sObjectName,
-                                                            String datetimeFilter,
+                                                            String datetimeAfter,
+                                                            String datetimeBefore,
                                                             String schema) throws Exception {
     ImmutableMap.Builder<String, String> propsBuilder = getBaseProperties(REFERENCE_NAME)
       .put(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME, sObjectName);
 
-    if (datetimeFilter != null) {
-      propsBuilder.put(SalesforceSourceConstants.PROPERTY_DATETIME_FILTER, datetimeFilter);
+    if (datetimeAfter != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, datetimeAfter);
+    }
+
+    if (datetimeBefore != null) {
+      propsBuilder.put(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE, datetimeBefore);
     }
 
     if (schema != null) {
