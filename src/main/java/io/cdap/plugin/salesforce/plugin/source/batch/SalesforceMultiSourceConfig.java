@@ -74,14 +74,15 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                               String username,
                               String password,
                               String loginUrl,
-                              @Nullable String datetimeFilter,
-                              @Nullable Integer duration,
-                              @Nullable Integer offset,
+                              @Nullable String datetimeAfter,
+                              @Nullable String datetimeBefore,
+                              @Nullable String duration,
+                              @Nullable String offset,
                               @Nullable String whiteList,
                               @Nullable String blackList,
                               @Nullable String sObjectNameField) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-      datetimeFilter, duration, offset);
+          datetimeAfter, datetimeBefore, duration, offset);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;
@@ -137,11 +138,12 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   /**
    * Generates list of SObject queries based on given list of SObjects and incremental filters if any.
    *
+   * @param logicalStartTime application start time
    * @return list of SObject queries
    */
-  public List<String> getQueries() {
+  public List<String> getQueries(long logicalStartTime) {
     List<String> queries = getSObjects().parallelStream()
-      .map(sObject -> getSObjectQuery(sObject, null))
+      .map(sObject -> getSObjectQuery(sObject, null, logicalStartTime))
       .collect(Collectors.toList());
 
     if (queries.isEmpty()) {

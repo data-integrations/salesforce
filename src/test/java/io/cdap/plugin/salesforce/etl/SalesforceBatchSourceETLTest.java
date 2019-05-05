@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.sforce.soap.partner.Field;
-import com.sforce.soap.partner.Location;
 import com.sforce.soap.partner.sobject.SObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
@@ -222,7 +221,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
       .map(Field::getName)
       .collect(Collectors.toList());
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null, null);
 
     Assert.assertEquals(1, results.size());
 
@@ -251,7 +250,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Schema providedSchema = Schema.recordOf("output",
       Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, providedSchema.toString());
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null, providedSchema.toString());
 
     Assert.assertEquals(1, results.size());
 
@@ -271,7 +270,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(sObjects, false);
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null, null);
 
     Assert.assertEquals(names.size(), results.size());
 
@@ -293,7 +292,9 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(Collections.singletonList(sObject1), false);
 
-    String dateTimeFilter = ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_DATE_TIME);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    String datetimeAfter = now.plusSeconds(1).format(DateTimeFormatter.ISO_DATE_TIME);
+    String datetimeBefore = now.plusHours(1).format(DateTimeFormatter.ISO_DATE_TIME);
 
     // we can not modify LastModifiedDate, add new record after 2 seconds to be able to check filtering
     TimeUnit.SECONDS.sleep(2);
@@ -305,7 +306,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(Collections.singletonList(sObject2), false);
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, dateTimeFilter, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, datetimeAfter, datetimeBefore, null);
 
     Assert.assertEquals(1, results.size());
     Assert.assertEquals("Wilma", results.get(0).get("Name"));
@@ -379,7 +380,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
       .filter(name -> !customField.getFullName().equals(name)) // exclude compound field name
       .collect(Collectors.toList());
 
-    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null);
+    List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null, null);
 
     Assert.assertEquals(1, results.size());
 

@@ -20,7 +20,8 @@ package io.cdap.plugin.salesforce.plugin.source.batch.util;
  */
 public class SalesforceSourceConstants {
 
-  public static final String PROPERTY_DATETIME_FILTER = "datetimeFilter";
+  public static final String PROPERTY_DATETIME_AFTER = "datetimeAfter";
+  public static final String PROPERTY_DATETIME_BEFORE = "datetimeBefore";
   public static final String PROPERTY_DURATION = "duration";
   public static final String PROPERTY_OFFSET = "offset";
   public static final String PROPERTY_SCHEMA = "schema";
@@ -36,8 +37,6 @@ public class SalesforceSourceConstants {
   public static final String CONFIG_SCHEMAS = "mapred.salesforce.input.schemas";
   public static final String CONFIG_SOBJECT_NAME_FIELD = "mapred.salesforce.input.sObjectNameField";
 
-  public static final int DURATION_DEFAULT = 0;
-  public static final int OFFSET_DEFAULT = 0;
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
 
 }
