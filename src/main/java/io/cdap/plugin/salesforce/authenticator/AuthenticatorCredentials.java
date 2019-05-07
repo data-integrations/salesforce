@@ -25,16 +25,16 @@ import java.util.Objects;
 public class AuthenticatorCredentials implements Serializable {
   private final String username;
   private final String password;
-  private final String clientId;
-  private final String clientSecret;
+  private final String consumerKey;
+  private final String consumerSecret;
   private final String loginUrl;
 
   public AuthenticatorCredentials(String username, String password,
-                                  String clientId, String clientSecret, String loginUrl) {
+                                  String consumerKey, String consumerSecret, String loginUrl) {
     this.username = username;
     this.password = password;
-    this.clientId = clientId;
-    this.clientSecret = clientSecret;
+    this.consumerKey = consumerKey;
+    this.consumerSecret = consumerSecret;
     this.loginUrl = loginUrl;
   }
 
@@ -46,12 +46,12 @@ public class AuthenticatorCredentials implements Serializable {
     return password;
   }
 
-  public String getClientId() {
-    return clientId;
+  public String getConsumerKey() {
+    return consumerKey;
   }
 
-  public String getClientSecret() {
-    return clientSecret;
+  public String getConsumerSecret() {
+    return consumerSecret;
   }
 
   public String getLoginUrl() {
@@ -71,13 +71,13 @@ public class AuthenticatorCredentials implements Serializable {
 
     return Objects.equals(username, that.username) &&
       Objects.equals(password, that.password) &&
-      Objects.equals(clientId, that.clientId) &&
-      Objects.equals(clientSecret, that.clientSecret) &&
+      Objects.equals(consumerKey, that.consumerKey) &&
+      Objects.equals(consumerSecret, that.consumerSecret) &&
       Objects.equals(loginUrl, that.loginUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(username, password, clientId, clientSecret, loginUrl);
+    return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl);
   }
 }

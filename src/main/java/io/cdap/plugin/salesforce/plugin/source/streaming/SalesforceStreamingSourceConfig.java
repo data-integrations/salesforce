@@ -104,10 +104,10 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
   @Name("pushTopicNotifyForFields")
   private String pushTopicNotifyForFields;
 
-  public SalesforceStreamingSourceConfig(String referenceName, String clientId, String clientSecret,
+  public SalesforceStreamingSourceConfig(String referenceName, String consumerKey, String consumerSecret,
                                          String username, String password, String loginUrl,
                                          String errorHandling, String pushTopicName, String sObjectName) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling);
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
   }

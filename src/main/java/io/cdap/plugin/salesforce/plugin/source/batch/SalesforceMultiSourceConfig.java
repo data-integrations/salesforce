@@ -69,8 +69,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   private String sObjectNameField;
 
   public SalesforceMultiSourceConfig(String referenceName,
-                              String clientId,
-                              String clientSecret,
+                              String consumerKey,
+                              String consumerSecret,
                               String username,
                               String password,
                               String loginUrl,
@@ -81,7 +81,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                               @Nullable String whiteList,
                               @Nullable String blackList,
                               @Nullable String sObjectNameField) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling,
       datetimeFilter, duration, offset);
     this.whiteList = whiteList;
     this.blackList = blackList;

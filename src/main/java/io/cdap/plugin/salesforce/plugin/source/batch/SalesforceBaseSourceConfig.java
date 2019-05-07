@@ -60,8 +60,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   private Integer offset;
 
   protected SalesforceBaseSourceConfig(String referenceName,
-                                       String clientId,
-                                       String clientSecret,
+                                       String consumerKey,
+                                       String consumerSecret,
                                        String username,
                                        String password,
                                        String loginUrl,
@@ -69,7 +69,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String datetimeFilter,
                                        @Nullable Integer duration,
                                        @Nullable Integer offset) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling);
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling);
     this.datetimeFilter = datetimeFilter;
     this.duration = duration;
     this.offset = offset;

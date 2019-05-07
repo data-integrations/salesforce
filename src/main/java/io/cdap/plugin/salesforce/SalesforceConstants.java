@@ -23,17 +23,17 @@ public class SalesforceConstants {
   public static final String API_VERSION = "45.0";
   public static final String REFERENCE_NAME_DELIMITER = ".";
 
-  public static final String PROPERTY_CLIENT_ID = "clientId";
-  public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
+  public static final String PROPERTY_CONSUMER_KEY = "consumerKey";
+  public static final String PROPERTY_CONSUMER_SECRET = "consumerSecret";
   public static final String PROPERTY_USERNAME = "username";
   public static final String PROPERTY_PASSWORD = "password";
   public static final String PROPERTY_LOGIN_URL = "loginUrl";
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
 
-  public static final String CONFIG_CLIENT_ID = "mapred.salesforce.client.id";
+  public static final String CONFIG_CONSUMER_KEY = "mapred.salesforce.consumer.key";
   public static final String CONFIG_PASSWORD = "mapred.salesforce.password";
   public static final String CONFIG_USERNAME = "mapred.salesforce.user";
-  public static final String CONFIG_CLIENT_SECRET = "mapred.salesforce.client.secret";
+  public static final String CONFIG_CONSUMER_SECRET = "mapred.salesforce.consumer.secret";
   public static final String CONFIG_LOGIN_URL = "mapred.salesforce.login.url";
 
   public static final int INTERVAL_FILTER_MIN_VALUE = 0;
