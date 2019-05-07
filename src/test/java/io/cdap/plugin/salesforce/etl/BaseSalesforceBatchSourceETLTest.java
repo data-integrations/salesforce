@@ -171,15 +171,28 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
   }
 
   protected CustomField createTextCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.Text);
+    customField.setLength(50);
+    customField.setDefaultValue("\"DefaultValue\"");
+    return customField;
+  }
+
+  protected CustomField createLocationCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.Location);
+    customField.setScale(3);
+    return customField;
+  }
+
+  private CustomField createCustomField(String fullName) {
     CustomField customField = new CustomField();
     customField.setFullName(fullName);
     // custom field name length can be 43 (max length + postfix `__c`)
     // substring field name to be within the label length limit
     customField.setLabel(fullName.substring(Math.max(0, fullName.length() - MAX_FIELD_NAME_LENGTH)));
-    customField.setType(FieldType.Text);
-    customField.setLength(50);
+    // to make it visible for current user
     customField.setRequired(true);
-    customField.setDefaultValue("\"DefaultValue\"");
     return customField;
   }
 
