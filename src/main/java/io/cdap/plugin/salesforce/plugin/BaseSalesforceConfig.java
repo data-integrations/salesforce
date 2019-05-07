@@ -30,15 +30,15 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
  */
 public class BaseSalesforceConfig extends ReferencePluginConfig {
 
-  @Name(SalesforceConstants.PROPERTY_CLIENT_ID)
-  @Description("Salesforce connected app's client ID")
+  @Name(SalesforceConstants.PROPERTY_CONSUMER_KEY)
+  @Description("Salesforce connected app's consumer key")
   @Macro
-  private String clientId;
+  private String consumerKey;
 
-  @Name(SalesforceConstants.PROPERTY_CLIENT_SECRET)
+  @Name(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
   @Description("Salesforce connected app's client secret key")
   @Macro
-  private String clientSecret;
+  private String consumerSecret;
 
   @Name(SalesforceConstants.PROPERTY_USERNAME)
   @Description("Salesforce username")
@@ -65,23 +65,23 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Macro
   private String errorHandling;
 
-  public BaseSalesforceConfig(String referenceName, String clientId, String clientSecret,
+  public BaseSalesforceConfig(String referenceName, String consumerKey, String consumerSecret,
                               String username, String password, String loginUrl, String errorHandling) {
     super(referenceName);
-    this.clientId = clientId;
-    this.clientSecret = clientSecret;
+    this.consumerKey = consumerKey;
+    this.consumerSecret = consumerSecret;
     this.username = username;
     this.password = password;
     this.loginUrl = loginUrl;
     this.errorHandling = errorHandling;
   }
 
-  public String getClientId() {
-    return clientId;
+  public String getConsumerKey() {
+    return consumerKey;
   }
 
-  public String getClientSecret() {
-    return clientSecret;
+  public String getConsumerSecret() {
+    return consumerSecret;
   }
 
   public String getUsername() {
@@ -108,7 +108,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   }
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
-    return SalesforceConnectionUtil.getAuthenticatorCredentials(username, password, clientId, clientSecret, loginUrl);
+    return SalesforceConnectionUtil.getAuthenticatorCredentials(username, password,
+                                                                consumerKey, consumerSecret, loginUrl);
   }
 
   /**
@@ -118,8 +119,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
    * @return true if none of the connection properties contains macro, false otherwise
    */
   public boolean canAttemptToEstablishConnection() {
-    return !(containsMacro(SalesforceConstants.PROPERTY_CLIENT_ID)
-      || containsMacro(SalesforceConstants.PROPERTY_CLIENT_SECRET)
+    return !(containsMacro(SalesforceConstants.PROPERTY_CONSUMER_KEY)
+      || containsMacro(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
       || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL));

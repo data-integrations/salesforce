@@ -61,8 +61,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
-                                String clientId,
-                                String clientSecret,
+                                String consumerKey,
+                                String consumerSecret,
                                 String username,
                                 String password,
                                 String loginUrl,
@@ -73,7 +73,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                 @Nullable Integer duration,
                                 @Nullable Integer offset,
                                 @Nullable String schema) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, errorHandling,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling,
       datetimeFilter, duration, offset);
     this.query = query;
     this.sObjectName = sObjectName;

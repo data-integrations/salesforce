@@ -21,8 +21,8 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
  */
 public class SalesforceSourceConfigBuilder {
   private String referenceName;
-  private String clientId;
-  private String clientSecret;
+  private String consumerKey;
+  private String consumerSecret;
   private String username;
   private String password;
   private String loginUrl;
@@ -39,13 +39,13 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setClientId(String clientId) {
-    this.clientId = clientId;
+  public SalesforceSourceConfigBuilder setConsumerKey(String consumerKey) {
+    this.consumerKey = consumerKey;
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setClientSecret(String clientSecret) {
-    this.clientSecret = clientSecret;
+  public SalesforceSourceConfigBuilder setConsumerSecret(String consumerSecret) {
+    this.consumerSecret = consumerSecret;
     return this;
   }
 
@@ -100,7 +100,7 @@ public class SalesforceSourceConfigBuilder {
   }
 
   public SalesforceSourceConfig build() {
-    return new SalesforceSourceConfig(referenceName, clientId, clientSecret, username, password, loginUrl,
+    return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                       errorHandling, query, sObjectName, datetimeFilter, duration, offset, schema);
   }
 }

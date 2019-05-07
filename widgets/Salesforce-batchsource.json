@@ -28,13 +28,13 @@
         },
         {
           "widget-type": "textbox",
-          "label": "Client Id",
-          "name": "clientId"
+          "label": "Consumer Key",
+          "name": "consumerKey"
         },
         {
           "widget-type": "password",
-          "label": "Client Secret",
-          "name": "clientSecret"
+          "label": "Consumer Secret",
+          "name": "consumerSecret"
         },
         {
           "widget-type": "textbox",

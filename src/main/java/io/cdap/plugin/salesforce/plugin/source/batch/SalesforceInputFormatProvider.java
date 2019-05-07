@@ -42,8 +42,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
       .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
-      .put(SalesforceConstants.CONFIG_CLIENT_ID, config.getClientId())
-      .put(SalesforceConstants.CONFIG_CLIENT_SECRET, config.getClientSecret())
+      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
+      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
       .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
       .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));

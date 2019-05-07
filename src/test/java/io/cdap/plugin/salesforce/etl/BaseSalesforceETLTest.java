@@ -50,19 +50,20 @@ import java.util.stream.Stream;
  *
  * Instructions to enable the tests:
  * 1. Create/use existing Salesforce account
- * 2. Create connected application within the account to get clientId and clientSecret
+ * 2. Create connected application within the account to get consumer key and consumer secret.
  * 3. Run the tests using the command below:
  *
  * mvn clean test
- * -Dsalesforce.test.clientId= -Dsalesforce.test.clientSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
+ * -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret=
+ * -Dsalesforce.test.username= -Dsalesforce.test.password=
  *
  */
 public abstract class BaseSalesforceETLTest extends HydratorTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceETLTest.class);
 
-  protected static final String CLIENT_ID = System.getProperty("salesforce.test.clientId");
-  protected static final String CLIENT_SECRET = System.getProperty("salesforce.test.clientSecret");
+  protected static final String CONSUMER_KEY = System.getProperty("salesforce.test.consumerKey");
+  protected static final String CONSUMER_SECRET = System.getProperty("salesforce.test.consumerSecret");
   protected static final String USERNAME = System.getProperty("salesforce.test.username");
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
@@ -76,7 +77,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   @BeforeClass
   public static void initializeTests() throws ConnectionException {
     try {
-      Assume.assumeNotNull(CLIENT_ID, CLIENT_SECRET, USERNAME, PASSWORD, LOGIN_URL);
+      Assume.assumeNotNull(CONSUMER_KEY, CONSUMER_SECRET, USERNAME, PASSWORD, LOGIN_URL);
     } catch (AssumptionViolatedException e) {
       LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
         "BaseSalesforceBatchSourceETLTest javadoc");
@@ -84,7 +85,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
     }
 
     AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
-      USERNAME, PASSWORD, CLIENT_ID, CLIENT_SECRET, LOGIN_URL);
+      USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
   }
 
@@ -135,8 +136,8 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   protected ImmutableMap.Builder<String, String> getBaseProperties(String referenceName) {
     return new ImmutableMap.Builder<String, String>()
       .put(Constants.Reference.REFERENCE_NAME, referenceName)
-      .put(SalesforceConstants.PROPERTY_CLIENT_ID, CLIENT_ID)
-      .put(SalesforceConstants.PROPERTY_CLIENT_SECRET, CLIENT_SECRET)
+      .put(SalesforceConstants.PROPERTY_CONSUMER_KEY, CONSUMER_KEY)
+      .put(SalesforceConstants.PROPERTY_CONSUMER_SECRET, CONSUMER_SECRET)
       .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
       .put(SalesforceConstants.PROPERTY_PASSWORD, PASSWORD)
       .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL)

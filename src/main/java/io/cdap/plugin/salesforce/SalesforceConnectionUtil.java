@@ -46,14 +46,15 @@ public class SalesforceConnectionUtil {
    *
    * @param username Salesforce username
    * @param password Salesforce password
-   * @param clientId Salesforce client id
-   * @param clientSecret Salesforce client secret
+   * @param consumerKey Salesforce consumer key
+   * @param consumerSecret Salesforce consumer secret
    * @param loginUrl Salesforce authentication url
    * @return authenticator credentials
    */
-  public static AuthenticatorCredentials getAuthenticatorCredentials(String username, String password, String clientId,
-                                                                     String clientSecret, String loginUrl) {
-    return new AuthenticatorCredentials(username, password, clientId, clientSecret, loginUrl);
+  public static AuthenticatorCredentials getAuthenticatorCredentials(String username, String password,
+                                                                     String consumerKey, String consumerSecret,
+                                                                     String loginUrl) {
+    return new AuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
   }
 
   /**
@@ -65,8 +66,8 @@ public class SalesforceConnectionUtil {
   public static AuthenticatorCredentials getAuthenticatorCredentials(Configuration conf) {
     return getAuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
                                        conf.get(SalesforceConstants.CONFIG_PASSWORD),
-                                       conf.get(SalesforceConstants.CONFIG_CLIENT_ID),
-                                       conf.get(SalesforceConstants.CONFIG_CLIENT_SECRET),
+                                       conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
+                                       conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
                                        conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
   }
 }
