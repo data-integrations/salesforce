@@ -18,11 +18,11 @@ Configuration
 
 **Password:** Salesforce password.
 
-**Client Id:** Application Client Id. This is also called "Consumer Key" in the Salesforce UI.
-To create a Client Id, a connected application first needs to be created in Salesforce.
+**Consumer Key:** Application Consumer Key. This is also known as the OAuth client id.
+A Salesforce connected application must be created in order to get a consumer key.
 
-**Client Secret:** Application Client Secret. This is also called "Consumer Secret" in the Salesforce UI.
-To create a Client Secret, a connected application first needs to be created in Salesforce.
+**Consumer Secret:** Application Consumer Secret. This is also known as the OAuth client secret.
+A Salesforce connected application must be created in order to get a client secret.
 
 **Login Url:** Salesforce OAuth2 login url.
 

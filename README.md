@@ -14,11 +14,11 @@ By default all integration tests will be skipped, since Salesforce credentials a
 
 Instructions to run the tests:
  1. Create/use existing Salesforce account
- 2. Create connected application within the account to get clientId and clientSecret
+ 2. Create connected application within the account to get consumerKey and consumerSecret
  3. Run the tests using the command below:
 
 ```
-mvn clean test -Dsalesforce.test.clientId= -Dsalesforce.test.clientSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
+mvn clean test -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
 ```
 
 # Contact

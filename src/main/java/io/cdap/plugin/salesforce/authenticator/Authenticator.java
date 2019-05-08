@@ -70,8 +70,8 @@ public class Authenticator {
     try {
       httpClient.start();
       String response = httpClient.POST(credentials.getLoginUrl()).param("grant_type", "password")
-        .param("client_id", credentials.getClientId())
-        .param("client_secret", credentials.getClientSecret())
+        .param("client_id", credentials.getConsumerKey())
+        .param("client_secret", credentials.getConsumerSecret())
         .param("username", credentials.getUsername())
         .param("password", credentials.getPassword()).send().getContentAsString();
       return GSON.fromJson(response, AuthResponse.class);
