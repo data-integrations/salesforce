@@ -52,7 +52,6 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
 
   private final SalesforceMultiSourceConfig config;
   private MapToRecordTransformer transformer;
-  private ErrorHandler errorHandler;
 
   public SalesforceBatchMultiSource(SalesforceMultiSourceConfig config) {
     this.config = config;
@@ -84,18 +83,13 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
     this.transformer = new MapToRecordTransformer();
-    this.errorHandler = new ErrorHandler(config.getErrorHandling());
   }
 
   @Override
   public void transform(KeyValue<Schema, Map<String, String>> input,
                         Emitter<StructuredRecord> emitter) throws Exception {
-    try {
-      StructuredRecord record = transformer.transform(input.getKey(), input.getValue());
-      emitter.emit(record);
-    } catch (Exception e) {
-      errorHandler.handle(emitter, input.getValue(), e);
-    }
+    StructuredRecord record = transformer.transform(input.getKey(), input.getValue());
+    emitter.emit(record);
   }
 
   /**

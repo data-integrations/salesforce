@@ -118,43 +118,30 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   }
 
   private StructuredRecord getStructuredRecord(String jsonMessage) {
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+
+    JSONObject sObjectFields;
     try {
-      StructuredRecord.Builder builder = StructuredRecord.builder(schema);
-
-      JSONObject sObjectFields;
-      try {
-        sObjectFields = new JSONObject(jsonMessage) // throws a JSONException if failed to decode
-          .getJSONObject("sobject"); // throws a JSONException if not found
-      } catch (JSONException e) {
-        throw new IllegalStateException(
-          String.format("Cannot retrieve /data/sobject from json message %s", jsonMessage), e);
-      }
-
-      for (Map.Entry<String, Object> entry : sObjectFields.toMap().entrySet()) {
-        String fieldName = entry.getKey();
-        Object value = entry.getValue();
-
-        Schema.Field field = schema.getField(fieldName, true);
-
-        if (field == null) {
-          continue; // this field is not in schema
-        }
-
-        builder.set(field.getName(), convertValue(value, field));
-      }
-      return builder.build();
-    } catch (Exception ex) {
-      switch (config.getErrorHandling()) {
-        case SKIP:
-          LOG.warn("Cannot process json '{}', skipping it.", jsonMessage, ex);
-          return null;
-        case STOP:
-          throw ex;
-        default:
-          throw new UnexpectedFormatException(
-            String.format("Unknown error handling strategy '%s'", config.getErrorHandling()));
-      }
+      sObjectFields = new JSONObject(jsonMessage) // throws a JSONException if failed to decode
+        .getJSONObject("sobject"); // throws a JSONException if not found
+    } catch (JSONException e) {
+      throw new IllegalStateException(
+        String.format("Cannot retrieve /data/sobject from json message %s", jsonMessage), e);
     }
+
+    for (Map.Entry<String, Object> entry : sObjectFields.toMap().entrySet()) {
+      String fieldName = entry.getKey();
+      Object value = entry.getValue();
+
+      Schema.Field field = schema.getField(fieldName, true);
+
+      if (field == null) {
+        continue; // this field is not in schema
+      }
+
+      builder.set(field.getName(), convertValue(value, field));
+    }
+    return builder.build();
   }
 
   private Object convertValue(Object value, Schema.Field field) {

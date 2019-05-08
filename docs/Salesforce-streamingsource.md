@@ -66,10 +66,6 @@ for the evaluated records only if they match the criteria specified in the WHERE
 Salesforce and generate SOQL query (`select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`).
 Ignored if SOQL query is provided.
 
-**Error Handling:** Strategy used to handle erroneous records. Acceptable values are Skip on error, Stop on error.<br>
-Skip on error - Ignores erroneous records.<br>
-Stop on error - Fails pipeline due to erroneous record
-
 **Schema:** The schema of output objects.
 The Salesforce types will be automatically mapped to schema types as shown below:
 

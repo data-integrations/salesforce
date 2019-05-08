@@ -27,7 +27,6 @@ import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import io.cdap.plugin.salesforce.plugin.ErrorHandling;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.BeforeClass;
@@ -140,8 +139,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       .put(SalesforceConstants.PROPERTY_CONSUMER_SECRET, CONSUMER_SECRET)
       .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
       .put(SalesforceConstants.PROPERTY_PASSWORD, PASSWORD)
-      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL)
-      .put(SalesforceConstants.PROPERTY_ERROR_HANDLING, ErrorHandling.STOP.getValue());
+      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL);
   }
 
   private void clearSObjects() throws ConnectionException {

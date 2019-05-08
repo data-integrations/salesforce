@@ -130,23 +130,6 @@
           }
         }
       ]
-    },
-    {
-      "label": "Advanced",
-      "properties": [
-        {
-          "widget-type": "select",
-          "label": "Error Handling",
-          "name": "errorHandling",
-          "widget-attributes": {
-            "values": [
-              "Skip on error",
-              "Stop on error"
-            ],
-            "default": "Skip on error"
-          }
-        }
-      ]
     }
   ],
   "outputs": [
