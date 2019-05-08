@@ -66,14 +66,13 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                 String username,
                                 String password,
                                 String loginUrl,
-                                String errorHandling,
                                 @Nullable String query,
                                 @Nullable String sObjectName,
                                 @Nullable String datetimeFilter,
                                 @Nullable Integer duration,
                                 @Nullable Integer offset,
                                 @Nullable String schema) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
       datetimeFilter, duration, offset);
     this.query = query;
     this.sObjectName = sObjectName;

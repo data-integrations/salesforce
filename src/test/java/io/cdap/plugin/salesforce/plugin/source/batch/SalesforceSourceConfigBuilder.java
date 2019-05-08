@@ -26,7 +26,6 @@ public class SalesforceSourceConfigBuilder {
   private String username;
   private String password;
   private String loginUrl;
-  private String errorHandling;
   private String query;
   private String sObjectName;
   private String datetimeFilter;
@@ -64,11 +63,6 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setErrorHandling(String errorHandling) {
-    this.errorHandling = errorHandling;
-    return this;
-  }
-
   public SalesforceSourceConfigBuilder setQuery(String query) {
     this.query = query;
     return this;
@@ -101,6 +95,6 @@ public class SalesforceSourceConfigBuilder {
 
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      errorHandling, query, sObjectName, datetimeFilter, duration, offset, schema);
+                                      query, sObjectName, datetimeFilter, duration, offset, schema);
   }
 }

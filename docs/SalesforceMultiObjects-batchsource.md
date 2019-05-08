@@ -61,19 +61,6 @@ updated from 3am - 9am. Ignored if `datetimeFilter` is provided.
 Offset units set to `hours`. For example, if duration is '6' (6 hours) and the offset is '1' (1 hour) and the pipeline 
 runs at 9am, it will read data updated from 2am - 8am. Ignored if `datetimeFilter` is provided.
 
-**Error Handling:** Strategy used to handle erroneous records. Acceptable values are Skip on error,
-Send to error, Stop on error.
-
-
-    +---------------+----------------------------------------------------------------------------------------------------+
-    |     Value     |                                            Description                                             |
-    +---------------+----------------------------------------------------------------------------------------------------+
-    | Skip on error | Ignores erroneous records                                                                          |
-    | Send to error | Emits an error to error handler. Errors are records with a field 'body', containing erroneous row. |
-    | Stop on error | Fails pipeline due to erroneous record                                                             |
-    +---------------+----------------------------------------------------------------------------------------------------+
-    
-
 **SObject Name Field**: The name of the field that holds the SObject name. 
 Must not be the name of any SObject column that will be read. Defaults to `tablename`.
     
