@@ -19,7 +19,6 @@ import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -55,25 +54,14 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Macro
   private String loginUrl;
 
-  @Name(SalesforceConstants.PROPERTY_ERROR_HANDLING)
-  @Description("Strategy used to handle erroneous records. Acceptable values are Skip on error, " +
-    "Send to error, Stop on error.\n" +
-    "Skip on error - ignores erroneous record.\n" +
-    "Send to error - emits an error to error handler. " +
-    "Errors are records with a field 'body', containing erroneous row.\n" +
-    "Stop on error - fails pipeline due to erroneous record.")
-  @Macro
-  private String errorHandling;
-
   public BaseSalesforceConfig(String referenceName, String consumerKey, String consumerSecret,
-                              String username, String password, String loginUrl, String errorHandling) {
+                              String username, String password, String loginUrl) {
     super(referenceName);
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
     this.password = password;
     this.loginUrl = loginUrl;
-    this.errorHandling = errorHandling;
   }
 
   public String getConsumerKey() {
@@ -96,15 +84,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return loginUrl;
   }
 
-  public ErrorHandling getErrorHandling() {
-    return ErrorHandling.fromValue(errorHandling)
-      .orElseThrow(() -> new InvalidConfigPropertyException("Unsupported error handling value: " + errorHandling,
-        SalesforceConstants.PROPERTY_ERROR_HANDLING));
-  }
-
   public void validate() {
     validateConnection();
-    validateErrorHandling();
   }
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
@@ -138,13 +119,4 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       throw new IllegalArgumentException(errorMessage, e);
     }
   }
-
-  private void validateErrorHandling() {
-    if (containsMacro(SalesforceConstants.PROPERTY_ERROR_HANDLING)) {
-      return;
-    }
-
-    getErrorHandling();
-  }
-
 }

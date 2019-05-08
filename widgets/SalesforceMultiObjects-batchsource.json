@@ -102,19 +102,6 @@
       "label": "Advanced",
       "properties": [
         {
-          "widget-type": "select",
-          "label": "Error Handling",
-          "name": "errorHandling",
-          "widget-attributes": {
-            "values": [
-              "Skip on error",
-              "Send to error",
-              "Stop on error"
-            ],
-            "default": "Skip on error"
-          }
-        },
-        {
           "widget-type": "textbox",
           "label": "SObject Name Field",
           "name": "sObjectNameField",
@@ -125,6 +112,5 @@
       ]
     }
   ],
-  "emit-errors": true,
   "outputs": [ ]
 }

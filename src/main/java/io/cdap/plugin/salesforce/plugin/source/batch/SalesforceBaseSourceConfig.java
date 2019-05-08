@@ -66,11 +66,10 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        String username,
                                        String password,
                                        String loginUrl,
-                                       String errorHandling,
                                        @Nullable String datetimeFilter,
                                        @Nullable Integer duration,
                                        @Nullable Integer offset) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, errorHandling);
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl);
     this.datetimeFilter = datetimeFilter;
     this.duration = duration;
     this.offset = offset;
