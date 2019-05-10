@@ -34,15 +34,17 @@ public class AuthResponse {
   @SerializedName("issued_at")
   private final String issuedAt;
   private final String signature;
+  private final String error;
 
   public AuthResponse(String accessToken, String instanceUrl, String id, String tokenType,
-                       String issuedAt, String signature) {
+                       String issuedAt, String signature, String error) {
     this.accessToken = accessToken;
     this.instanceUrl = instanceUrl;
     this.id = id;
     this.tokenType = tokenType;
     this.issuedAt = issuedAt;
     this.signature = signature;
+    this.error = error;
   }
 
   public String getAccessToken() {
@@ -69,6 +71,10 @@ public class AuthResponse {
     return signature;
   }
 
+  public String getError() {
+    return error;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -85,11 +91,12 @@ public class AuthResponse {
       Objects.equals(id, that.id) &&
       Objects.equals(tokenType, that.tokenType) &&
       Objects.equals(issuedAt, that.issuedAt) &&
-      Objects.equals(signature, that.signature));
+      Objects.equals(signature, that.signature) &&
+      Objects.equals(error, that.error));
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(accessToken, instanceUrl, id, tokenType, issuedAt, signature);
+    return Objects.hash(accessToken, instanceUrl, id, tokenType, issuedAt, signature, error);
   }
 }
