@@ -114,9 +114,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
 
     try {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
-    } catch (ConnectionException | IllegalArgumentException e) {
-      String errorMessage = "Cannot connect to Salesforce API with credentials specified";
-      throw new IllegalArgumentException(errorMessage, e);
+    } catch (ConnectionException e) {
+      throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
   }
 }

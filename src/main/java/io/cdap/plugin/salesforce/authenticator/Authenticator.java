@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforce.authenticator;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -74,7 +75,15 @@ public class Authenticator {
         .param("client_secret", credentials.getConsumerSecret())
         .param("username", credentials.getUsername())
         .param("password", credentials.getPassword()).send().getContentAsString();
-      return GSON.fromJson(response, AuthResponse.class);
+
+      AuthResponse authResponse = GSON.fromJson(response, AuthResponse.class);
+
+      if (!Strings.isNullOrEmpty(authResponse.getError())) {
+        throw new IllegalArgumentException(
+          String.format("Cannot authenticate to Salesforce with given credentials. ServerResponse='%s'", response));
+      }
+
+      return authResponse;
     } finally {
       httpClient.stop();
     }
