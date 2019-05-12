@@ -44,18 +44,18 @@ import java.util.Map;
  * RecordReader implementation, which reads a single Salesforce batch from bulk job
  * provided in InputSplit
  */
-public class SalesforceRecordReader extends RecordReader<Schema, Map<String, String>> {
+public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String, ?>> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceRecordReader.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBulkRecordReader.class);
 
   private final Schema schema;
 
   private CSVParser csvParser;
   private Iterator<CSVRecord> parserIterator;
 
-  private Map<String, String> value;
+  private Map<String, ?> value;
 
-  public SalesforceRecordReader(Schema schema) {
+  public SalesforceBulkRecordReader(Schema schema) {
     this.schema = schema;
   }
 
@@ -108,7 +108,7 @@ public class SalesforceRecordReader extends RecordReader<Schema, Map<String, Str
   }
 
   @Override
-  public Map<String, String> getCurrentValue() {
+  public Map<String, ?> getCurrentValue() {
     return value;
   }
 

@@ -27,6 +27,7 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -83,11 +84,7 @@ public class SalesforceInputFormat extends InputFormat {
       configuration.get(SalesforceSourceConstants.CONFIG_SCHEMAS), SCHEMAS_TYPE);
     Schema schema = Schema.parseJson(schemas.get(sObjectName));
 
-    RecordReader<Schema, Map<String, String>> delegate = SalesforceQueryUtil.isQueryUnderLengthLimit(query)
-      ? new SalesforceRecordReader(schema)
-      : new SalesforceWideRecordReader(schema, query);
-
-    return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, delegate);
+    return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, getDelegateRecordReader(query, schema));
   }
 
   private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection) {
@@ -135,4 +132,17 @@ public class SalesforceInputFormat extends InputFormat {
     }
   }
 
+  private RecordReader<Schema, Map<String, ?>> getDelegateRecordReader(String query, Schema schema) {
+    if (SalesforceQueryParser.isRestrictedQuery(query)) {
+      LOG.info("The SOQL query uses an aggregate function call or offset. "
+        + "Reads will be performed serially and not in parallel.");
+      return new SalesforceSoapRecordReader(schema, query, new SoapRecordToMapTransformer());
+    }
+    if (SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
+      return new SalesforceBulkRecordReader(schema);
+    }
+    LOG.info("The SOQL query is a wide query. "
+      + "An additional SOAP request will be performed for each record.");
+    return new SalesforceWideRecordReader(schema, query, new SoapRecordToMapTransformer());
+  }
 }

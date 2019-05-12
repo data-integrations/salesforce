@@ -18,6 +18,7 @@ package io.cdap.plugin.salesforce.etl;
 import com.google.common.collect.ImmutableMap;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.metadata.CustomObject;
+import com.sforce.soap.metadata.DeleteConstraint;
 import com.sforce.soap.metadata.DeploymentStatus;
 import com.sforce.soap.metadata.FieldType;
 import com.sforce.soap.metadata.Metadata;
@@ -26,6 +27,7 @@ import com.sforce.soap.metadata.SaveResult;
 import com.sforce.soap.metadata.SharingModel;
 import com.sforce.soap.partner.LoginResult;
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
@@ -94,7 +96,9 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
                       parentArtifact,
                       SalesforceBatchSource.class,
                       SalesforceBatchMultiSource.class,
-                      SObject.class // should be loaded by Plugin ClassLoader to avoid SOAP deserialization issue
+                      // should be loaded by Plugin ClassLoader to avoid SOAP deserialization issue
+                      SObject.class, QueryResult.class
+
     );
 
     metadataConnection = createMetadataConnection();
@@ -190,6 +194,16 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     return customField;
   }
 
+  protected CustomField createReferenceCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.Lookup);
+    customField.setReferenceTo(fullName);
+    customField.setRelationshipName(getCustomFieldLabel(fullName) + "_Parents");
+    customField.setLabel(getCustomFieldLabel(fullName));
+    customField.setDeleteConstraint(DeleteConstraint.Restrict);
+    return customField;
+  }
+
   private CustomField createCustomField(String fullName) {
     CustomField customField = new CustomField();
     customField.setFullName(fullName);
@@ -199,6 +213,10 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     // to make it visible for current user
     customField.setRequired(true);
     return customField;
+  }
+
+  private String getCustomFieldLabel(String fullName) {
+    return fullName.trim().replaceAll("__c$", "");
   }
 
   private static MetadataConnection createMetadataConnection() throws ConnectionException {
