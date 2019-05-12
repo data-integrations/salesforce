@@ -25,6 +25,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -77,8 +78,8 @@ public class SalesforceSchemaUtil {
   public static Schema getSchema(AuthenticatorCredentials credentials, SObjectDescriptor sObjectDescriptor)
     throws ConnectionException {
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
-    SObjectsDescribeResult describeResult = new SObjectsDescribeResult(partnerConnection,
-      sObjectDescriptor.getAllParentObjects());
+    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(partnerConnection,
+      sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
 
     return getSchemaWithFields(sObjectDescriptor, describeResult);
   }
@@ -147,18 +148,74 @@ public class SalesforceSchemaUtil {
     }
   }
 
-  public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor, SObjectsDescribeResult describeResult) {
+  public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor,
+                                           SObjectsDescribeResult describeResult) {
+    return getSchemaWithFields(sObjectDescriptor, describeResult, Collections.emptyList());
+  }
+
+  public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor,
+                                           SObjectsDescribeResult describeResult,
+                                           List<String> topLevelParents) {
     List<Schema.Field> schemaFields = new ArrayList<>();
 
     for (SObjectDescriptor.FieldDescriptor fieldDescriptor : sObjectDescriptor.getFields()) {
-      String parent = fieldDescriptor.hasParents() ? fieldDescriptor.getLastParent() : sObjectDescriptor.getName();
-      Field field = describeResult.getField(parent, fieldDescriptor.getName());
-      if (field == null) {
-        throw new IllegalArgumentException(
-          String.format("Field '%s' is absent in Salesforce describe result", fieldDescriptor.getFullName()));
+
+      SalesforceFunctionType functionType = fieldDescriptor.getFunctionType();
+      Schema fieldSchema = null;
+      if (!functionType.isConstant()) {
+        List<String> allTopLevelParents = new ArrayList<>(topLevelParents);
+        allTopLevelParents.add(sObjectDescriptor.getName());
+        String parentsPath = fieldDescriptor.getParentsPath(allTopLevelParents);
+        Field field = describeResult.getField(parentsPath, fieldDescriptor.getName());
+
+        if (field == null) {
+          throw new IllegalArgumentException(
+            String.format("Field '%s' does not exist in Salesforce object '%s'.",
+              fieldDescriptor.getFullName(), parentsPath));
+        }
+
+        fieldSchema = getCdapFieldSchema(field);
       }
-      Schema.Field schemaField = Schema.Field.of(fieldDescriptor.getFullName(), getCdapFieldSchema(field));
+
+      Schema queryFieldSchema = functionType.getSchema(fieldSchema);
+      Schema.Field schemaField = Schema.Field.of(fieldDescriptor.getQueryName(), queryFieldSchema);
       schemaFields.add(schemaField);
+    }
+
+    /*
+    Sub-query has one to many relationship with top level fields, results will be output as array of records
+
+    Query:
+      SELECT Id, Account.Name, (SELECT Id, Name, Contact.LastName FROM Account.Contacts) FROM Account
+
+    Result:
+     {
+         "Id":"0011i000005o4KzAAI",
+         "Name":"GenePoint",
+         "Contacts":{
+            "records":[
+               {
+                  "Id":"0031i000005c49GAAQ",
+                  "Name":"Edna Frank",
+                  "LastName":"Frank"
+               },
+               {
+                  "Id":"0031i000005c49GAAZ",
+                  "Name":"John Brown",
+                  "LastName":"Brown"
+               }
+            ]
+         }
+      }
+     */
+    for (SObjectDescriptor childSObject : sObjectDescriptor.getChildSObjects()) {
+      Schema childSchema = getSchemaWithFields(childSObject, describeResult,
+        Collections.singletonList(sObjectDescriptor.getName()));
+
+      String childName = childSObject.getName();
+      Schema.Field childField = Schema.Field.of(childName,
+        Schema.arrayOf(Schema.recordOf(childName, Objects.requireNonNull(childSchema.getFields()))));
+      schemaFields.add(childField);
     }
 
     return Schema.recordOf("output", schemaFields);

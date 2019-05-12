@@ -15,12 +15,10 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
-import com.sforce.ws.bind.XmlObject;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
@@ -36,7 +34,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -45,25 +42,27 @@ import java.util.stream.Collectors;
  * RecordReader implementation for wide SOQL queries. Reads a single Salesforce batch of SObject Id's from bulk job
  * provided in InputSplit, creates subpartitions and makes parallel SOAP calls to retrieve all values.
  */
-public class SalesforceWideRecordReader extends SalesforceRecordReader {
+public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceWideRecordReader.class);
 
   private final String query;
+  private final SoapRecordToMapTransformer transformer;
 
-  private List<Map<String, String>> results;
-  private Map<String, String> value;
+  private List<Map<String, ?>> results;
+  private Map<String, ?> value;
   private int index;
 
-  public SalesforceWideRecordReader(Schema schema, String query) {
+  public SalesforceWideRecordReader(Schema schema, String query, SoapRecordToMapTransformer transformer) {
     super(schema);
     this.query = query;
+    this.transformer = transformer;
   }
 
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException,
     InterruptedException {
-    List<Map<String, String>> fetchedIdList = fetchBulkQueryIds(inputSplit, taskAttemptContext);
+    List<Map<String, ?>> fetchedIdList = fetchBulkQueryIds(inputSplit, taskAttemptContext);
     LOG.debug("Number of records received from batch job for wide object: '{}'", fetchedIdList.size());
 
     Configuration conf = taskAttemptContext.getConfiguration();
@@ -76,7 +75,7 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
       String fields = String.join(",", fieldsNames);
       String sObjectName = sObjectDescriptor.getName();
 
-      List<List<Map<String, String>>> partitions =
+      List<List<Map<String, ?>>> partitions =
         Lists.partition(fetchedIdList, SalesforceSourceConstants.WIDE_QUERY_MAX_BATCH_COUNT);
       LOG.debug("Number of partitions to be fetched for wide object: '{}'", partitions.size());
 
@@ -84,7 +83,7 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
         .map(this::getSObjectIds)
         .map(sObjectIds -> fetchPartition(partnerConnection, fields, sObjectName, sObjectIds))
         .flatMap(Arrays::stream)
-        .map(sObject -> transformToMap(sObject, sObjectDescriptor.getFields()))
+        .map(sObject -> transformer.transformToMap(sObject, sObjectDescriptor))
         .collect(Collectors.toList());
     } catch (ConnectionException e) {
       throw new RuntimeException("Cannot create Salesforce SOAP connection", e);
@@ -101,24 +100,13 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
   }
 
   @Override
-  public Map<String, String> getCurrentValue() {
+  public Map<String, ?> getCurrentValue() {
     return value;
   }
 
   @Override
   public float getProgress() {
     return results == null || results.isEmpty() ? 0.0f : (float) index / results.size();
-  }
-
-  @VisibleForTesting
-  Map<String, String> transformToMap(SObject sObject, List<SObjectDescriptor.FieldDescriptor> fieldsNames) {
-    Map<String, String> result = new HashMap<>(fieldsNames.size());
-    for (SObjectDescriptor.FieldDescriptor fieldDescriptor : fieldsNames) {
-      Object fieldValue = extractValue(sObject, fieldDescriptor.getName(), fieldDescriptor.getParents());
-
-      result.put(fieldDescriptor.getFullName(), fieldValue == null ? null : String.valueOf(fieldValue));
-    }
-    return result;
   }
 
   /**
@@ -130,10 +118,10 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
    * @throws IOException          can be due error during reading query
    * @throws InterruptedException interrupted sleep while waiting for batch results
    */
-  private List<Map<String, String>> fetchBulkQueryIds(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+  private List<Map<String, ?>> fetchBulkQueryIds(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
     throws IOException, InterruptedException {
     super.initialize(inputSplit, taskAttemptContext);
-    List<Map<String, String>> fetchedIdList = new ArrayList<>();
+    List<Map<String, ?>> fetchedIdList = new ArrayList<>();
     while (super.nextKeyValue()) {
       fetchedIdList.add(super.getCurrentValue());
     }
@@ -151,7 +139,7 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
    * @param subIds list of single entry Map
    * @return array of SObject ids
    */
-  private String[] getSObjectIds(List<Map<String, String>> subIds) {
+  private String[] getSObjectIds(List<Map<String, ?>> subIds) {
     return subIds.stream()
       .map(Map::values)
       .flatMap(Collection::stream)
@@ -176,49 +164,5 @@ public class SalesforceWideRecordReader extends SalesforceRecordReader {
                 String.join(",", sObjectIds));
       throw new RuntimeException(String.format("Cannot retrieve data for SObject '%s'", sObjectName), e);
     }
-  }
-
-  /**
-   * Extracts value from XmlObject field. Reference type fields extracted recursively.
-   * <p/>
-   * Example: `SELECT Id, Name, Campaign.Id FROM Opportunity LIMIT 1`
-   * <p/>
-   * Response:
-   * <pre>
-   * XmlObject{name=Opportunity, value=null,
-   *   children=[
-   *     XmlObject{name=Id, value=oid-1, children=[]},
-   *     XmlObject{name=Name, value=value1, children=[]},
-   *     XmlObject{name=Campaign, value=null, children=[XmlObject{name=Id, value=cid-1, children=[]}]}
-   *   ]
-   * }
-   * </pre>
-   * <ul>
-   *  <li>Extract simple field  `Id` from SObject Opportunity:
-   *  name=`Id`, children=`empty List()` -> `oid-1`</li>
-   *  <li>Extract simple field  `Name` from SObject Opportunity:
-   *  name=`Name`, children=`empty List()` -> `value1`</li>
-   *  <li>Extract reference field  `Campaign.Id` from SObject Opportunity:
-   *  name=`Id`, children=`List(Campaign)` -> `cid-1`</li>
-   * </ul>
-   *
-   * @param xmlObject field value holder
-   * @param name      field name
-   * @param children  field's children names
-   * @return field value
-   */
-  private Object extractValue(XmlObject xmlObject, String name, List<String> children) {
-    if (children.isEmpty()) {
-      return xmlObject.getField(name);
-    }
-    String childName = children.get(0);
-    XmlObject child = xmlObject.getChild(childName);
-    if (child == null) {
-      throw new IllegalStateException(
-        String.format("SObject reference field with name '%s' not found in parent '%s'",
-                      childName, xmlObject.getName().getLocalPart()));
-    }
-    // remove higher level child from list and check remaining
-    return extractValue(child, name, children.subList(1, children.size()));
   }
 }

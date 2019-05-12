@@ -215,7 +215,7 @@ statement           : SELECT fieldList fromStatement
                       EOF
                     ;
 
-fromStatement       : FROM objectList
+fromStatement       : FROM objectType
                       (USING SCOPE filterScope)?
                       (WHERE conditionExpressions)?
                       (WITH ((DATA CATEGORY filteringExpression) | fieldExpression) )?
@@ -242,14 +242,14 @@ fieldElement        : subquery
 
 subquery            : '('
                         SELECT fieldList
-                        FROM objectList
+                        FROM objectType
                         (WHERE conditionExpressions)?
                         (ORDER BY fieldOrderByList)?
                         (LIMIT numberOfRowsToReturn)?
                         (OFFSET numberOfRowsToSkip)?
                       ')' ;
 
-fieldName           : field ;
+fieldName           : field alias?; // only for aggregate queries
 
 field               : id_or_keyword ('.' id_or_keyword)* ;
 
@@ -277,8 +277,6 @@ whenFieldList       : (fieldName (',' fieldName)*) ;
 whenObjectType      : id_or_keyword ;
 
 elseClause          : ELSE whenFieldList ;
-
-objectList          : objectType ( ',' objectType )* ;
 
 objectType          : id_or_keyword ('.' id_or_keyword)* (AS? alias)? ;
 

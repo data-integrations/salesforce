@@ -32,7 +32,6 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConsta
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -120,12 +119,11 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
 
     Set<String> sObjectsToDescribe = sObjectDescriptors.stream()
-      .map(SObjectDescriptor::getAllParentObjects)
-      .flatMap(Collection::stream)
+      .map(SObjectDescriptor::getName)
       .collect(Collectors.toSet());
 
     // generate one describe result for all SObjects in one request to Salesforce
-    SObjectsDescribeResult describeResult = new SObjectsDescribeResult(partnerConnection, sObjectsToDescribe);
+    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(partnerConnection, sObjectsToDescribe);
 
     return sObjectDescriptors.stream()
       .collect(Collectors.toMap(

@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SalesforceRecordReaderTest {
+public class SalesforceBulkRecordReaderTest {
   @Test
   public void testTypes() throws Exception {
     String csvString = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\"\n" +
@@ -219,7 +219,7 @@ public class SalesforceRecordReaderTest {
   private void assertRecordReaderOutputRecords(String csvString, Schema schema,
                                                List<Map<String, Object>> expectedRecords) throws Exception {
     MapToRecordTransformer transformer = new MapToRecordTransformer();
-    SalesforceRecordReader reader = new SalesforceRecordReader(schema);
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema);
     reader.setupParser(new ByteArrayInputStream(csvString.getBytes(StandardCharsets.UTF_8)));
 
     Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
@@ -227,7 +227,7 @@ public class SalesforceRecordReaderTest {
 
     List<StructuredRecord> records = new ArrayList<>();
     while (reader.nextKeyValue()) {
-      Map<String, String> value = reader.getCurrentValue();
+      Map<String, ?> value = reader.getCurrentValue();
       StructuredRecord record = transformer.transform(schema, value);
       records.add(record);
     }

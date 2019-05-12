@@ -189,8 +189,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
-    SObjectsDescribeResult describeResult = new SObjectsDescribeResult(partnerConnection,
-                                                                       sObjectDescriptor.getAllParentObjects());
+    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(partnerConnection,
+      sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     for (Field field : describeResult.getFields()) {
       if (field.isCreateable()) {
         creatableSObjectFields.add(field.getName());

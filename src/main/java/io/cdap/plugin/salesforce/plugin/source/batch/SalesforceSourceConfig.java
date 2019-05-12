@@ -24,6 +24,8 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.parser.SOQLParsingException;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
@@ -121,11 +123,18 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   public void validate() {
     super.validate();
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
+      if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
+        throw new InvalidConfigPropertyException(String.format(
+          "SOQL Query with restricted field types (function calls, sub-query fields) or "
+            + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
+            + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query),
+                                                 SalesforceSourceConstants.PROPERTY_QUERY);
+      }
       SObjectDescriptor queryDescriptor;
       try {
         queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
       } catch (SOQLParsingException e) {
-        throw new InvalidConfigPropertyException(String.format("Invalid SOQL query: '%s", query), e,
+        throw new InvalidConfigPropertyException(String.format("Invalid SOQL query: '%s'", query), e,
                                                  SalesforceSourceConstants.PROPERTY_QUERY);
       }
       if (canAttemptToEstablishConnection()) {

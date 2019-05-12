@@ -16,10 +16,12 @@
 package io.cdap.plugin.salesforce.parser;
 
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceFunctionType;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,13 +115,16 @@ public class SalesforceQueryParserTest {
       "SELECT Name, COUNT(Id) FROM Account GROUP BY Name HAVING COUNT(Id) > 1",
       "SELECT NAME n from Account",
       "SELECT * from Account",
-      "SELECT Name, (SELECT LastName FROM Contacts) FROM Account",
       "SELECT TYPEOF What WHEN Account THEN Phone ELSE Email END FROM Event",
-      "SELECT Name FROM Contact.Account")
+      "SELECT Name FROM Contact.Account",
+      "SELECT COUNT() from Opportunity",
+      "SELECT COUNT_DISTINCT(Company) FROM Lead",
+      "SELECT HOUR_IN_DAY(convertTimezone(CreatedDate)) FROM Opportunity",
+      "SELECT Account.Name FROM Opportunity GROUP BY Account.Name")
       .forEach(query -> {
         try {
           SObjectDescriptor.fromQuery(query);
-          Assert.fail();
+          Assert.fail(String.format("Error must be thrown during query '%s' parsing", query));
         } catch (SOQLParsingException e) {
           // expected failure, do nothing
         }
@@ -135,4 +140,109 @@ public class SalesforceQueryParserTest {
     Assert.assertEquals(fromStatement, result);
   }
 
+  @Test
+  public void testRestrictedQuery() {
+    Stream.of(
+      "SELECT MAX(CloseDate) Amt FROM Opportunity",
+      "SELECT Name n, MAX(Amount) max FROM Opportunity GROUP BY Name",
+      "SELECT MAX(Amount) max, Name n FROM Opportunity GROUP BY Name",
+      "SELECT Name, (SELECT LastName FROM Contacts) FROM Account",
+      "SELECT LeadSource FROM Lead GROUP BY LeadSource",
+      "SELECT LeadSource, COUNT(Name) cnt FROM Lead GROUP BY ROLLUP(LeadSource)",
+      "SELECT Type, BillingCountry, GROUPING(Type) grpType, GROUPING(BillingCountry) grpCty, COUNT(id) accts " +
+        "FROM Account GROUP BY CUBE(Type, BillingCountry) ORDER BY GROUPING(Type), GROUPING(BillingCountry)",
+      "SELECT Name FROM Opportunity LIMIT 10 OFFSET 2")
+      .forEach(query -> Assert.assertTrue(String.format("Query '%s' should have been restricted", query),
+        SalesforceQueryParser.isRestrictedQuery(query)));
+  }
+
+  @Test
+  public void testNotRestrictedQuery() {
+    Stream.of(
+      "SELECT Id, Name FROM Opportunity",
+      "SELECT Name, Id FROM Merchandise__c ORDER BY Name",
+      "SELECT Id, Who.FirstName, Who.LastName FROM Task WHERE Owner.FirstName LIKE 'B%'",
+      "SELECT Name FROM Account ORDER BY Name DESC NULLS LAST")
+      .forEach(query -> Assert.assertFalse(String.format("Query '%s' should have not been restricted", query),
+        SalesforceQueryParser.isRestrictedQuery(query)));
+  }
+
+  @Test
+  public void testConstantFunctionCall() {
+    String query = "SELECT COUNT() CNT from Opportunity";
+
+    SObjectDescriptor expectedResult = new SObjectDescriptor("Opportunity",
+      Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("CNT"), "CNT", SalesforceFunctionType.LONG_REQUIRED)));
+
+    Assert.assertEquals(expectedResult, SalesforceQueryParser.getObjectDescriptorFromQuery(query));
+  }
+
+  @Test
+  public void testIdentityFunctionCall() {
+    String query = "SELECT MAX(CloseDate) MX FROM Opportunity";
+
+    SObjectDescriptor expectedResult = new SObjectDescriptor("Opportunity",
+      Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("CloseDate"), "MX", SalesforceFunctionType.IDENTITY)));
+
+    Assert.assertEquals(expectedResult, SalesforceQueryParser.getObjectDescriptorFromQuery(query));
+  }
+
+  @Test
+  public void testNestedFunctionCall() {
+    String query = "SELECT HOUR_IN_DAY(convertTimezone(CreatedDate)) HID "
+      + "FROM Opportunity GROUP BY HOUR_IN_DAY(convertTimezone(CreatedDate))";
+
+    SObjectDescriptor expectedResult = new SObjectDescriptor("Opportunity",
+      Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("CreatedDate"), "HID", SalesforceFunctionType.INT)));
+
+    Assert.assertEquals(expectedResult, SalesforceQueryParser.getObjectDescriptorFromQuery(query));
+  }
+
+  @Test
+  public void testFunctionCallWithRelationshipField() {
+    String query = "SELECT MAX(Account.Name) MX FROM Contact";
+
+    SObjectDescriptor expectedResult = new SObjectDescriptor("Contact",
+      Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+        Arrays.asList("Account", "Name"), "MX", SalesforceFunctionType.IDENTITY)));
+
+    Assert.assertEquals(expectedResult, SalesforceQueryParser.getObjectDescriptorFromQuery(query));
+  }
+
+  @Test
+  public void testFunctionCallWithAlias() {
+    String query = "SELECT MAX(Contact.Account.Name) MX FROM Contact";
+
+    SObjectDescriptor expectedResult = new SObjectDescriptor("Contact",
+      Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+        Arrays.asList("Account", "Name"), "MX", SalesforceFunctionType.IDENTITY)));
+
+    Assert.assertEquals(expectedResult, SalesforceQueryParser.getObjectDescriptorFromQuery(query));
+  }
+
+  @Test
+  public void testSubQuery() {
+    String query = "SELECT Name, (SELECT FirstName, LastName, Owner.Id FROM Contacts) FROM Account";
+    SObjectDescriptor result = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+
+    Assert.assertEquals(Collections.singletonList(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("Name"), null, SalesforceFunctionType.NONE)),
+      result.getFields());
+
+    List<SObjectDescriptor.FieldDescriptor> fields = Arrays.asList(
+      new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("FirstName"), null, SalesforceFunctionType.NONE),
+      new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("LastName"), null, SalesforceFunctionType.NONE),
+      new SObjectDescriptor.FieldDescriptor(
+        Arrays.asList("Owner", "Id"), null, SalesforceFunctionType.NONE)
+    );
+
+    Assert.assertEquals(
+      Collections.singletonList(new SObjectDescriptor("Contacts", fields)),
+      result.getChildSObjects());
+  }
 }

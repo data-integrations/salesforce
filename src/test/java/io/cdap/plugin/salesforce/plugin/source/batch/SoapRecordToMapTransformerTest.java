@@ -18,26 +18,29 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 import com.sforce.soap.partner.sobject.SObject;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.SalesforceFunctionType;
 import io.cdap.plugin.salesforce.etl.SObjectBuilder;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class SalesforceWideRecordReaderTest {
+public class SoapRecordToMapTransformerTest {
 
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void testTransformToMap() {
-    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader(null, null);
+    SoapRecordToMapTransformer transformer = new SoapRecordToMapTransformer();
     SObject campaign = new SObjectBuilder()
       .setType("Campaign")
       .put("Id", "testCampaignId")
@@ -54,7 +57,12 @@ public class SalesforceWideRecordReaderTest {
 
     List<SObjectDescriptor.FieldDescriptor> fieldDescriptors =
       getFieldDescriptors("Name", "Id", "Campaign.Name", "Campaign.Id");
-    Map<String, String> resultMap = recordReader.transformToMap(opportunity, fieldDescriptors);
+    SObjectDescriptor sObjectDescriptor = Mockito.mock(SObjectDescriptor.class);
+
+    Mockito.when(sObjectDescriptor.getChildSObjects()).thenReturn(Collections.emptyList());
+    Mockito.when(sObjectDescriptor.getFields()).thenReturn(fieldDescriptors);
+
+    Map<String, ?> resultMap = transformer.transformToMap(opportunity, sObjectDescriptor);
 
     Assert.assertNotNull(resultMap);
     Assert.assertEquals(fieldDescriptors.size(), resultMap.size());
@@ -67,7 +75,7 @@ public class SalesforceWideRecordReaderTest {
 
   @Test
   public void testTransformToMapIncorrectReferenceField() {
-    SalesforceWideRecordReader recordReader = new SalesforceWideRecordReader(null, null);
+    SoapRecordToMapTransformer transformer = new SoapRecordToMapTransformer();
     SObject opportunity = new SObjectBuilder()
       .setType("Opportunity")
       .put("Id", "testOpportunityId")
@@ -79,14 +87,19 @@ public class SalesforceWideRecordReaderTest {
       getFieldDescriptors("Name", "Id", "Campaign.Name", "Campaign.Id");
     thrown.expect(IllegalStateException.class);
 
-    recordReader.transformToMap(opportunity, fieldDescriptors);
+    SObjectDescriptor sObjectDescriptor = Mockito.mock(SObjectDescriptor.class);
+
+    Mockito.when(sObjectDescriptor.getChildSObjects()).thenReturn(Collections.emptyList());
+    Mockito.when(sObjectDescriptor.getFields()).thenReturn(fieldDescriptors);
+
+    transformer.transformToMap(opportunity, sObjectDescriptor);
   }
 
   private List<SObjectDescriptor.FieldDescriptor> getFieldDescriptors(String... fields) {
     return Stream.of(fields)
       .map(name -> name.split("\\" + SalesforceConstants.REFERENCE_NAME_DELIMITER))
       .map(Arrays::asList)
-      .map(SObjectDescriptor.FieldDescriptor::new)
+      .map(nameParts -> new SObjectDescriptor.FieldDescriptor(nameParts, null, SalesforceFunctionType.NONE))
       .collect(Collectors.toList());
   }
 }
