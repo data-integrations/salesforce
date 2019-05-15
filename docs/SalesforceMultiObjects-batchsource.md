@@ -41,13 +41,11 @@ The filter can be one of two types:
 
 `SOQL Date Format` - string should be in Salesforce Date Formats. 
 
-    +----------------------------------+---------------------------+---------------------------+
-    |              Format              |       Format Syntax       |          Example          |
-    +----------------------------------+---------------------------+---------------------------+
-    | Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
-    |                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
-    |                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
-    +----------------------------------+---------------------------+---------------------------+
+|              Format              |       Format Syntax       |          Example          |
+| -------------------------------- | ------------------------- | ------------------------- |
+| Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
+|                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
+|                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
 
 `SOQL Date Literal` - fieldExpression to compare a range of values to the value in a datetime 
 field. Each literal is a range of time beginning with midnight (00:00:00). For example: `YESTERDAY`, `LAST_WEEK`, 
@@ -70,65 +68,60 @@ Example
 There are two SObjects of interest in Salesforce.
 The first SObject is named 'Account' and contains:
 
-    +-----+----------+------------------+
-    | Id  | Name     | Email            |
-    +-----+----------+------------------+
-    | 0   | Samuel   | sjax@example.net |
-    | 1   | Alice    | a@example.net    |
-    +-----+----------+------------------+
+| Id  | Name     | Email            |
+| --- | -------- | ---------------- |
+| 0   | Samuel   | sjax@example.net |
+| 1   | Alice    | a@example.net    |
 
 The second is named 'Activity' and contains:
 
-    +--------+----------+--------+
-    | Id     | Item     | Action |
-    +--------+----------+--------+
-    | 0      | shirt123 | view   |
-    | 0      | carxyz   | view   |
-    | 0      | shirt123 | buy    |
-    | 0      | coffee   | view   |
-    | 1      | cola     | buy    |
-    +--------+----------+--------+
+| Id     | Item     | Action |
+| ------ | -------- | ------ |
+| 0      | shirt123 | view   |
+| 0      | carxyz   | view   |
+| 0      | shirt123 | buy    |
+| 0      | coffee   | view   |
+| 1      | cola     | buy    |
     
 To read data from these two SObjects, both of them must be indicated in the `White List` configuration property.
 
 The output of the the source will be the following records:
 
-    +-----+----------+------------------+-----------+
-    | Id  | Name     | Email            | tablename |
-    +-----+----------+------------------+-----------+
-    | 0   | Samuel   | sjax@example.net | Account   |
-    | 1   | Alice    | a@example.net    | Account   |
-    +-----+----------+------------------+-----------+
-    +--------+----------+--------+-----------+
-    | Id     | Item     | Action | tablename |
-    +--------+----------+--------+-----------+
-    | 0      | shirt123 | view   | Activity  |
-    | 0      | carxyz   | view   | Activity  |
-    | 0      | shirt123 | buy    | Activity  |
-    | 0      | coffee   | view   | Activity  |
-    | 1      | cola     | buy    | Activity  |
-    +--------+----------+--------+-----------+
+| Id  | Name     | Email            | tablename |
+| --- | -------- | ---------------- | --------- |
+| 0   | Samuel   | sjax@example.net | Account   |
+| 1   | Alice    | a@example.net    | Account   |
+
+
+| Id     | Item     | Action | tablename |
+| ------ | -------- | ------ | --------- |
+| 0      | shirt123 | view   | Activity  |
+| 0      | carxyz   | view   | Activity  |
+| 0      | shirt123 | buy    | Activity  |
+| 0      | coffee   | view   | Activity  |
+| 1      | cola     | buy    | Activity  |
     
 The plugin will emit two pipeline arguments to provide multi sink plugin with the schema of the output records:
 
-    multisink.Account =
-     {
-       "type": "record",
-       "name": "output",
-       "fields": [
-         { "name": "Id", "type": "long" } ,
-         { "name": "Name", "type": "string" },
-         { "name": "Email", "type": [ "string", "null" ] }
-       ]
-     }
-    multisink.Activity =
-     {
-       "type": "record",
-       "name": "output",
-       "fields": [
-         { "name": "Id", "type": "long" } ,
-         { "name": "Item", "type": "string" },
-         { "name": "Action", "type": "string" }
-       ]
-     }
-     
+```js
+multisink.Account =
+  {
+    "type": "record",
+    "name": "output",
+    "fields": [
+      { "name": "Id", "type": "long" } ,
+      { "name": "Name", "type": "string" },
+      { "name": "Email", "type": [ "string", "null" ] }
+    ]
+  }
+multisink.Activity =
+  {
+    "type": "record",
+    "name": "output",
+    "fields": [
+      { "name": "Id", "type": "long" } ,
+      { "name": "Item", "type": "string" },
+      { "name": "Action", "type": "string" }
+    ]
+  }
+```
