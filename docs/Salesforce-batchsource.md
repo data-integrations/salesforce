@@ -46,13 +46,11 @@ The filter can be one of two types:
 
 `SOQL Date Format` - string should be in Salesforce Date Formats. 
 
-    +----------------------------------+---------------------------+---------------------------+
-    |              Format              |       Format Syntax       |          Example          |
-    +----------------------------------+---------------------------+---------------------------+
-    | Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
-    |                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
-    |                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
-    +----------------------------------+---------------------------+---------------------------+
+|              Format              |       Format Syntax       |          Example          |
+| -------------------------------- | ------------------------- | ------------------------- |
+| Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
+|                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
+|                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
 
 `SOQL Date Literal` - fieldExpression to compare a range of values to the value in a datetime 
 field. Each literal is a range of time beginning with midnight (00:00:00). For example: `YESTERDAY`, `LAST_WEEK`, 
@@ -69,18 +67,16 @@ runs at 9am, it will read data updated from 2am - 8am. Ignored if `datetimeFilte
 **Schema:** The schema of output objects.
 The Salesforce types will be automatically mapped to schema types as shown below:
 
-    +-------------+----------------------------------------------------------------------------+--------------+
-    | Schema type |                              Salesforce type                               |    Notes     |
-    +-------------+----------------------------------------------------------------------------+--------------+
-    | bool        | _bool                                                                      |              |
-    | int         | _int                                                                       |              |
-    | long        | _long                                                                      |              |
-    | double      | _double, currency, percent                                                 |              |
-    | date        | date                                                                       |              |
-    | timestamp   | datetime                                                                   | Microseconds |
-    | time        | time                                                                       | Microseconds |
-    | string      | picklist, multipicklist, combobox, reference, base64,                      |              |
-    |             | textarea, phone, id, url, email, encryptedstring,                          |              |
-    |             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |
-    +-------------+----------------------------------------------------------------------------+--------------+
-    
+| Schema type |                              Salesforce type                               |    Notes     |
+| ----------- | -------------------------------------------------------------------------- | ------------ |
+| bool        | _bool                                                                      |              |
+| int         | _int                                                                       |              |
+| long        | _long                                                                      |              |
+| double      | _double, currency, percent                                                 |              |
+| date        | date                                                                       |              |
+| timestamp   | datetime                                                                   | Microseconds |
+| time        | time                                                                       | Microseconds |
+| string      | picklist, multipicklist, combobox, reference, base64,                      |              |
+|             | textarea, phone, id, url, email, encryptedstring,                          |              |
+|             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |
+
