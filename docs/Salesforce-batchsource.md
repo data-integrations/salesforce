@@ -38,13 +38,8 @@ Examples:
 Salesforce and generate SOQL query (`select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`). 
 Ignored if SOQL query is provided. 
 
-**Datetime Filter:** SObject query datetime filter is applied to system field `LastModifiedDate` to allow incremental 
-query. Filter is applied in `>` (greater than) comparison only and will be added to SObject query in a form of 
-where clause (`WHERE LastModifiedDate > ${datetimeFilter}`). 
-If value is not provided, it means all records to be read since the beginning of time. 
-The filter can be one of two types: 
-
-`SOQL Date Format` - string should be in Salesforce Date Formats. 
+**Last Modified After:** Filter data to only include records where the system field `LastModifiedDate` is greater than 
+or equal to the specified date. The date must be provided in the Salesforce date format:
 
 |              Format              |       Format Syntax       |          Example          |
 | -------------------------------- | ------------------------- | ------------------------- |
@@ -52,17 +47,52 @@ The filter can be one of two types:
 |                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
 |                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
 
-`SOQL Date Literal` - fieldExpression to compare a range of values to the value in a datetime 
-field. Each literal is a range of time beginning with midnight (00:00:00). For example: `YESTERDAY`, `LAST_WEEK`, 
-`LAST_MONTH` ...
+If no value is provided, no lower bound for LastModifiedDate is applied.
 
-**Duration:** SObject query duration filter is applied to system field `LastModifiedDate` to allow range query. 
-Duration units set to `hours`. For example, if duration is '6' (6 hours) and the pipeline runs at 9am, it will read data 
-updated from 3am - 9am. Ignored if `datetimeFilter` is provided.
+**Last Modified Before:** Filter data to only include records where the system field `LastModifiedDate` is less than 
+the specified date. The date must be provided in the Salesforce date format:
 
-**Offset:** SObject query offset filter is applied to system field `LastModifiedDate` to allow range query. 
-Offset units set to `hours`. For example, if duration is '6' (6 hours) and the offset is '1' (1 hour) and the pipeline 
-runs at 9am, it will read data updated from 2am - 8am. Ignored if `datetimeFilter` is provided.
+|              Format              |       Format Syntax       |          Example          |
+| -------------------------------- | ------------------------- | ------------------------- |
+| Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
+|                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
+|                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
+
+Specifying this along with `Last Modified After` allows reading data modified within a specific time window. 
+If no value is provided, no upper bound for `LastModifiedDate` is applied.
+
+**Duration:** Filter data read to only include records that were last modified within a time window of the specified size. 
+For example, if the duration is '6 hours' and the pipeline runs at 9am, it will read data that was last updated 
+from 3am (inclusive) to 9am (exclusive). The duration is specified using numbers and time units:
+
+|  Unit   |
+| ------- |
+| SECONDS |
+| MINUTES |
+| HOURS   |
+| DAYS    |
+| MONTHS  |
+| YEARS   |
+              
+Several units can be specified, but each unit can only be used once. For example, `2 days, 1 hours, 30 minutes`.
+The duration is ignored if a value is already specified for `Last Modified After` or `Last Modified Before`.
+
+**Offset:** Filter data to only read records where the system field `LastModifiedDate` is less than the logical start time 
+of the pipeline minus the given offset. For example, if duration is '6 hours' and the offset is '1 hours', and the pipeline 
+runs at 9am, data last modified between 2am (inclusive) and 8am (exclusive) will be read. 
+The duration is specified using numbers and time units:
+
+|  Unit   |
+| ------- |
+| SECONDS |
+| MINUTES |
+| HOURS   |
+| DAYS    |
+| MONTHS  |
+| YEARS   |
+
+Several units can be specified, but each unit can only be used once. For example, `2 days, 1 hours, 30 minutes`.
+The offset is ignored if a value is already specified for `Last Modified After` or `Last Modified Before`.
 
 **Schema:** The schema of output objects.
 The Salesforce types will be automatically mapped to schema types as shown below:

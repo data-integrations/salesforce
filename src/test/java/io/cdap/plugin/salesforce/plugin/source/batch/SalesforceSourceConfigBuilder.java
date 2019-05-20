@@ -28,9 +28,10 @@ public class SalesforceSourceConfigBuilder {
   private String loginUrl;
   private String query;
   private String sObjectName;
-  private String datetimeFilter;
-  private Integer duration;
-  private Integer offset;
+  private String datetimeAfter;
+  private String datetimeBefore;
+  private String duration;
+  private String offset;
   private String schema;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
@@ -73,17 +74,22 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setDatetimeFilter(String datetimeFilter) {
-    this.datetimeFilter = datetimeFilter;
+  public SalesforceSourceConfigBuilder setDatetimeAfter(String datetimeAfter) {
+    this.datetimeAfter = datetimeAfter;
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setDuration(Integer duration) {
+  public SalesforceSourceConfigBuilder setDatetimeBefore(String datetimeBefore) {
+    this.datetimeBefore = datetimeBefore;
+    return this;
+  }
+
+  public SalesforceSourceConfigBuilder setDuration(String duration) {
     this.duration = duration;
     return this;
   }
 
-  public SalesforceSourceConfigBuilder setOffset(Integer offset) {
+  public SalesforceSourceConfigBuilder setOffset(String offset) {
     this.offset = offset;
     return this;
   }
@@ -95,6 +101,6 @@ public class SalesforceSourceConfigBuilder {
 
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      query, sObjectName, datetimeFilter, duration, offset, schema);
+                                      query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema);
   }
 }

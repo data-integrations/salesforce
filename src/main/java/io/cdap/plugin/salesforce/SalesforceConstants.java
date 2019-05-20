@@ -35,6 +35,6 @@ public class SalesforceConstants {
   public static final String CONFIG_CONSUMER_SECRET = "mapred.salesforce.consumer.secret";
   public static final String CONFIG_LOGIN_URL = "mapred.salesforce.login.url";
 
-  public static final int INTERVAL_FILTER_MIN_VALUE = 0;
+  public static final int RANGE_FILTER_MIN_VALUE = 0;
   public static final int SOQL_MAX_LENGTH = 20000;
 }
