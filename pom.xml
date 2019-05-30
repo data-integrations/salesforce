@@ -30,7 +30,7 @@
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
-    <cdap.version>6.0.0-SNAPSHOT</cdap.version>
+    <cdap.version>6.0.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
@@ -39,6 +39,7 @@
     <hydrator.version>2.3.0-SNAPSHOT</hydrator.version>
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>45.0.0</salesforce.api.version>
+    <salesforce.marketing.cloud.version>1.4.0</salesforce.marketing.cloud.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
     <antlr.version>4.7.2</antlr.version>
     <mockito.version>1.10.19</mockito.version>
@@ -73,13 +74,13 @@
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-api</artifactId>
       <version>${cdap.version}</version>
-      <scope>provided</scope>
+      <!--scope>provided</scope-->
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-etl-api</artifactId>
       <version>${cdap.version}</version>
-      <scope>provided</scope>
+      <!--scope>provided</scope-->
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
@@ -208,6 +209,12 @@
       <artifactId>spark-streaming_2.11</artifactId>
       <version>${spark2.version}</version>
       <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.salesforce-marketingcloud</groupId>
+      <artifactId>fuelsdk</artifactId>
+      <version>${salesforce.marketing.cloud.version}</version>
     </dependency>
 
     <dependency>

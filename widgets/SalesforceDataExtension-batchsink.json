@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "spec-version": "1.5"
+  },
+  "configuration-groups": [
+    {
+      "label": "Basic",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Data Extension",
+          "name": "dataExtension"
+        },
+        {
+          "widget-type": "radio-group",
+          "name" : "operation",
+          "label" : "Operation",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "insert",
+            "options": [
+              {
+                "id": "insert",
+                "label": "Insert"
+              },
+              {
+                "id": "update",
+                "label": "Update"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "Authentication",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Client ID",
+          "name": "clientId"
+        },
+        {
+          "widget-type": "password",
+          "label": "Client Secret",
+          "name": "clientSecret"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Authentication Base URI",
+          "name": "authEndpoint"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "SOAP Base URI",
+          "name": "soapEndpoint"
+        }
+      ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Max Batch Size",
+          "name": "maxBatchSize",
+          "widget-attributes" : {
+            "default": "500"
+          }
+        },
+        {
+          "widget-type": "radio-group",
+          "name" : "failOnError",
+          "label" : "Fail On Error",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "false",
+            "options": [
+              {
+                "id": "true",
+                "label": "True"
+              },
+              {
+                "id": "false",
+                "label": "False"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
