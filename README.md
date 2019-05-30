@@ -8,6 +8,7 @@ Following plugins are available in this repository.
   * Salesforce Batch Source
   * Salesforce Batch Multi Source
   * Salesforce Streaming Source
+  * Salesforce Batch Sink
 
 # Integration tests
 
