@@ -1,0 +1,58 @@
+/*
+ * Copyright © 2019 Cask Data, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package io.cdap.plugin.salesforce.plugin.sink.batch;
+
+import com.google.common.collect.ImmutableMap;
+import io.cdap.cdap.api.data.batch.OutputFormatProvider;
+import io.cdap.plugin.salesforce.SalesforceConstants;
+
+import java.util.Map;
+
+/**
+ *  Provides SalesforceOutputFormat's class name and configuration.
+ */
+public class SalesforceOutputFormatProvider implements OutputFormatProvider {
+  private final Map<String, String> configMap;
+
+  /**
+   * Gets properties from config and stores them as properties in map for Mapreduce.
+   *
+   * @param config Salesforce batch sink configuration
+   */
+  public SalesforceOutputFormatProvider(SalesforceSinkConfig config) {
+    this.configMap = new ImmutableMap.Builder<String, String>()
+      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
+      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
+      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
+      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
+      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
+      .put(SalesforceSinkConstants.CONFIG_SOBJECT, config.getSObject())
+      .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
+      .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
+      .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
+      .build();
+  }
+
+  @Override
+  public String getOutputFormatClassName() {
+    return SalesforceOutputFormat.class.getName();
+  }
+
+  @Override
+  public Map<String, String> getOutputFormatConfiguration() {
+    return configMap;
+  }
+}
