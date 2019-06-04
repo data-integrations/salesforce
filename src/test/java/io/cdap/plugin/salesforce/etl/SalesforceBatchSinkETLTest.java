@@ -20,8 +20,10 @@ import com.google.common.collect.ImmutableMap;
 import com.sforce.soap.partner.sobject.SObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -113,10 +115,18 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
-      StructuredRecord.builder(schema).set("NaMe", "testInsertAccount1").set("numberofEmployEES", 6)
-        .set("ShippingLatitudE", 50.4501).set("shippingLongitude", 30.5234).build(),
-      StructuredRecord.builder(schema).set("NaMe", "testInsertAccount2").set("numberofEmployEES", 1)
-        .set("ShippingLatitudE", 37.4220).set("shippingLongitude", 122.0841).build()
+      StructuredRecord.builder(schema)
+        .set("NaMe", "testInsertAccount1")
+        .set("numberofEmployEES", 6)
+        .set("ShippingLatitudE", 50.4501)
+        .set("shippingLongitude", 30.5234)
+        .build(),
+      StructuredRecord.builder(schema)
+        .set("NaMe", "testInsertAccount2")
+        .set("numberofEmployEES", 1)
+        .set("ShippingLatitudE", 37.4220)
+        .set("shippingLongitude", 122.0841)
+        .build()
     );
     List<SObject> createdSObjects = new ArrayList<>();
 
@@ -186,14 +196,14 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
       .put(SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH, "1").build();
     List<SObject> createdSObjects = new ArrayList<>();
 
-    ApplicationManager appManager = deployPipeline(sObject, schema);
+    ApplicationManager appManager = deployPipeline(sObject, schema, sinkProperties);
     runPipeline(appManager, inputRecords);
     assertRecordsCreated(sObject, inputRecords, createdSObjects);
     addToCleanUpList(createdSObjects);
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testCompoundFieldsValidation() throws Exception {
+  @Test
+  public void testCompoundFieldsValidation() {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
@@ -203,14 +213,18 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("BillingAddress", Schema.of(Schema.Type.STRING))
     );
 
-    // Exception below is expected:
-    // "java.lang.IllegalStateException: Expected 200 OK, got 400 Bad Request. Error: Failed to deploy app"
-    // This indicates that validation (not actual execution) failed.
-    ApplicationManager appManager = deployPipeline(sObject, schema);
+    try {
+      getDefaultConfig(sObject).validate(schema);
+      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
+    } catch (InvalidStageException ex) {
+      if (!ex.getMessage().contains("Following schema fields: 'BillingAddress' are not present or not creatable")) {
+        throw ex;
+      }
+    }
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testNonCreatableFieldsValidation() throws Exception {
+  @Test
+  public void testNonCreatableFieldsValidation() {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
@@ -224,14 +238,18 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("HasOverdueTask", Schema.of(Schema.Type.STRING))
     );
 
-    // Exception below is expected:
-    // "java.lang.IllegalStateException: Expected 200 OK, got 400 Bad Request. Error: Failed to deploy app"
-    // This indicates that validation (not actual execution) failed.
-    deployPipeline(sObject, schema);
+    try {
+      getDefaultConfig(sObject).validate(schema);
+      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
+    } catch (InvalidStageException ex) {
+      if (!ex.getMessage().contains("Following schema fields: 'HasOverdueTask' are not present or not creatable")) {
+        throw ex;
+      }
+    }
   }
 
-  @Test(expected = IllegalStateException.class)
-  public void testNonExistingFieldsValidation() throws Exception {
+  @Test
+  public void testNonExistingFieldsValidation() {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
@@ -244,9 +262,14 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("SomethingNotExistant", Schema.of(Schema.Type.STRING))
     );
 
-    // Exception below is expected:
-    // "java.lang.IllegalStateException: Expected 200 OK, got 400 Bad Request. Error: Failed to deploy app"
-    // This indicates that validation (not actual execution) failed.
-    deployPipeline(sObject, schema);
+    try {
+      getDefaultConfig(sObject).validate(schema);
+      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
+    } catch (InvalidStageException ex) {
+      if (!ex.getMessage().contains(
+        "Following schema fields: 'SomethingNotExistant' are not present or not creatable")) {
+        throw ex;
+      }
+    }
   }
 }

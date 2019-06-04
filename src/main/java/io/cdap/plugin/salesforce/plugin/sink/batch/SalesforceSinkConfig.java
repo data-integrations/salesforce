@@ -78,8 +78,14 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
 
   public SalesforceSinkConfig(String referenceName, String clientId,
                               String clientSecret, String username,
-                              String password, String loginUrl) {
+                              String password, String loginUrl, String sObject,
+                              String maxBytesPerBatch, String maxRecordsPerBatch,
+                              String errorHandling) {
     super(referenceName, clientId, clientSecret, username, password, loginUrl);
+    this.sObject = sObject;
+    this.maxBytesPerBatch = maxBytesPerBatch;
+    this.maxRecordsPerBatch = maxRecordsPerBatch;
+    this.errorHandling = errorHandling;
   }
 
   public String getSObject() {
