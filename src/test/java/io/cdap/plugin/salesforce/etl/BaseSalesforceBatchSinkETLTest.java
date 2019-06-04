@@ -37,9 +37,9 @@ import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.cdap.test.DataSetManager;
 import io.cdap.cdap.test.TestConfiguration;
 import io.cdap.cdap.test.WorkflowManager;
-import io.cdap.plugin.salesforce.SalesforceTransformUtil;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceBatchSink;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
+import io.cdap.plugin.salesforce.plugin.sink.batch.StructuredRecordToCSVRecordTransformer;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -163,7 +163,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
       if (isString) {
         sb.append("'");
       }
-      String value = SalesforceTransformUtil.convertSchemaFieldToString(record.get(fieldName), field);
+      String value = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(record.get(fieldName), field);
       if (value != null) {
         sb.append(value);
       }
@@ -220,5 +220,13 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
     workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
+  }
+
+  protected SalesforceSinkConfig getDefaultConfig(String sObject) {
+    return new SalesforceSinkConfig(REFERENCE_NAME,
+                                    BaseSalesforceETLTest.CONSUMER_KEY, BaseSalesforceETLTest.CONSUMER_SECRET,
+                                    BaseSalesforceETLTest.USERNAME, BaseSalesforceETLTest.PASSWORD,
+                                    BaseSalesforceETLTest.LOGIN_URL, sObject,
+                                    "1000000", "10000", "Stop on Error");
   }
 }
