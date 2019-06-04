@@ -32,21 +32,27 @@ public class StructuredRecordToCSVRecordTransformer {
 
   public CSVRecord transform(StructuredRecord record) {
     List<String> fieldNames = new ArrayList<>();
-    List<Object> values = new ArrayList<>();
+    List<String> values = new ArrayList<>();
 
     for (Schema.Field field : record.getSchema().getFields()) {
       String fieldName = field.getName();
-      Object value = convert(record.get(fieldName), field);
+      String value = convertSchemaFieldToString(record.get(fieldName), field);
 
       fieldNames.add(fieldName);
       values.add(value);
     }
 
-    CSVRecord csvRecord = new CSVRecord(fieldNames, values);
-    return csvRecord;
+    return new CSVRecord(fieldNames, values);
   }
 
-  private static Object convert(Object value, Schema.Field field) {
+  /**
+   * Convert a schema field to String which can be read by Salesforce.
+   *
+   * @param value field value
+   * @param field schema field
+   * @return string representing the value in format, which can be understood by Salesforce
+   */
+  public static String convertSchemaFieldToString(Object value, Schema.Field field) {
     // don't convert null to avoid NPE
     if (value == null) {
       return null;
@@ -72,7 +78,7 @@ public class StructuredRecordToCSVRecordTransformer {
         case TIME_MICROS:
           // convert timestamp to HH:mm:ss,SSS
           instant = Instant.ofEpochMilli(TimeUnit.MICROSECONDS.toMillis((Long) value));
-          return instant.atZone(ZoneOffset.UTC).toLocalTime();
+          return instant.atZone(ZoneOffset.UTC).toLocalTime().toString();
         case TIMESTAMP_MILLIS:
           // convert timestamp to ISO 8601 format
           instant = Instant.ofEpochMilli((Long) value);
@@ -80,13 +86,13 @@ public class StructuredRecordToCSVRecordTransformer {
         case TIME_MILLIS:
           // convert timestamp to HH:mm:ss,SSS
           instant = Instant.ofEpochMilli((Long) value);
-          return instant.atZone(ZoneOffset.UTC).toLocalTime();
+          return instant.atZone(ZoneOffset.UTC).toLocalTime().toString();
         default:
           throw new IllegalArgumentException(
             String.format("Field '%s' is of unsupported type '%s'", field.getName(), logicalType.getToken()));
       }
     }
 
-    return value;
+    return value.toString();
   }
 }

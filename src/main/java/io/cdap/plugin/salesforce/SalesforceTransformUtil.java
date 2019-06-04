@@ -49,5 +49,4 @@ public class SalesforceTransformUtil {
           String.format("Field '%s' is of unsupported type '%s'", fieldName, logicalType.getToken()));
     }
   }
-
 }

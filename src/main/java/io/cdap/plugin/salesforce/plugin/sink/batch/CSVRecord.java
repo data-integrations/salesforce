@@ -25,11 +25,11 @@ import java.util.Objects;
 /**
  * Represents a CSV record with its headers.
  */
-public class CSVRecord implements Iterable<Object> {
+public class CSVRecord implements Iterable<String> {
   private final List<String> columnNames;
-  private final List<Object> values;
+  private final List<String> values;
 
-  public CSVRecord(List<String> columnNames, List<Object> values) {
+  public CSVRecord(List<String> columnNames, List<String> values) {
     this.columnNames = columnNames;
     this.values = values;
 
@@ -43,13 +43,12 @@ public class CSVRecord implements Iterable<Object> {
     return columnNames;
   }
 
-  public List<Object> getValues() {
+  public List<String> getValues() {
     return values;
   }
 
-
   @Override
-  public Iterator<Object> iterator() {
+  public Iterator<String> iterator() {
     return values.iterator();
   }
 
