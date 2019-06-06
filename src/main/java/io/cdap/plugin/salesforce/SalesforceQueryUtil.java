@@ -59,7 +59,7 @@ public class SalesforceQueryUtil {
   /**
    * Checks if query length is less than SOQL max length limit.
    *
-   * @param query SOQL
+   * @param query SOQL query
    * @return true if SOQL length less than max allowed
    */
   public static boolean isQueryUnderLengthLimit(String query) {

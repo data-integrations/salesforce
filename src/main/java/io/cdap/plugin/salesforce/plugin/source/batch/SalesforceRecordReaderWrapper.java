@@ -31,15 +31,15 @@ import javax.annotation.Nullable;
  * for each current value adds new field with SObject name to which value belongs to
  * if {@link #sObjectNameField} is set.
  */
-public class SalesforceRecordReaderWrapper extends RecordReader<Schema, Map<String, String>> {
+public class SalesforceRecordReaderWrapper extends RecordReader<Schema, Map<String, ?>> {
 
   private final String sObjectName;
   private final String sObjectNameField;
-  private final RecordReader<Schema, Map<String, String>> delegate;
+  private final RecordReader<Schema, Map<String, ?>> delegate;
 
   public SalesforceRecordReaderWrapper(String sObjectName,
                                        @Nullable String sObjectNameField,
-                                       RecordReader<Schema, Map<String, String>> delegate) {
+                                       RecordReader<Schema, Map<String, ?>> delegate) {
     this.sObjectName = sObjectName;
     this.sObjectNameField = sObjectNameField;
     this.delegate = delegate;
@@ -61,12 +61,12 @@ public class SalesforceRecordReaderWrapper extends RecordReader<Schema, Map<Stri
   }
 
   @Override
-  public Map<String, String> getCurrentValue() throws IOException, InterruptedException {
-    Map<String, String> currentValue = delegate.getCurrentValue();
+  public Map<String, ?> getCurrentValue() throws IOException, InterruptedException {
+    Map<String, ?> currentValue = delegate.getCurrentValue();
     if (sObjectNameField == null) {
       return currentValue;
     }
-    Map<String, String> updatedCurrentValue = new HashMap<>(currentValue);
+    Map<String, Object> updatedCurrentValue = new HashMap<>(currentValue);
     updatedCurrentValue.put(sObjectNameField, sObjectName);
     return updatedCurrentValue;
   }

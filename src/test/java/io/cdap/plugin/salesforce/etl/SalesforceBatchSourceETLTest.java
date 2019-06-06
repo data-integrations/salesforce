@@ -35,7 +35,9 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -396,5 +398,142 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertEquals("Bamm-Bamm", results.get(0).get("Name"));
     Assert.assertEquals(3.33, (double) results.get(0).get("CustomField__Latitude__s"), 0.0);
     Assert.assertEquals(55.779, (double) results.get(0).get("CustomField__Longitude__s"), 0.0);
+  }
+
+  @Test
+  public void testSOQLAggregateFunction() throws Exception {
+    String sObjectName = createCustomObject("IT_AggFunctions", null);
+
+    int numberOfRecords = 3;
+    List<SObject> sObjects = IntStream.range(0, numberOfRecords)
+      .mapToObj(i -> new SObjectBuilder()
+        .setType(sObjectName)
+        .put("Name", "R-" + i)
+        .build())
+      .collect(Collectors.toList());
+
+    addSObjects(sObjects, false);
+
+    List<StructuredRecord> results = getResultsBySOQLQuery("SELECT COUNT(name) cnt FROM " + sObjectName);
+
+    Assert.assertEquals(1, results.size());
+    Assert.assertEquals(numberOfRecords, (long) results.get(0).get("cnt"));
+  }
+
+  @Test
+  public void testSOQLGroupByClause() throws Exception {
+    CustomField textField = createTextCustomField("TextField__c");
+    CustomField locationField = createLocationCustomField("LocationField__c");
+    String sObjectName = createCustomObject("IT_GroupByClause", new CustomField[]{textField, locationField});
+
+    int numberOfRecords = 3;
+    List<SObject> sObjects = IntStream.range(0, numberOfRecords)
+      .mapToObj(i -> new SObjectBuilder()
+        .setType(sObjectName)
+        .put("Name", "Dino")
+        .put("TextField__c", String.valueOf(i))
+        .put("LocationField__Latitude__s", i)
+        .put("LocationField__Longitude__s", i)
+        .build())
+      .collect(Collectors.toList());
+
+    addSObjects(sObjects, false);
+
+    List<StructuredRecord> results = getResultsBySOQLQuery(
+      String.format("SELECT Name, MAX(TextField__c) maxDesc, AVG(LocationField__Latitude__s) avgLat, "
+                      + "COUNT(TextField__c) cnt, SUM(LocationField__Longitude__s) sumLon "
+                      + "FROM %s "
+                      + "GROUP BY Name", sObjectName));
+
+    Assert.assertEquals(1, results.size());
+    Assert.assertEquals("Dino", results.get(0).get("Name"));
+    Assert.assertEquals("2", results.get(0).get("maxDesc"));
+    Assert.assertEquals(1.0, (double) results.get(0).get("avgLat"), 0.0);
+    Assert.assertEquals(3.0, (double) results.get(0).get("sumLon"), 0.0);
+    Assert.assertEquals(numberOfRecords, (long) results.get(0).get("cnt"));
+  }
+
+  @Test
+  public void testSOQLReferenceField() throws Exception {
+    String childSObjectName = createCustomObject("IT_ChildObject", null);
+    SObject childSObject = new SObjectBuilder()
+      .setType(childSObjectName)
+      .put("Name", "Bamm-Bamm")
+      .build();
+
+    List<String> childIds = addSObjects(Collections.singletonList(childSObject), false);
+
+    Assert.assertEquals(1, childIds.size());
+    String childId = childIds.get(0);
+
+    CustomField customField = createReferenceCustomField(childSObjectName);
+    String sObjectName = createCustomObject("IT_ReferenceField", new CustomField[]{customField});
+
+    SObject sObjectWilma = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Wilma")
+      .put(childSObjectName, childId)
+      .build();
+
+    SObject sObjectFred = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Fred")
+      .put(childSObjectName, childId)
+      .build();
+
+    addSObjects(Arrays.asList(sObjectWilma, sObjectFred), false);
+
+    List<StructuredRecord> results = getResultsBySOQLQuery(
+      String.format("SELECT COUNT(%s__r.Name) cnt FROM %s", customField.getLabel(), sObjectName));
+
+    Assert.assertEquals(1, results.size());
+    Assert.assertEquals(2, (long) results.get(0).get("cnt"));
+  }
+
+  @Test
+  public void testSOQLSubQuery() throws Exception {
+    String childSObjectName = createCustomObject("IT_ChildObject", null);
+    SObject childSObject = new SObjectBuilder()
+      .setType(childSObjectName)
+      .put("Name", "Bamm-Bamm")
+      .build();
+
+    List<String> childIds = addSObjects(Collections.singletonList(childSObject), false);
+
+    Assert.assertEquals(1, childIds.size());
+    String childId = childIds.get(0);
+
+    CustomField customField = createReferenceCustomField(childSObjectName);
+    String sObjectName = createCustomObject("IT_ReferenceField", new CustomField[]{customField});
+
+    SObject sObjectWilma = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Wilma")
+      .put(childSObjectName, childId)
+      .build();
+
+    SObject sObjectFred = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Name", "Fred")
+      .put(childSObjectName, childId)
+      .build();
+
+    addSObjects(Arrays.asList(sObjectWilma, sObjectFred), false);
+
+    String referencePostfix = "__r";
+    List<StructuredRecord> results = getResultsBySOQLQuery(
+      String.format("SELECT Id, (select Name from %s%s) FROM %s",
+                    customField.getRelationshipName(), referencePostfix, childSObjectName));
+
+    Assert.assertEquals(1, results.size());
+    Assert.assertEquals(childId, results.get(0).get("Id"));
+
+    List<StructuredRecord> subQueryResults = results.get(0).get(customField.getRelationshipName() + referencePostfix);
+    Assert.assertNotNull(subQueryResults);
+    Assert.assertEquals(2, subQueryResults.size());
+
+    subQueryResults.sort(Comparator.comparing(record -> record.get("Name")));
+    Assert.assertEquals("Fred", subQueryResults.get(0).get("Name"));
+    Assert.assertEquals("Wilma", subQueryResults.get(1).get("Name"));
   }
 }

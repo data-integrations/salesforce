@@ -17,6 +17,7 @@
 package io.cdap.plugin.salesforce.etl;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.SaveResult;
@@ -67,6 +68,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
                                                              "https://login.salesforce.com/services/oauth2/token");
+  public static final int SOAP_RECORDS_LIMIT = 200;
 
   @Rule
   public TestName testName = new TestName();
@@ -89,7 +91,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   }
 
   @After
-  public void cleanUpBase() throws ConnectionException {
+  public void cleanUpBase() {
     clearSObjects();
   }
 
@@ -109,27 +111,38 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
    * @param sObjects list of sobjects to create
    * @param save if sObjects need to be saved for deletion
    */
-  protected void addSObjects(List<SObject> sObjects, boolean save) {
-    try {
-      SaveResult[] results = partnerConnection.create(sObjects.toArray(new SObject[0]));
-      if (save) {
-        createdObjectsIds.addAll(Arrays.stream(results)
-                                   .map(SaveResult::getId).collect(Collectors.toList()));
-      }
-
-      for (SaveResult saveResult : results) {
-        if (!saveResult.getSuccess()) {
-          String allErrors = Stream.of(saveResult.getErrors())
-            .map(Error::getMessage)
-            .collect(Collectors.joining("\n"));
-
-          throw new RuntimeException(allErrors);
+  protected List<String> addSObjects(List<SObject> sObjects, boolean save) {
+    // split sObjects into smaller partitions to ensure we don't exceed the limitation
+    List<SaveResult> results = Lists.partition(sObjects, SOAP_RECORDS_LIMIT).stream()
+      .map(subList -> subList.toArray(new SObject[0]))
+      .map(subSObjects -> {
+        try {
+          return partnerConnection.create(subSObjects);
+        } catch (ConnectionException e) {
+          throw new RuntimeException("There was issue communicating with Salesforce", e);
         }
-      }
+      })
+      .flatMap(Arrays::stream)
+      .collect(Collectors.toList());
 
-    } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+    List<String> ids = results.stream()
+      .map(SaveResult::getId)
+      .collect(Collectors.toList());
+
+    if (save) {
+      createdObjectsIds.addAll(ids);
     }
+
+    for (SaveResult saveResult : results) {
+      if (!saveResult.getSuccess()) {
+        String allErrors = Stream.of(saveResult.getErrors())
+          .map(Error::getMessage)
+          .collect(Collectors.joining("\n"));
+
+        throw new RuntimeException(allErrors);
+      }
+    }
+    return ids;
   }
 
   protected ImmutableMap.Builder<String, String> getBaseProperties(String referenceName) {
@@ -142,12 +155,20 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL);
   }
 
-  private void clearSObjects() throws ConnectionException {
+  private void clearSObjects() {
     if (createdObjectsIds.isEmpty()) {
       return;
     }
-
-    partnerConnection.delete(createdObjectsIds.toArray(new String[0]));
+    // split sObjectIds into smaller partitions to ensure we don't exceed the limitation
+    Lists.partition(createdObjectsIds, SOAP_RECORDS_LIMIT).stream()
+      .map(subList -> subList.toArray(new String[0]))
+      .forEach(ids -> {
+        try {
+          partnerConnection.delete(ids);
+        } catch (ConnectionException e) {
+          throw new RuntimeException(e);
+        }
+      });
     createdObjectsIds.clear();
   }
 }

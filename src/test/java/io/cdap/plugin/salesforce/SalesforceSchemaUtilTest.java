@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,38 +41,71 @@ public class SalesforceSchemaUtilTest {
   public void testGetSchemaWithFields() {
     String opportunity = "Opportunity";
     String account = "Account";
+    String contacts = "Contacts";
+    String owner = "Owner";
 
     List<SObjectDescriptor.FieldDescriptor> fieldDescriptors = Stream
       .of("Id", "Name", "Amount", "Percent", "ConversionRate", "IsWon", "CreatedDate", "CreatedDateTime", "CreatedTime")
-      .map(name -> {
-        Field field = new Field();
-        field.setName(name);
-        return field;
-      })
+      .map(name -> getFieldWithType(name, FieldType.anyType, false))
       .map(SObjectDescriptor.FieldDescriptor::new)
       .collect(Collectors.toList());
 
-    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(Arrays.asList(account, "NumberOfEmployees")));
-    SObjectDescriptor sObjectDescriptor = new SObjectDescriptor(opportunity, fieldDescriptors);
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Arrays.asList(account, "NumberOfEmployees"), null, SalesforceFunctionType.NONE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("Id"), "IdAlias", SalesforceFunctionType.NONE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("CNT"), "Cnt", SalesforceFunctionType.LONG_REQUIRED));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("CreatedDate"), "Mx", SalesforceFunctionType.IDENTITY));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("CreatedDateTime"), "DayOnlyFunc", SalesforceFunctionType.DATE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("Percent"), "GroupingFunc", SalesforceFunctionType.INT_REQUIRED));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("Amount"), "AvgFunc", SalesforceFunctionType.DOUBLE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("CreatedDateTime"), "CalMonFunc", SalesforceFunctionType.INT));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Collections.singletonList("Amount"), "SumFunc", SalesforceFunctionType.NUMERIC));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+      Arrays.asList(account, "NumberOfEmployees"), "SumRelFunc", SalesforceFunctionType.NUMERIC));
+
+    SObjectDescriptor childSObject = new SObjectDescriptor(contacts, Arrays.asList(
+      new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("FirstName"), null, SalesforceFunctionType.NONE),
+      new SObjectDescriptor.FieldDescriptor(
+        Arrays.asList(owner, "Status"), null, SalesforceFunctionType.NONE)));
+
+    SObjectDescriptor sObjectDescriptor =
+      new SObjectDescriptor(opportunity, fieldDescriptors, Collections.singletonList(childSObject));
 
     Map<String, Field> opportunityFields = new LinkedHashMap<>();
-    opportunityFields.put("Id", getFieldWithType(FieldType._long, false));
-    opportunityFields.put("Name", getFieldWithType(FieldType.string, false));
-    opportunityFields.put("Amount", getFieldWithType(FieldType.currency, true));
-    opportunityFields.put("Percent", getFieldWithType(FieldType.percent, true));
-    opportunityFields.put("ConversionRate", getFieldWithType(FieldType._double, true));
-    opportunityFields.put("IsWon", getFieldWithType(FieldType._boolean, false));
-    opportunityFields.put("CreatedDate", getFieldWithType(FieldType.date, false));
-    opportunityFields.put("CreatedDateTime", getFieldWithType(FieldType.datetime, false));
-    opportunityFields.put("CreatedTime", getFieldWithType(FieldType.time, false));
+    opportunityFields.put("Id", getFieldWithType("Id", FieldType._long, false));
+    opportunityFields.put("Name", getFieldWithType("Name", FieldType.string, false));
+    opportunityFields.put("Amount", getFieldWithType("Amount", FieldType.currency, true));
+    opportunityFields.put("Percent", getFieldWithType("Percent", FieldType.percent, true));
+    opportunityFields.put("ConversionRate", getFieldWithType("ConversionRate", FieldType._double, true));
+    opportunityFields.put("IsWon", getFieldWithType("IsWon", FieldType._boolean, false));
+    opportunityFields.put("CreatedDate", getFieldWithType("CreatedDate", FieldType.date, false));
+    opportunityFields.put("CreatedDateTime", getFieldWithType("CreatedDateTime", FieldType.datetime, false));
+    opportunityFields.put("CreatedTime", getFieldWithType("CreatedTime", FieldType.time, false));
 
     Map<String, Field> accountFields = new LinkedHashMap<>();
-    accountFields.put("NumberOfEmployees", getFieldWithType(FieldType._long, false));
+    accountFields.put("NumberOfEmployees", getFieldWithType("NumberOfEmployees", FieldType._long, false));
+
+    Map<String, Field> contactsFields = new LinkedHashMap<>();
+    contactsFields.put("FirstName", getFieldWithType("FirstName", FieldType.string, false));
+
+    Map<String, Field> ownerFields = new LinkedHashMap<>();
+    ownerFields.put("Status", getFieldWithType("Status", FieldType.string, false));
 
     Map<String, Map<String, Field>> holder = new HashMap<>();
     holder.put(opportunity, opportunityFields);
-    holder.put(account, accountFields);
-    SObjectsDescribeResult describeResult = new SObjectsDescribeResult(holder);
+    holder.put(String.join(".", opportunity, account), accountFields);
+    holder.put(String.join(".", opportunity, contacts), contactsFields);
+    holder.put(String.join(".", opportunity, contacts, owner), ownerFields);
+    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(holder);
 
     Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult);
 
@@ -85,7 +119,19 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
       Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
       Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
-      Schema.Field.of("Account.NumberOfEmployees", Schema.of(Schema.Type.LONG)));
+      Schema.Field.of("Account.NumberOfEmployees", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("DayOnlyFunc", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("GroupingFunc", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("AvgFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+      Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("SumFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+      Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
+        Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
+        Schema.Field.of("Owner.Status", Schema.of(Schema.Type.STRING))))));
 
     Assert.assertEquals(expectedSchema.toString(), actualSchema.toString());
   }
@@ -184,8 +230,9 @@ public class SalesforceSchemaUtilTest {
     SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
   }
 
-  private Field getFieldWithType(FieldType type, boolean isNillable) {
+  private Field getFieldWithType(String name, FieldType type, boolean isNillable) {
     Field field = new Field();
+    field.setName(name);
     field.setType(type);
     field.setNillable(isNillable);
 
