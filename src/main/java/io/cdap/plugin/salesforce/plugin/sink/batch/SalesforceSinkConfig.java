@@ -15,6 +15,8 @@
  */
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
+import com.google.common.base.Strings;
+import com.sforce.async.OperationEnum;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
@@ -26,6 +28,7 @@ import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
@@ -34,6 +37,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Provides the configurations for {@link SalesforceBatchSink} plugin.
@@ -43,6 +47,11 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   public static final String PROPERTY_MAX_BYTES_PER_BATCH = "maxBytesPerBatch";
   public static final String PROPERTY_MAX_RECORDS_PER_BATCH = "maxRecordsPerBatch";
   public static final String PROPERTY_SOBJECT = "sObject";
+  public static final String PROPERTY_OPERATION = "operation";
+  public static final String PROPERTY_EXTERNAL_ID_FIELD = "externalIdField";
+
+  private static final String SALESFORCE_ID_FIELD = "Id";
+
   /**
    * According to "Bulk API Limitations" batch cannot be larger than 10 megabytes.
    */
@@ -56,6 +65,22 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Description("Salesforce object name to insert records into.")
   @Macro
   private String sObject;
+
+  @Name(PROPERTY_OPERATION)
+  @Description("Operation used for sinking data into Salesforce.\n" +
+    "Insert - adds records.\n" +
+    "Upsert - upserts the records. Salesforce will decide if sObjects " +
+    "are the same using external id field.\n" +
+    "Update - updates existing records based on Id field.")
+  @Macro
+  private String operation;
+
+  @Name(PROPERTY_EXTERNAL_ID_FIELD)
+  @Description("External id field name. It is used only if operation is upsert.\n" +
+    "The field specified can be either 'Id' or any customly created field, which has external id attribute set.")
+  @Nullable
+  @Macro
+  private String externalIdField;
 
   @Name(PROPERTY_MAX_BYTES_PER_BATCH)
   @Description("Maximum size in bytes of a batch of records when writing to Salesforce. " +
@@ -79,10 +104,13 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   public SalesforceSinkConfig(String referenceName, String clientId,
                               String clientSecret, String username,
                               String password, String loginUrl, String sObject,
+                              String operation, String externalIdField,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling) {
     super(referenceName, clientId, clientSecret, username, password, loginUrl);
     this.sObject = sObject;
+    this.operation = operation;
+    this.externalIdField = externalIdField;
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
@@ -90,6 +118,23 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
 
   public String getSObject() {
     return sObject;
+  }
+
+  public String getOperation() {
+    return operation;
+  }
+
+  public OperationEnum getOperationEnum() {
+    try {
+      return OperationEnum.valueOf(operation.toLowerCase());
+    } catch (IllegalArgumentException ex) {
+      throw new InvalidConfigPropertyException("Unsupported value for operation: " + operation,
+                                               SalesforceSinkConfig.PROPERTY_OPERATION);
+    }
+  }
+
+  public String getExternalIdField() {
+    return externalIdField;
   }
 
   public Long getMaxBytesPerBatch() {
@@ -122,6 +167,11 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
       getErrorHandling();
+    }
+
+    if (!containsMacro(PROPERTY_OPERATION)) {
+      // triggering getter will also trigger value validity check
+      getOperationEnum();
     }
 
     if (!containsMacro(PROPERTY_MAX_BYTES_PER_BATCH)) {
@@ -158,21 +208,58 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       throw new InvalidStageException("Sink schema must contain at least one field");
     }
 
-    if (!canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)) {
+    if (!canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+      || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
       return;
     }
 
-    Set<String> creatableSObjectFields = null;
-    try {
-      creatableSObjectFields = getCreatableSObjectFields();
-    } catch (ConnectionException e) {
-      throw new InvalidStageException("There was issue communicating with Salesforce", e);
-    }
+    SObjectsDescribeResult describeResult = getSObjectDescribeResult();
+    Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
     Set<String> inputFields = schema.getFields()
       .stream()
       .map(Schema.Field::getName)
       .collect(Collectors.toSet());
+
+    OperationEnum operation = getOperationEnum();
+
+    String externalIdFieldName = null;
+    switch (operation) {
+      case insert:
+        break;
+      case upsert:
+        externalIdFieldName = getExternalIdField();
+        break;
+      case update:
+        externalIdFieldName = SALESFORCE_ID_FIELD;
+        break;
+      default:
+        throw new InvalidConfigPropertyException("Unsupported value for operation: " + operation,
+                                                 SalesforceSinkConfig.PROPERTY_OPERATION);
+    }
+
+    if (operation == OperationEnum.upsert) {
+      Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
+      if (externalIdField == null) {
+        throw new InvalidConfigPropertyException(
+          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName),
+          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+      } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
+        throw new InvalidConfigPropertyException(
+          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName),
+          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+      }
+    } else {
+      if (!Strings.isNullOrEmpty(getExternalIdField())) {
+        throw new InvalidConfigPropertyException(
+          String.format("External id field must not be set for operation='%s'", operation),
+          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+      }
+    }
+
+    if (externalIdFieldName != null && !inputFields.remove(externalIdFieldName)) {
+      throw new InvalidStageException(String.format("Schema must contain external id field '%s'", externalIdFieldName));
+    }
     inputFields.removeAll(creatableSObjectFields);
 
     if (!inputFields.isEmpty()) {
@@ -182,20 +269,45 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     }
   }
 
-  private Set<String> getCreatableSObjectFields() throws ConnectionException {
+  private Set<String> getCreatableSObjectFields(SObjectsDescribeResult describeResult) {
     Set<String> creatableSObjectFields = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
-    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
-    PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
-
-    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
-    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(partnerConnection,
-      sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     for (Field field : describeResult.getFields()) {
       if (field.isCreateable()) {
         creatableSObjectFields.add(field.getName());
       }
     }
     return creatableSObjectFields;
+  }
+
+  private SObjectsDescribeResult getSObjectDescribeResult() {
+    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+    try {
+      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
+                                                                       this.getAuthenticatorCredentials());
+      return SObjectsDescribeResult.of(partnerConnection,
+                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
+    } catch (ConnectionException e) {
+      throw new InvalidStageException("There was issue communicating with Salesforce", e);
+    }
+  }
+
+  /**
+   * Checks that input schema is correct. Which means:
+   * 1. All fields in it are present in sObject
+   * 2. Field types are in accordance with the actual types in sObject.
+   *
+   * @param schema input schema to check
+   */
+  private void validateInputSchema(Schema schema) {
+    AuthenticatorCredentials authenticatorCredentials = getAuthenticatorCredentials();
+    try {
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
+      Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
+      SalesforceSchemaUtil.checkCompatibility(sObjectActualSchema, schema, false);
+    } catch (ConnectionException e) {
+      throw new InvalidStageException("There was issue communicating with Salesforce", e);
+    }
   }
 }

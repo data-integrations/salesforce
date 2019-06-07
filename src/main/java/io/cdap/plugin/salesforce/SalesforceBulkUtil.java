@@ -72,12 +72,17 @@ public final class SalesforceBulkUtil {
    * @throws AsyncApiException if there is an issue creating the job
    */
   public static JobInfo createJob(BulkConnection bulkConnection,
-                                  String sObject, OperationEnum operationEnum) throws AsyncApiException {
+                                  String sObject, OperationEnum operationEnum,
+                                  String externalIdField) throws AsyncApiException {
     JobInfo job = new JobInfo();
     job.setObject(sObject);
     job.setOperation(operationEnum);
     job.setConcurrencyMode(ConcurrencyMode.Parallel);
     job.setContentType(ContentType.CSV);
+    if (externalIdField != null) {
+      job.setExternalIdFieldName(externalIdField);
+    }
+
     job = bulkConnection.createJob(job);
     Preconditions.checkState(job.getId() != null, "Couldn't get job ID. There was a problem in creating the " +
       "batch job");
@@ -112,7 +117,7 @@ public final class SalesforceBulkUtil {
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query);
+    JobInfo job = createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
 
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       bulkConnection.createBatchFromStream(job, bout);

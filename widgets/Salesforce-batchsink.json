@@ -55,8 +55,36 @@
           "name": "sObject"
         },
         {
+          "widget-type": "radio-group",
+          "label": "Operation",
+          "name": "operation",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "Insert",
+            "options": [
+              {
+                "id": "insert",
+                "label": "Insert"
+              },
+              {
+                "id": "upsert",
+                "label": "Upsert"
+              },
+              {
+                "id": "update",
+                "label": "Update"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "textbox",
-          "label": "Max records per batch",
+          "label": "Upsert External ID Field",
+          "name": "externalIdField"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Max Records Per Batch",
           "name": "maxRecordsPerBatch",
           "widget-attributes" : {
             "default": "10000"
@@ -64,7 +92,7 @@
         },
         {
           "widget-type": "textbox",
-          "label": "Max bytes per batch",
+          "label": "Max Bytes Per Batch",
           "name": "maxBytesPerBatch",
           "widget-attributes" : {
             "default": "10000000"

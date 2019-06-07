@@ -70,12 +70,15 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
       public void setupJob(JobContext jobContext) {
         Configuration conf = jobContext.getConfiguration();
         String sObjectName = conf.get(SalesforceSinkConstants.CONFIG_SOBJECT);
+        OperationEnum operationType = OperationEnum.valueOf(
+          conf.get(SalesforceSinkConstants.CONFIG_OPERATION).toLowerCase());
+        String externalIdField = conf.get(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD);
 
         AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
 
         try {
           BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-          JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectName, OperationEnum.insert);
+          JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectName, operationType, externalIdField);
           conf.set(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
           LOG.info("Started Salesforce job with jobId='{}'", job.getId());
         } catch (AsyncApiException e) {
