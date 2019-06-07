@@ -33,17 +33,23 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
    * @param config Salesforce batch sink configuration
    */
   public SalesforceOutputFormatProvider(SalesforceSinkConfig config) {
-    this.configMap = new ImmutableMap.Builder<String, String>()
+    ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
       .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
       .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
       .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
       .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
       .put(SalesforceSinkConstants.CONFIG_SOBJECT, config.getSObject())
+      .put(SalesforceSinkConstants.CONFIG_OPERATION, config.getOperation())
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
-      .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
-      .build();
+      .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString());
+
+    if (config.getExternalIdField() != null) {
+      configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());
+    }
+
+    this.configMap = configBuilder.build();
   }
 
   @Override

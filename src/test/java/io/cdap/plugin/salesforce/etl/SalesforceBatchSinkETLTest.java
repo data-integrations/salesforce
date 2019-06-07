@@ -105,6 +105,158 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   }
 
   @Test
+  public void testUpdateAccount() throws Exception {
+    String sObject = "Account";
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+
+    List<StructuredRecord> inputRecords = ImmutableList.of(
+      StructuredRecord.builder(schema)
+        .set("Name", "testUpdateAccount1")
+        .set("NumberOfEmployees", 6)
+        .set("ShippingLatitude", 50.4501)
+        .set("ShippingLongitude", 30.5234)
+        .build(),
+      StructuredRecord.builder(schema)
+        .set("Name", "testUpdateAccount2")
+        .set("NumberOfEmployees", 1)
+        .set("ShippingLatitude", 37.4220)
+        .set("ShippingLongitude", 122.0841)
+        .build()
+    );
+    List<SObject> createdSObjects = new ArrayList<>();
+
+    ApplicationManager appManager = deployPipeline(sObject, schema);
+    runPipeline(appManager, inputRecords);
+    assertRecordsCreated(sObject, inputRecords, createdSObjects);
+    addToCleanUpList(createdSObjects);
+
+    schema = Schema.recordOf("output",
+                             Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+                             Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+                             Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+
+    inputRecords = ImmutableList.of(
+      StructuredRecord.builder(schema)
+        .set("Id", createdObjectsIds.get(0))
+        .set("Name", "testUpdateAccount1Stage2")
+        .set("NumberOfEmployees", 6)
+        .set("ShippingLatitude", 50.4501)
+        .set("ShippingLongitude", 30.5234)
+        .build(),
+      StructuredRecord.builder(schema)
+        .set("Id", createdObjectsIds.get(1))
+        .set("Name", "testUpdateAccount2Stage2")
+        .set("NumberOfEmployees", 1)
+        .set("ShippingLatitude", 37.4220)
+        .set("ShippingLongitude", 122.0841)
+        .build()
+    );
+
+    Map<String, String> sinkProperties = new ImmutableMap.Builder<String, String>()
+      .put(SalesforceSinkConfig.PROPERTY_OPERATION, "Update")
+      .build();
+
+    appManager = deployPipeline(sObject, schema, sinkProperties);
+    runPipeline(appManager, inputRecords);
+    assertRecordsCreated(sObject, inputRecords, createdSObjects);
+    addToCleanUpList(createdSObjects);
+  }
+
+  @Test
+  public void testUpsertOpportunity() throws Exception {
+    String sObject = "Opportunity";
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+    );
+
+    List<StructuredRecord> inputRecords1 = ImmutableList.of(
+      StructuredRecord.builder(schema)
+        .set("Name", "testUpsertOpportunity1")
+        .set("StageName", "Prospecting")
+        .set("CloseDate", 17897).set("IsPrivate", true)
+        .set("Amount", 123.0)
+        .set("ForecastCategoryName", "Omitted")
+        .build(),
+      StructuredRecord.builder(schema)
+        .set("Name", "testUpsertOpportunity2")
+        .set("StageName", "Closed Won")
+        .set("CloseDate", 17897)
+        .set("IsPrivate", false)
+        .set("Amount", 0.0)
+        .set("ForecastCategoryName", "Closed")
+        .build()
+    );
+    List<SObject> createdSObjects = new ArrayList<>();
+
+    ApplicationManager appManager = deployPipeline(sObject, schema);
+    runPipeline(appManager, inputRecords1);
+    assertRecordsCreated(sObject, inputRecords1, createdSObjects);
+    addToCleanUpList(createdSObjects);
+
+    schema = Schema.recordOf("output",
+                             Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+                             Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+                             Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+                             Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+                             Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+    );
+
+    List<StructuredRecord> inputRecords2 = ImmutableList.of(
+      StructuredRecord.builder(schema)
+        .set("Id", createdObjectsIds.get(0))
+        .set("Name", "testUpsertOpportunity1Stage2")
+        .set("StageName", "Prospecting")
+        .set("CloseDate", 17897)
+        .set("IsPrivate", true)
+        .set("Amount", 123.0)
+        .set("ForecastCategoryName", "Omitted")
+        .build(),
+      StructuredRecord.builder(schema)
+        .set("Id", "")
+        .set("Name", "testUpsertOpportunity2Stage2")
+        .set("StageName", "Closed Won")
+        .set("CloseDate", 17897)
+        .set("IsPrivate", false)
+        .set("Amount", 0.0)
+        .set("ForecastCategoryName", "Closed")
+        .build()
+    );
+    createdSObjects = new ArrayList<>();
+
+    Map<String, String> sinkProperties = new ImmutableMap.Builder<String, String>()
+      .put(SalesforceSinkConfig.PROPERTY_OPERATION, "Upsert")
+      .put(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD, "Id")
+      .build();
+
+    appManager = deployPipeline(sObject, schema, sinkProperties);
+    runPipeline(appManager, inputRecords2);
+
+    List<StructuredRecord> expectedRecords = new ArrayList<>();
+    expectedRecords.add(inputRecords1.get(1));
+    expectedRecords.addAll(inputRecords2);
+
+    assertRecordsCreated(sObject, expectedRecords, createdSObjects);
+    addToCleanUpList(createdSObjects);
+  }
+
+  @Test
   public void testNonDefaultFieldsCase() throws Exception {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",

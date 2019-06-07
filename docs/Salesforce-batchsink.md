@@ -27,10 +27,19 @@ A Salesforce connected application must be created in order to get a client secr
 
 **SObject Name:** Salesforce object name to insert records into.
 
-**Max records per batch:** Maximum number of records to include in a batch when writing to Salesforce.
+**Operation:** Operation used for writing data into Salesforce.<br>
+Insert - adds records.<br>
+Upsert - upserts the records. Salesforce will decide if sObjects 
+are the same using external id field.<br>
+Update - updates existing records based on Id field.
+
+**Upsert External ID Field:** External id field name. It is used only if operation is upsert.
+The field specified can be either 'Id' or any customly created field, which has external id attribute set.
+
+**Max Records Per Batch:** Maximum number of records to include in a batch when writing to Salesforce.
 This value cannot be greater than 10,000.
 
-**Max bytes per batch:** Maximum size in bytes of a batch of records when writing to Salesforce.
+**Max Bytes Per Batch:** Maximum size in bytes of a batch of records when writing to Salesforce.
 This value cannot be greater than 10,000,000.
 
 **Error Handling:** Strategy used to handle erroneous records.<br>

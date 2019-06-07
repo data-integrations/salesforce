@@ -107,6 +107,16 @@ public class SalesforceSchemaUtil {
   }
 
   /**
+   * Works like {@link SalesforceSchemaUtil#checkCompatibility(Schema, Schema, boolean)}
+   * except that checking nullable is always on.
+   *
+   * @see SalesforceSchemaUtil#checkCompatibility(Schema, Schema, boolean)
+   */
+  public static void checkCompatibility(Schema actualSchema, Schema providedSchema) {
+    checkCompatibility(actualSchema, providedSchema, true);
+  }
+
+  /**
    * Checks two schemas compatibility based on the following rules:
    * <ul>
    *   <li>Actual schema must have fields indicated in the provided schema.</li>
@@ -117,10 +127,11 @@ public class SalesforceSchemaUtil {
    *
    * @param actualSchema schema calculated based on Salesforce metadata information
    * @param providedSchema schema provided in the configuration
+   * @param checkNullable if true, checks for nullability of fields in schema are triggered.
    */
-  public static void checkCompatibility(Schema actualSchema, Schema providedSchema) {
+  public static void checkCompatibility(Schema actualSchema, Schema providedSchema, boolean checkNullable) {
     for (Schema.Field providedField : Objects.requireNonNull(providedSchema.getFields())) {
-      Schema.Field actualField = actualSchema.getField(providedField.getName());
+      Schema.Field actualField = actualSchema.getField(providedField.getName(), true);
       if (actualField == null) {
         throw new IllegalArgumentException(
           String.format("Field '%s' does not exist in Salesforce", providedField.getName()));
@@ -142,7 +153,7 @@ public class SalesforceSchemaUtil {
             providedField.getName(), providedFieldSchema, actualFieldSchema));
       }
 
-      if (isActualFieldNullable && !isProvidedFieldNullable) {
+      if (checkNullable && isActualFieldNullable && !isProvidedFieldNullable) {
         throw new IllegalArgumentException(String.format("Field '%s' should be nullable", providedField.getName()));
       }
     }
