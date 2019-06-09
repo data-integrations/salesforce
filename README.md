@@ -20,7 +20,7 @@ Instructions to run the tests:
  3. Run the tests using the command below:
 
 ```
-mvn clean test -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret= -Dsalesforce.test.username= -Dsalesforce.test.password=
+mvn clean test -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret= -Dsalesforce.test.username= -Dsalesforce.test.password= -Djackson2.version=2.6.7
 ```
 
 # Contact
