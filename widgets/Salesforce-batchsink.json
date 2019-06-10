@@ -60,7 +60,7 @@
           "name": "operation",
           "widget-attributes": {
             "layout": "inline",
-            "default": "Insert",
+            "default": "insert",
             "options": [
               {
                 "id": "insert",
