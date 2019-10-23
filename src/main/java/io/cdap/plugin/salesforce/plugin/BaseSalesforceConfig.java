@@ -19,6 +19,7 @@ import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -84,8 +85,14 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return loginUrl;
   }
 
-  public void validate() {
-    validateConnection();
+  public void validate(FailureCollector collector) {
+    try {
+      validateConnection();
+    } catch (Exception e) {
+      collector.addFailure("Error encountered while establishing connection: " + e.getMessage(), null)
+        .withStacktrace(e.getStackTrace());
+    }
+    collector.getOrThrowException();
   }
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
@@ -115,7 +122,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     try {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
     }
   }
 }

@@ -24,6 +24,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
@@ -100,9 +101,9 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   @Override
-  public void validate() {
-    super.validate();
-    validateFilters();
+  public void validate(FailureCollector collector) {
+    super.validate(collector);
+    validateFilters(collector);
   }
 
   /**

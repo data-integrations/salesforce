@@ -24,6 +24,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
@@ -161,17 +162,25 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                                                             SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
   }
 
-  public void validate(Schema schema) {
-    super.validate();
+  public void validate(Schema schema, FailureCollector collector) {
+    super.validate(collector);
 
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
-      getErrorHandling();
+      try {
+        getErrorHandling();
+      } catch (InvalidConfigPropertyException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_ERROR_HANDLING);
+      }
     }
 
     if (!containsMacro(PROPERTY_OPERATION)) {
       // triggering getter will also trigger value validity check
-      getOperationEnum();
+      try {
+        getOperationEnum();
+      } catch (InvalidConfigPropertyException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_OPERATION);
+      }
     }
 
     if (!containsMacro(PROPERTY_MAX_BYTES_PER_BATCH)) {
@@ -181,8 +190,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
         String errorMessage = String.format(
           "Unsupported value for maxBytesPerBatch: %d. Value should be between 1 and %d",
           maxBytesPerBatch, MAX_BYTES_PER_BATCH_LIMIT);
-
-        throw new InvalidConfigPropertyException(errorMessage, SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH);
+        collector.addFailure(errorMessage, null).withConfigProperty(PROPERTY_MAX_BYTES_PER_BATCH);
       }
     }
 
@@ -194,18 +202,18 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
         String errorMessage = String.format(
           "Unsupported value for maxRecordsPerBatch: %d. Value should be between 1 and %d",
           maxRecordsPerBatch, MAX_RECORDS_PER_BATCH_LIMIT);
-
-        throw new InvalidConfigPropertyException(errorMessage, SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH);
+        collector.addFailure(errorMessage, null).withConfigProperty(PROPERTY_MAX_RECORDS_PER_BATCH);
       }
     }
-
-    validateSchema(schema);
+    collector.getOrThrowException();
+    validateSchema(schema, collector);
   }
 
-  private void validateSchema(Schema schema) {
+  private void validateSchema(Schema schema, FailureCollector collector) {
     List<Schema.Field> fields = schema.getFields();
     if (fields == null || fields.isEmpty()) {
-      throw new InvalidStageException("Sink schema must contain at least one field");
+      collector.addFailure("Sink schema must contain at least one field", null);
+      throw collector.getOrThrowException();
     }
 
     if (!canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
@@ -213,7 +221,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       return;
     }
 
-    SObjectsDescribeResult describeResult = getSObjectDescribeResult();
+    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector);
     Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
     Set<String> inputFields = schema.getFields()
@@ -234,38 +242,40 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
         externalIdFieldName = SALESFORCE_ID_FIELD;
         break;
       default:
-        throw new InvalidConfigPropertyException("Unsupported value for operation: " + operation,
-                                                 SalesforceSinkConfig.PROPERTY_OPERATION);
+        collector.addFailure("Unsupported value for operation: " + operation, null)
+          .withConfigProperty(PROPERTY_OPERATION);
     }
 
     if (operation == OperationEnum.upsert) {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
-        throw new InvalidConfigPropertyException(
-          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName),
-          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+        collector.addFailure(
+          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
+          .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
-        throw new InvalidConfigPropertyException(
-          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName),
-          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+        collector.addFailure(
+          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
+          .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
-    } else {
+    } else if (operation == OperationEnum.insert || operation == OperationEnum.update) {
       if (!Strings.isNullOrEmpty(getExternalIdField())) {
-        throw new InvalidConfigPropertyException(
-          String.format("External id field must not be set for operation='%s'", operation),
-          SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+        collector.addFailure(String.format("External id field must not be set for operation='%s'", operation), null)
+          .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
     }
 
     if (externalIdFieldName != null && !inputFields.remove(externalIdFieldName)) {
-      throw new InvalidStageException(String.format("Schema must contain external id field '%s'", externalIdFieldName));
+      collector.addFailure(String.format("Schema must contain external id field '%s'", externalIdFieldName), null)
+        .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
     }
     inputFields.removeAll(creatableSObjectFields);
 
     if (!inputFields.isEmpty()) {
-      throw new InvalidStageException(String.format("Following schema fields: '%s' are not present " +
-                                                         "or not creatable in target Salesforce sObject '%s'",
-                                                       String.join(",", inputFields), this.getSObject()));
+      for (String inputField : inputFields) {
+        collector.addFailure(
+          String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
+          .withInputSchemaField(inputField);
+      }
     }
   }
 
@@ -280,16 +290,17 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     return creatableSObjectFields;
   }
 
-  private SObjectsDescribeResult getSObjectDescribeResult() {
+  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
     AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
                                                                        this.getAuthenticatorCredentials());
       return SObjectsDescribeResult.of(partnerConnection,
-                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
+                                       sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {
-      throw new InvalidStageException("There was issue communicating with Salesforce", e);
+      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      throw collector.getOrThrowException();
     }
   }
 

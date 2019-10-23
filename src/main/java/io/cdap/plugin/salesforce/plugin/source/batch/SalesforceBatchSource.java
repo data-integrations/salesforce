@@ -26,6 +26,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.dataset.lib.KeyValue;
 import io.cdap.cdap.etl.api.Emitter;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
@@ -61,7 +62,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
-    config.validate(); // validate when macros not yet substituted
+    // validate when macros not yet substituted
+    config.validate(pipelineConfigurer.getStageConfigurer().getFailureCollector());
 
     if (config.containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
       // schema will be available later during `prepareRun` stage
@@ -84,7 +86,9 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
   @Override
   public void prepareRun(BatchSourceContext context) {
-    config.validate(); // validate when macros are already substituted
+    FailureCollector collector = context.getFailureCollector();
+    config.validate(collector); // validate when macros are already substituted
+    collector.getOrThrowException();
 
     if (schema == null) {
       schema = retrieveSchema();

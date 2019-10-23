@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.sforce.soap.partner.sobject.SObject;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.cdap.test.ApplicationManager;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
 import org.junit.Assert;
@@ -365,14 +365,9 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("BillingAddress", Schema.of(Schema.Type.STRING))
     );
 
-    try {
-      getDefaultConfig(sObject).validate(schema);
-      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
-    } catch (InvalidStageException ex) {
-      if (!ex.getMessage().contains("Following schema fields: 'BillingAddress' are not present or not creatable")) {
-        throw ex;
-      }
-    }
+    MockFailureCollector collector = new MockFailureCollector();
+    getDefaultConfig(sObject).validate(schema, collector);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
   @Test
@@ -390,14 +385,9 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("HasOverdueTask", Schema.of(Schema.Type.STRING))
     );
 
-    try {
-      getDefaultConfig(sObject).validate(schema);
-      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
-    } catch (InvalidStageException ex) {
-      if (!ex.getMessage().contains("Following schema fields: 'HasOverdueTask' are not present or not creatable")) {
-        throw ex;
-      }
-    }
+    MockFailureCollector collector = new MockFailureCollector();
+    getDefaultConfig(sObject).validate(schema, collector);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
   @Test
@@ -414,14 +404,8 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("SomethingNotExistant", Schema.of(Schema.Type.STRING))
     );
 
-    try {
-      getDefaultConfig(sObject).validate(schema);
-      Assert.fail("Validation was expected to fail due to compound field 'BillingAddress' in schema");
-    } catch (InvalidStageException ex) {
-      if (!ex.getMessage().contains(
-        "Following schema fields: 'SomethingNotExistant' are not present or not creatable")) {
-        throw ex;
-      }
-    }
+    MockFailureCollector collector = new MockFailureCollector();
+    getDefaultConfig(sObject).validate(schema, collector);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 }
