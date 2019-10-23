@@ -20,6 +20,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
@@ -109,11 +110,27 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     return datetimeBefore;
   }
 
-  protected void validateFilters() {
-    validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
-    validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE, getDatetimeBefore());
-    validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_DURATION, getDuration());
-    validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
+  protected void validateFilters(FailureCollector collector) {
+    try {
+      validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
+    } catch (InvalidConfigPropertyException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
+    try {
+      validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE, getDatetimeBefore());
+    } catch (InvalidConfigPropertyException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
+    try {
+      validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_DURATION, getDuration());
+    } catch (InvalidConfigPropertyException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
+    try {
+      validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
+    } catch (InvalidConfigPropertyException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
   }
 
   /**

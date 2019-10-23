@@ -22,6 +22,7 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -120,47 +121,61 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   @Override
-  public void validate() {
-    super.validate();
+  public void validate(FailureCollector collector) {
+    super.validate(collector);
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
-        throw new InvalidConfigPropertyException(String.format(
-          "SOQL Query with restricted field types (function calls, sub-query fields) or "
-            + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
-            + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query),
-                                                 SalesforceSourceConstants.PROPERTY_QUERY);
+        collector.addFailure(
+          String.format(
+            "SOQL Query with restricted field types (function calls, sub-query fields) or "
+              + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
+              + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query), null)
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
       }
       SObjectDescriptor queryDescriptor;
       try {
         queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
       } catch (SOQLParsingException e) {
-        throw new InvalidConfigPropertyException(String.format("Invalid SOQL query: '%s'", query), e,
-                                                 SalesforceSourceConstants.PROPERTY_QUERY);
+        collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
+          .withStacktrace(e.getStackTrace())
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
       }
       if (canAttemptToEstablishConnection()) {
-        validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames());
+        validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector);
       }
     }
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-      && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
-      && !isSoqlQuery()) {
-      validateFilters();
+      && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)) {
+      try {
+        boolean isSoql = isSoqlQuery();
+        if (!isSoql) {
+          validateFilters(collector);
+        }
+      } catch (InvalidConfigPropertyException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+      }
     }
-    validateSchema();
+    validateSchema(collector);
   }
 
-  private void validateSchema() {
+  private void validateSchema(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
       return;
     }
 
-    Schema schema = getSchema();
-    if (schema != null) {
-      SalesforceSchemaUtil.validateFieldSchemas(schema);
+    try {
+      Schema schema = getSchema();
+      if (schema != null) {
+        SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
+      }
+    } catch (InvalidConfigPropertyException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
   }
 
-  private void validateCompoundFields(String sObjectName, List<String> fieldNames) {
+  private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector) {
     try {
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
                                                                        getAuthenticatorCredentials());
@@ -170,17 +185,18 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         .map(SObjectDescriptor.FieldDescriptor::getName)
         .collect(Collectors.toList());
       if (!compoundFieldNames.isEmpty()) {
-        throw new InvalidConfigPropertyException(
+        collector.addFailure(
           String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
                           + "Please specify the individual attributes instead of compound field name in SOQL query. "
                           + "For example, instead of 'Select BillingAddress ...', use "
                           + "'Select BillingCountry, BillingCity, BillingStreet ...'",
-            compoundFieldNames),
-          SalesforceSourceConstants.PROPERTY_QUERY);
+                        compoundFieldNames), null)
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
       }
     } catch (ConnectionException e) {
-      throw new IllegalStateException(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
+      collector.addFailure(
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
+        .withStacktrace(e.getStackTrace());
     }
   }
 }
