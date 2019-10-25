@@ -25,8 +25,8 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
@@ -129,8 +129,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     try {
       return OperationEnum.valueOf(operation.toLowerCase());
     } catch (IllegalArgumentException ex) {
-      throw new InvalidConfigPropertyException("Unsupported value for operation: " + operation,
-                                               SalesforceSinkConfig.PROPERTY_OPERATION);
+      throw new InvalidConfigException("Unsupported value for operation: " + operation,
+                                       SalesforceSinkConfig.PROPERTY_OPERATION);
     }
   }
 
@@ -142,8 +142,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     try {
       return Long.parseLong(maxBytesPerBatch);
     } catch (NumberFormatException ex) {
-      throw new InvalidConfigPropertyException("Unsupported value for maxBytesPerBatch: " + maxBytesPerBatch,
-                                               SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH);
+      throw new InvalidConfigException("Unsupported value for maxBytesPerBatch: " + maxBytesPerBatch,
+                                       SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH);
     }
   }
 
@@ -151,15 +151,15 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     try {
       return Long.parseLong(maxRecordsPerBatch);
     } catch (NumberFormatException ex) {
-      throw new InvalidConfigPropertyException("Unsupported value for maxRecordsPerBatch: " + maxRecordsPerBatch,
-                                               SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH);
+      throw new InvalidConfigException("Unsupported value for maxRecordsPerBatch: " + maxRecordsPerBatch,
+                                       SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH);
     }
   }
 
   public ErrorHandling getErrorHandling() {
     return ErrorHandling.fromValue(errorHandling)
-      .orElseThrow(() -> new InvalidConfigPropertyException("Unsupported error handling value: " + errorHandling,
-                                                            SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
+      .orElseThrow(() -> new InvalidConfigException("Unsupported error handling value: " + errorHandling,
+                                                    SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
   }
 
   public void validate(Schema schema, FailureCollector collector) {
@@ -169,7 +169,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       // triggering getter will also trigger value validity check
       try {
         getErrorHandling();
-      } catch (InvalidConfigPropertyException e) {
+      } catch (InvalidConfigException e) {
         collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_ERROR_HANDLING);
       }
     }
@@ -178,7 +178,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       // triggering getter will also trigger value validity check
       try {
         getOperationEnum();
-      } catch (InvalidConfigPropertyException e) {
+      } catch (InvalidConfigException e) {
         collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_OPERATION);
       }
     }

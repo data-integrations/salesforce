@@ -16,7 +16,7 @@
 
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -99,7 +99,7 @@ public class SalesforceSourceConfigTest {
       .setSObjectName(null)
       .build();
 
-    thrown.expect(InvalidConfigPropertyException.class);
+    thrown.expect(InvalidConfigException.class);
 
     config.isSoqlQuery();
   }
@@ -139,7 +139,7 @@ public class SalesforceSourceConfigTest {
           config.getDuration();
 
           Assert.fail(String.format("Exception is not thrown for value '%s'", value));
-        } catch (InvalidConfigPropertyException e) {
+        } catch (InvalidConfigException e) {
           // expected failure, do nothing
         }
       });
@@ -180,7 +180,7 @@ public class SalesforceSourceConfigTest {
           config.getOffset();
 
           Assert.fail(String.format("Exception is not thrown for value '%s'", value));
-        } catch (InvalidConfigPropertyException e) {
+        } catch (InvalidConfigException e) {
           // expected failure, do nothing
         }
       });
