@@ -25,8 +25,8 @@ import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -177,9 +177,9 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
         LOG.info("Creating PushTopic {}", pushTopicName);
 
         if (Strings.isNullOrEmpty(query)) {
-          throw new InvalidConfigPropertyException("SOQL query or SObject name must be provided, unless " +
+          throw new InvalidConfigException("SOQL query or SObject name must be provided, unless " +
                                                      "existing pushTopic is used",
-                                                   SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY);
+                                           SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY);
         }
 
         pushTopic = new SObjectBuilder()

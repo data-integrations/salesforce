@@ -21,7 +21,7 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -113,22 +113,22 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   protected void validateFilters(FailureCollector collector) {
     try {
       validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
-    } catch (InvalidConfigPropertyException e) {
+    } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
     try {
       validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_BEFORE, getDatetimeBefore());
-    } catch (InvalidConfigPropertyException e) {
+    } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
     try {
       validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_DURATION, getDuration());
-    } catch (InvalidConfigPropertyException e) {
+    } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
     try {
       validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
-    } catch (InvalidConfigPropertyException e) {
+    } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
   }
@@ -196,7 +196,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     try {
       parseDatetime(datetime);
     } catch (DateTimeParseException e) {
-      throw new InvalidConfigPropertyException(
+      throw new InvalidConfigException(
         String.format("Invalid SObject '%s' value: '%s'. Value must be in Salesforce Date Formats. For example, "
                         + "2019-01-01T23:01:01Z", propertyName, datetime), propertyName);
     }
@@ -211,7 +211,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
       .collect(Collectors.toList());
 
     if (!invalidValues.isEmpty()) {
-      throw new InvalidConfigPropertyException(
+      throw new InvalidConfigException(
         String.format("Invalid SObject '%s' values: '%s'. Values must be '%d' or greater", propertyName,
                       invalidValues, SalesforceConstants.RANGE_FILTER_MIN_VALUE), propertyName);
     }
@@ -229,7 +229,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
         keyValue -> parseUnitType(propertyName, keyValue[1]),
         keyValue -> parseUnitValue(propertyName, keyValue[0]),
         (o, n) -> {
-          throw new InvalidConfigPropertyException(
+          throw new InvalidConfigException(
             String.format("'%s' has duplicate unit types '%s'",
                           propertyName, rangeValue), propertyName);
         }
@@ -238,7 +238,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
 
   private void validateUnitKeyValue(String propertyName, String rangeValue, String[] keyValue) {
     if (keyValue.length < 2) {
-      throw new InvalidConfigPropertyException(
+      throw new InvalidConfigException(
         String.format("'%s' has invalid format '%s'. "
                         + "Expected format is <VALUE_1> <TYPE_1>,<VALUE_2> <TYPE_2>... . "
                         + "For example, '1 days, 2 hours, 30 minutes'", propertyName, rangeValue), propertyName);
@@ -250,7 +250,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     try {
       return ChronoUnit.valueOf(value.trim().toUpperCase());
     } catch (IllegalArgumentException e) {
-      throw new InvalidConfigPropertyException(
+      throw new InvalidConfigException(
         String.format("'%s' has invalid unit type '%s'", propertyName, value), e, propertyName);
     }
   }
@@ -259,7 +259,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     try {
       return Integer.parseInt(value.trim());
     } catch (NumberFormatException e) {
-      throw new InvalidConfigPropertyException(
+      throw new InvalidConfigException(
         String.format("'%s' has invalid unit value '%s'", propertyName, value), e, propertyName);
     }
   }

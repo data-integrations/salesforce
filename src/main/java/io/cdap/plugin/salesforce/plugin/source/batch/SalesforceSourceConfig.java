@@ -23,7 +23,7 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidConfigPropertyException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
@@ -105,7 +105,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     try {
       return Strings.isNullOrEmpty(schema) ? null : Schema.parseJson(schema);
     } catch (IOException e) {
-      throw new InvalidConfigPropertyException("Unable to parse output schema: " +
+      throw new InvalidConfigException("Unable to parse output schema: " +
         schema, e, SalesforceSourceConstants.PROPERTY_SCHEMA);
     }
   }
@@ -116,7 +116,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     } else if (!Strings.isNullOrEmpty(sObjectName)) {
       return false;
     }
-    throw new InvalidConfigPropertyException("SOQL query or SObject name must be provided",
+    throw new InvalidConfigException("SOQL query or SObject name must be provided",
                                              SalesforceSourceConstants.PROPERTY_QUERY);
   }
 
@@ -153,7 +153,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         if (!isSoql) {
           validateFilters(collector);
         }
-      } catch (InvalidConfigPropertyException e) {
+      } catch (InvalidConfigException e) {
         collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
       }
     }
@@ -170,7 +170,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       if (schema != null) {
         SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
       }
-    } catch (InvalidConfigPropertyException e) {
+    } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
   }
