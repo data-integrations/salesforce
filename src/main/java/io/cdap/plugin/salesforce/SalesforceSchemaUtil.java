@@ -22,6 +22,7 @@ import com.sforce.soap.partner.FieldType;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import java.util.ArrayList;
@@ -88,20 +89,28 @@ public class SalesforceSchemaUtil {
    * Validates that fields from given CDAP schema are of supported schema.
    *
    * @param schema CDAP schema
+   * @param collector that collects failures
    */
-  public static void validateFieldSchemas(Schema schema) {
+  public static void validateFieldSchemas(Schema schema, FailureCollector collector) {
     for (Schema.Field field : Objects.requireNonNull(schema.getFields(), "Schema must have fields")) {
       Schema fieldSchema = field.getSchema();
       fieldSchema = fieldSchema.isNullable() ? fieldSchema.getNonNullable() : fieldSchema;
+
       if (!SUPPORTED_TYPES.contains(fieldSchema.getType())) {
-        throw new IllegalArgumentException(
-          String.format("Field '%s' is of unsupported type '%s'", field.getName(), fieldSchema.getType()));
+        collector.addFailure(
+          String.format("Field '%s' is of unsupported type '%s'.", field.getName(), fieldSchema.getDisplayName()),
+          String.format("Supported types are: '%s'", SUPPORTED_TYPES.stream().map(Enum::name)
+            .collect(Collectors.joining(", "))))
+          .withOutputSchemaField(field.getName()).withInputSchemaField(field.getName());
       }
 
       Schema.LogicalType logicalType = fieldSchema.getLogicalType();
       if (logicalType != null && !SUPPORTED_LOGICAL_TYPES.contains(logicalType)) {
-        throw new IllegalArgumentException(
-          String.format("Field '%s' is of unsupported type '%s'", field.getName(), logicalType.getToken()));
+        collector.addFailure(
+          String.format("Field '%s' is of unsupported type '%s'.", field.getName(), fieldSchema.getDisplayName()),
+          String.format("Supported types are: '%s'", SUPPORTED_LOGICAL_TYPES.stream().map(Enum::name)
+            .collect(Collectors.joining(", "))))
+          .withOutputSchemaField(field.getName()).withInputSchemaField(field.getName());
       }
     }
   }

@@ -18,6 +18,7 @@ package io.cdap.plugin.salesforce;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.FieldType;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -148,7 +149,8 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
       Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)));
 
-    SalesforceSchemaUtil.validateFieldSchemas(schema);
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
   }
 
   @Test
@@ -157,9 +159,9 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
       Schema.Field.of("BytesField", Schema.of(Schema.Type.BYTES)));
 
-    thrown.expect(IllegalArgumentException.class);
-
-    SalesforceSchemaUtil.validateFieldSchemas(schema);
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
   @Test
