@@ -23,7 +23,7 @@ Configuration
 
 **Username:** Salesforce username.
 
-**Password:** Salesforce password.
+**Password:** Salesforce password + security token (concatenated together with no spaces in between).
 
 **Consumer Key:** Application Consumer Key. This is also known as the OAuth client id.
 A Salesforce connected application must be created in order to get a consumer key.
