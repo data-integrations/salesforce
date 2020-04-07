@@ -87,7 +87,6 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     Schema schema = context.getInputSchema();
     if (schema != null && schema.getFields() != null) {
       recordLineage(context, config.referenceName, schema,
-                    schema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList()),
                     "Read", "Read from Salesforce MultiObjects.");
     }
   }

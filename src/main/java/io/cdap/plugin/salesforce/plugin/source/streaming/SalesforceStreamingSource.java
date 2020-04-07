@@ -37,7 +37,6 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import java.util.stream.Collectors;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
 import javax.ws.rs.Path;
@@ -90,7 +89,6 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     Schema schema = context.getInputSchema();
     if (schema != null && schema.getFields() != null) {
       recordLineage(context, config.referenceName, schema,
-                    schema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList()),
                     "Read", String.format("Read from Salesforce Stream with push topic of %s.",
                                                          config.getPushTopicName()));
     }
