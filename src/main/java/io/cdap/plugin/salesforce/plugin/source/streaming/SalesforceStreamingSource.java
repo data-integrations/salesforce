@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.sobject.SObject;
@@ -25,6 +26,7 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.dataset.DatasetManagementException;
 import io.cdap.cdap.api.dataset.DatasetProperties;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
@@ -39,6 +41,7 @@ import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.tephra.TransactionFailureException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -127,12 +130,16 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
                                           SObjectDescriptor.fromQuery(query));
   }
 
-  private void recordLineage(StreamingSourceContext context, String outputName, Schema tableSchema, String operationName,
-                             String description) {
-    LineageRecorder lineageRecorder = new LineageRecorder(context, outputName);
-    lineageRecorder.createExternalDataset(tableSchema);
+  private void recordLineage(StreamingSourceContext context, String outputName, Schema tableSchema,
+                             String operationName, String description)
+    throws DatasetManagementException, TransactionFailureException {
+    Preconditions.checkNotNull(tableSchema, "schema for output %s is null.", outputName);
+    Preconditions.checkNotNull(tableSchema.getFields(), "schema.getFields() for output %s is null.", outputName);
+
+    context.registerLineage(outputName, tableSchema);
     List<String> fieldNames = tableSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
     if (!fieldNames.isEmpty()) {
+      LineageRecorder lineageRecorder = new LineageRecorder(context, outputName);
       lineageRecorder.recordRead(operationName, description, fieldNames);
     }
   }
