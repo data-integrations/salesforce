@@ -33,12 +33,15 @@ import io.cdap.cdap.etl.api.streaming.StreamingSource;
 import io.cdap.cdap.etl.api.streaming.StreamingSourceContext;
 import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.common.IdUtils;
+import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.spark.streaming.api.java.JavaDStream;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 
 /**
@@ -122,5 +125,15 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
     return SalesforceSchemaUtil.getSchema(authenticatorCredentials,
                                           SObjectDescriptor.fromQuery(query));
+  }
+
+  private void recordLineage(StreamingSourceContext context, String outputName, Schema tableSchema, String operationName,
+                             String description) {
+    LineageRecorder lineageRecorder = new LineageRecorder(context, outputName);
+    lineageRecorder.createExternalDataset(tableSchema);
+    List<String> fieldNames = tableSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
+    if (!fieldNames.isEmpty()) {
+      lineageRecorder.recordRead(operationName, description, fieldNames);
+    }
   }
 }
