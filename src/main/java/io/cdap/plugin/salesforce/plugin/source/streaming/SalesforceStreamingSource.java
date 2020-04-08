@@ -16,7 +16,6 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.sobject.SObject;
@@ -42,6 +41,8 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.tephra.TransactionFailureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,6 +58,8 @@ import javax.ws.rs.Path;
 public class SalesforceStreamingSource extends StreamingSource<StructuredRecord> {
   static final String NAME = "Salesforce";
   static final String DESCRIPTION = "Streams data updates from Salesforce using Salesforce Streaming API";
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSource.class);
+
   private SalesforceStreamingSourceConfig config;
 
   public SalesforceStreamingSource(SalesforceStreamingSourceConfig config) {
@@ -133,8 +136,14 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   private void recordLineage(StreamingSourceContext context, String outputName, Schema tableSchema,
                              String operationName, String description)
     throws DatasetManagementException, TransactionFailureException {
-    Preconditions.checkNotNull(tableSchema, "schema for output %s is null.", outputName);
-    Preconditions.checkNotNull(tableSchema.getFields(), "schema.getFields() for output %s is null.", outputName);
+    if (tableSchema == null) {
+      LOG.warn("Schema for output %s is null. Field-level lineage will not be recorded", outputName);
+      return;
+    }
+    if (tableSchema.getFields() == null) {
+      LOG.warn("schema.getFields() for output %s is null. Field-level lineage will not be recorded", outputName);
+      return;
+    }
 
     context.registerLineage(outputName, tableSchema);
     List<String> fieldNames = tableSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
