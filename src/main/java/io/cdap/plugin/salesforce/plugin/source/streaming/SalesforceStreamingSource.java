@@ -25,19 +25,27 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.dataset.DatasetManagementException;
 import io.cdap.cdap.api.dataset.DatasetProperties;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.cdap.etl.api.streaming.StreamingSource;
+import io.cdap.cdap.etl.api.streaming.StreamingSourceContext;
 import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.common.IdUtils;
+import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.tephra.TransactionFailureException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 
 /**
@@ -50,6 +58,8 @@ import javax.ws.rs.Path;
 public class SalesforceStreamingSource extends StreamingSource<StructuredRecord> {
   static final String NAME = "Salesforce";
   static final String DESCRIPTION = "Streams data updates from Salesforce using Salesforce Streaming API";
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSource.class);
+
   private SalesforceStreamingSourceConfig config;
 
   public SalesforceStreamingSource(SalesforceStreamingSourceConfig config) {
@@ -84,6 +94,16 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   }
 
   @Override
+  public void prepareRun(StreamingSourceContext context) throws Exception {
+    Schema schema = context.getInputSchema();
+    if (schema != null && schema.getFields() != null) {
+      recordLineage(context, config.referenceName, schema,
+                    "Read", String.format("Read from Salesforce Stream with push topic of %s.",
+                                                         config.getPushTopicName()));
+    }
+  }
+
+  @Override
   public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws ConnectionException {
     FailureCollector collector = streamingContext.getFailureCollector();
     config.validate(collector); // validate when macros are substituted
@@ -111,5 +131,25 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
     return SalesforceSchemaUtil.getSchema(authenticatorCredentials,
                                           SObjectDescriptor.fromQuery(query));
+  }
+
+  private void recordLineage(StreamingSourceContext context, String outputName, Schema tableSchema,
+                             String operationName, String description)
+    throws DatasetManagementException, TransactionFailureException {
+    if (tableSchema == null) {
+      LOG.warn("Schema for output %s is null. Field-level lineage will not be recorded", outputName);
+      return;
+    }
+    if (tableSchema.getFields() == null) {
+      LOG.warn("Schema fields for output %s is empty. Field-level lineage will not be recorded", outputName);
+      return;
+    }
+
+    context.registerLineage(outputName, tableSchema);
+    List<String> fieldNames = tableSchema.getFields().stream().map(Schema.Field::getName).collect(Collectors.toList());
+    if (!fieldNames.isEmpty()) {
+      LineageRecorder lineageRecorder = new LineageRecorder(context, outputName);
+      lineageRecorder.recordRead(operationName, description, fieldNames);
+    }
   }
 }
