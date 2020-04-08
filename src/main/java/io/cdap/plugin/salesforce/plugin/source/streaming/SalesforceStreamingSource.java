@@ -141,7 +141,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
       return;
     }
     if (tableSchema.getFields() == null) {
-      LOG.warn("schema.getFields() for output %s is null. Field-level lineage will not be recorded", outputName);
+      LOG.warn("Schema fields for output %s is empty. Field-level lineage will not be recorded", outputName);
       return;
     }
 
