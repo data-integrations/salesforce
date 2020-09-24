@@ -17,8 +17,6 @@ package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
-import com.sforce.async.JobInfo;
-import com.sforce.async.OperationEnum;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -40,8 +38,6 @@ import java.io.IOException;
  * it defines the output committer.
  */
 public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord> {
-
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceOutputFormat.class);
 
   @Override
   public RecordWriter<NullWritable, CSVRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
@@ -68,22 +64,8 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
     return new OutputCommitter() {
       @Override
       public void setupJob(JobContext jobContext) {
-        Configuration conf = jobContext.getConfiguration();
-        String sObjectName = conf.get(SalesforceSinkConstants.CONFIG_SOBJECT);
-        OperationEnum operationType = OperationEnum.valueOf(
-          conf.get(SalesforceSinkConstants.CONFIG_OPERATION).toLowerCase());
-        String externalIdField = conf.get(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD);
-
-        AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-
-        try {
-          BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-          JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectName, operationType, externalIdField);
-          conf.set(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
-          LOG.info("Started Salesforce job with jobId='{}'", job.getId());
-        } catch (AsyncApiException e) {
-          throw new RuntimeException("There was issue communicating with Salesforce", e);
-        }
+        // we cannot set the job id in the conf here since this happens in driver so the executor will not have
+        // the value
       }
 
       @Override
