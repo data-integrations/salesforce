@@ -16,9 +16,18 @@
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.google.common.collect.ImmutableMap;
+import com.sforce.async.AsyncApiException;
+import com.sforce.async.BulkConnection;
+import com.sforce.async.JobInfo;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
+import io.cdap.plugin.salesforce.SalesforceBulkUtil;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +36,8 @@ import java.util.Objects;
  *  Provides SalesforceOutputFormat's class name and configuration.
  */
 public class SalesforceOutputFormatProvider implements OutputFormatProvider {
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceOutputFormatProvider.class);
+
   private final Map<String, String> configMap;
 
   /**
@@ -58,6 +69,21 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
 
     if (config.getExternalIdField() != null) {
       configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());
+    }
+
+    AuthenticatorCredentials credentials =
+      SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(), config.getPassword(),
+                                                           config.getConsumerKey(), config.getConsumerSecret(),
+                                                           config.getLoginUrl());
+
+    try {
+      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
+                                                 config.getExternalIdField());
+      configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
+      LOG.info("Started Salesforce job with jobId='{}'", job.getId());
+    } catch (AsyncApiException e) {
+      throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
 
     this.configMap = configBuilder.build();

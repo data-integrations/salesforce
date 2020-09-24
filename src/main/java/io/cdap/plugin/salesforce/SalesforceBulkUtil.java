@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Class which provides functions to submit jobs to bulk api and read resulting batches
@@ -74,7 +75,7 @@ public final class SalesforceBulkUtil {
    */
   public static JobInfo createJob(BulkConnection bulkConnection,
                                   String sObject, OperationEnum operationEnum,
-                                  String externalIdField) throws AsyncApiException {
+                                  @Nullable String externalIdField) throws AsyncApiException {
     JobInfo job = new JobInfo();
     job.setObject(sObject);
     job.setOperation(operationEnum);
