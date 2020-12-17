@@ -33,6 +33,7 @@ public class SalesforceSourceConfigBuilder {
   private String duration;
   private String offset;
   private String schema;
+  private String securityToken;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -99,8 +100,15 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setSecurityToken(String securityToken) {
+    this.securityToken = securityToken;
+    return this;
+  }
+
+
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema);
+                                      query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema,
+                                      securityToken);
   }
 }

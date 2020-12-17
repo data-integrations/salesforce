@@ -25,6 +25,8 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
+import javax.annotation.Nullable;
+
 /**
  * Base configuration for Salesforce Streaming and Batch plugins
  */
@@ -50,19 +52,27 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Macro
   private String password;
 
+  @Name(SalesforceConstants.PROPERTY_SECURITY_TOKEN)
+  @Description("Salesforce security token")
+  @Nullable
+  @Macro
+  private String securityToken;
+
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
   private String loginUrl;
 
   public BaseSalesforceConfig(String referenceName, String consumerKey, String consumerSecret,
-                              String username, String password, String loginUrl) {
+                              String username, String password, String loginUrl,
+                              @Nullable String securityToken) {
     super(referenceName);
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
     this.password = password;
     this.loginUrl = loginUrl;
+    this.securityToken = securityToken;
   }
 
   public String getConsumerKey() {
@@ -78,7 +88,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   }
 
   public String getPassword() {
-    return password;
+    return constructPasswordWithToken(password, securityToken);
   }
 
   public String getLoginUrl() {
@@ -96,7 +106,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   }
 
   public AuthenticatorCredentials getAuthenticatorCredentials() {
-    return SalesforceConnectionUtil.getAuthenticatorCredentials(username, password,
+    return SalesforceConnectionUtil.getAuthenticatorCredentials(username, getPassword(),
                                                                 consumerKey, consumerSecret, loginUrl);
   }
 
@@ -111,7 +121,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
-      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL));
+      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)
+      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN));
   }
 
   private void validateConnection() {
@@ -123,6 +134,14 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException e) {
       throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
+    }
+  }
+
+  private String constructPasswordWithToken(String password, @Nullable String securityToken) {
+    if (securityToken != null && !securityToken.isEmpty() && !password.endsWith(securityToken)) {
+      return password + securityToken;
+    } else {
+      return password;
     }
   }
 }

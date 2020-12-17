@@ -84,8 +84,9 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String datetimeAfter,
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
-                                       @Nullable String offset) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl);
+                                       @Nullable String offset,
+                                       @Nullable String securityToken) {
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;

@@ -30,13 +30,13 @@
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
-    <cdap.version>6.2.0-SNAPSHOT</cdap.version>
+    <cdap.version>6.2.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
     <spark2.version>2.1.3</spark2.version>
-    <hydrator.version>2.4.0-SNAPSHOT</hydrator.version>
+    <hydrator.version>2.4.0</hydrator.version>
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>45.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
