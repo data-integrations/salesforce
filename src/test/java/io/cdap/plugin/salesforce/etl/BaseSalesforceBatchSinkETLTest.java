@@ -228,6 +228,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
                                     BaseSalesforceETLTest.CONSUMER_KEY, BaseSalesforceETLTest.CONSUMER_SECRET,
                                     BaseSalesforceETLTest.USERNAME, BaseSalesforceETLTest.PASSWORD,
                                     BaseSalesforceETLTest.LOGIN_URL, sObject, "Insert", null,
-                                    "1000000", "10000", "Stop on Error");
+                                    "1000000", "10000", "Stop on Error",
+                                    BaseSalesforceETLTest.SECURITY_TOKEN);
   }
 }

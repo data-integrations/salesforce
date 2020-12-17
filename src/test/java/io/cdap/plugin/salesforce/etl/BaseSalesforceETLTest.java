@@ -56,7 +56,7 @@ import java.util.stream.Stream;
  * mvn clean test
  * -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret=
  * -Dsalesforce.test.username= -Dsalesforce.test.password=
- *
+ * -Dsalesforce.test.securityToken=
  */
 public abstract class BaseSalesforceETLTest extends HydratorTestBase {
 
@@ -68,6 +68,9 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
                                                              "https://login.salesforce.com/services/oauth2/token");
+  protected static final String SECURITY_TOKEN = System.getProperty("salesforce.test.securityToken",
+                                                               "");
+
   public static final int SOAP_RECORDS_LIMIT = 200;
 
   @Rule
@@ -152,7 +155,8 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       .put(SalesforceConstants.PROPERTY_CONSUMER_SECRET, CONSUMER_SECRET)
       .put(SalesforceConstants.PROPERTY_USERNAME, USERNAME)
       .put(SalesforceConstants.PROPERTY_PASSWORD, PASSWORD)
-      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL);
+      .put(SalesforceConstants.PROPERTY_LOGIN_URL, LOGIN_URL)
+      .put(SalesforceConstants.PROPERTY_SECURITY_TOKEN, SECURITY_TOKEN);
   }
 
   private void clearSObjects() {

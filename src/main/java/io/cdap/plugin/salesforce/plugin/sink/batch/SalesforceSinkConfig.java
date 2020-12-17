@@ -107,8 +107,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               String password, String loginUrl, String sObject,
                               String operation, String externalIdField,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
-                              String errorHandling) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl);
+                              String errorHandling, @Nullable String securityToken) {
+    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;

@@ -27,6 +27,7 @@ public class SalesforceConstants {
   public static final String PROPERTY_CONSUMER_SECRET = "consumerSecret";
   public static final String PROPERTY_USERNAME = "username";
   public static final String PROPERTY_PASSWORD = "password";
+  public static final String PROPERTY_SECURITY_TOKEN = "securityToken";
   public static final String PROPERTY_LOGIN_URL = "loginUrl";
 
   public static final String CONFIG_CONSUMER_KEY = "mapred.salesforce.consumer.key";

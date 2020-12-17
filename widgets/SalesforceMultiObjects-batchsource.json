@@ -27,6 +27,11 @@
           "name": "password"
         },
         {
+          "widget-type": "password",
+          "label": "Security Token",
+          "name": "securityToken"
+        },
+        {
           "widget-type": "textbox",
           "label": "Consumer Key",
           "name": "consumerKey"
