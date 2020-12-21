@@ -107,8 +107,8 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
 
   public SalesforceStreamingSourceConfig(String referenceName, String consumerKey, String consumerSecret,
                                          String username, String password, String loginUrl,
-                                         String pushTopicName, String sObjectName) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl);
+                                         String pushTopicName, String sObjectName, @Nullable String securityToken) {
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
   }

@@ -83,12 +83,15 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     String sObjectNameField = config.getSObjectNameField();
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
       config, queries, getSchemaWithNameField(sObjectNameField, schemas), sObjectNameField)));
-
+    /* TODO PLUGIN-510
+     *  As part of [CDAP-16290], recordLineage function was introduced with out implementation.
+     *  To avoid compilation errors the code block is commented for future fix.
     Schema schema = context.getInputSchema();
     if (schema != null && schema.getFields() != null) {
       recordLineage(context, config.referenceName, schema,
                     "Read", "Read from Salesforce MultiObjects.");
     }
+     */
   }
 
   @Override

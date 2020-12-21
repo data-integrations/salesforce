@@ -18,6 +18,9 @@ Configuration
 
 **Password:** Salesforce password.
 
+**Security Token:** Salesforce security Token. If the password does not contain the security token the plugin 
+will append the token before authenticating with salesforce.
+
 **Consumer Key:** Application Consumer Key. This is also known as the OAuth client id.
 A Salesforce connected application must be created in order to get a consumer key.
 
