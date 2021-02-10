@@ -30,6 +30,7 @@
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
+    <avro.version>1.7.7</avro.version>
     <cdap.version>6.2.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
@@ -322,6 +323,10 @@
           <groupId>org.apache.kafka</groupId>
           <artifactId>kafka_2.10</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.hbase</groupId>
+          <artifactId>hbase-common</artifactId>
+        </exclusion>
       </exclusions>
       <scope>test</scope>
     </dependency>
@@ -329,6 +334,12 @@
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-data-pipeline2_2.11</artifactId>
       <version>${cdap.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+      <version>${avro.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
