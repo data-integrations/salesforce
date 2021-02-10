@@ -120,7 +120,7 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
       Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
       Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
-      Schema.Field.of("Account.NumberOfEmployees", Schema.of(Schema.Type.LONG)),
+      Schema.Field.of("Account_NumberOfEmployees", Schema.of(Schema.Type.LONG)),
       Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
       Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
       Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
@@ -132,9 +132,12 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
       Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
         Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
-        Schema.Field.of("Owner.Status", Schema.of(Schema.Type.STRING))))));
+        Schema.Field.of("Owner_Status", Schema.of(Schema.Type.STRING))))));
 
-    Assert.assertEquals(expectedSchema.toString(), actualSchema.toString());
+    Assert.assertEquals(expectedSchema, actualSchema);
+
+    // Parse the schema as Avro schema to make sure all names are accepted by Avro
+    new org.apache.avro.Schema.Parser().parse(actualSchema.toString());
   }
 
   @Test

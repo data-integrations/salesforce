@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +67,9 @@ public class SalesforceSchemaUtil {
       .collect(Collectors.collectingAndThen(Collectors.toSet(), ImmutableSet::copyOf));
 
   private static final Schema DEFAULT_SCHEMA = Schema.of(Schema.Type.STRING);
+
+  private static final Pattern AVRO_NAME_START_PATTERN = Pattern.compile("^[A-Za-z_]");
+  private static final Pattern AVRO_NAME_REPLACE_PATTERN = Pattern.compile("[^A-Za-z0-9_]");
 
   /**
    * Connects to Salesforce and obtains description of sObjects needed to determine schema field types.
@@ -194,11 +198,11 @@ public class SalesforceSchemaUtil {
               fieldDescriptor.getFullName(), parentsPath));
         }
 
-        fieldSchema = getCdapFieldSchema(field);
+        fieldSchema = createFieldSchema(field);
       }
 
       Schema queryFieldSchema = functionType.getSchema(fieldSchema);
-      Schema.Field schemaField = Schema.Field.of(fieldDescriptor.getQueryName(), queryFieldSchema);
+      Schema.Field schemaField = Schema.Field.of(normalizeAvroName(fieldDescriptor.getQueryName()), queryFieldSchema);
       schemaFields.add(schemaField);
     }
 
@@ -232,7 +236,7 @@ public class SalesforceSchemaUtil {
       Schema childSchema = getSchemaWithFields(childSObject, describeResult,
         Collections.singletonList(sObjectDescriptor.getName()));
 
-      String childName = childSObject.getName();
+      String childName = normalizeAvroName(childSObject.getName());
       Schema.Field childField = Schema.Field.of(childName,
         Schema.arrayOf(Schema.recordOf(childName, Objects.requireNonNull(childSchema.getFields()))));
       schemaFields.add(childField);
@@ -241,9 +245,23 @@ public class SalesforceSchemaUtil {
     return Schema.recordOf("output", schemaFields);
   }
 
-  private static Schema getCdapFieldSchema(Field field) {
+  private static Schema createFieldSchema(Field field) {
     Schema fieldSchema = SALESFORCE_TYPE_TO_CDAP_SCHEMA.getOrDefault(field.getType(), DEFAULT_SCHEMA);
     return field.isNillable() ? Schema.nullableOf(fieldSchema) : fieldSchema;
   }
 
+  /**
+   * Normalize the given field name to be compatible with
+   * <a href="https://avro.apache.org/docs/current/spec.html#names">Avro names</a>
+   */
+  private static String normalizeAvroName(String name) {
+    String finalName = name;
+    // Make sure the name starts with allowed character
+    if (!AVRO_NAME_START_PATTERN.matcher(name).find()) {
+      finalName = "A" + finalName;
+    }
+
+    // Replace any not allowed characters with "_".
+    return AVRO_NAME_REPLACE_PATTERN.matcher(finalName).replaceAll("_");
+  }
 }
