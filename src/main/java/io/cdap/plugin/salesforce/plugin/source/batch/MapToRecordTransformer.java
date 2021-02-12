@@ -19,6 +19,7 @@ import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.SalesforceTransformUtil;
 
 import java.util.List;
@@ -39,9 +40,14 @@ public class MapToRecordTransformer {
   }
 
   private void transformRecord(Schema schema, Map<String, ?> record, StructuredRecord.Builder builder) {
-    Objects.requireNonNull(schema.getFields())
-      .forEach(field -> builder.set(field.getName(),
-                                    convertValue(field.getName(), record.get(field.getName()), field.getSchema())));
+    for (Map.Entry<String, ?> entry : record.entrySet()) {
+      String fieldName = SalesforceSchemaUtil.normalizeAvroName(entry.getKey());
+      Schema.Field field = schema.getField(fieldName);
+      if (field == null) {
+        continue;
+      }
+      builder.set(fieldName, convertValue(field.getName(), entry.getValue(), field.getSchema()));
+    }
   }
 
   private Object convertValue(String fieldName, Object value, Schema fieldSchema) {

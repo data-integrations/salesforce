@@ -72,6 +72,21 @@ public class SalesforceSchemaUtil {
   private static final Pattern AVRO_NAME_REPLACE_PATTERN = Pattern.compile("[^A-Za-z0-9_]");
 
   /**
+   * Normalize the given field name to be compatible with
+   * <a href="https://avro.apache.org/docs/current/spec.html#names">Avro names</a>
+   */
+  public static String normalizeAvroName(String name) {
+    String finalName = name;
+    // Make sure the name starts with allowed character
+    if (!AVRO_NAME_START_PATTERN.matcher(name).find()) {
+      finalName = "A" + finalName;
+    }
+
+    // Replace any not allowed characters with "_".
+    return AVRO_NAME_REPLACE_PATTERN.matcher(finalName).replaceAll("_");
+  }
+
+  /**
    * Connects to Salesforce and obtains description of sObjects needed to determine schema field types.
    * Based on this information, creates schema for the fields used in sObject descriptor.
    *
@@ -248,20 +263,5 @@ public class SalesforceSchemaUtil {
   private static Schema createFieldSchema(Field field) {
     Schema fieldSchema = SALESFORCE_TYPE_TO_CDAP_SCHEMA.getOrDefault(field.getType(), DEFAULT_SCHEMA);
     return field.isNillable() ? Schema.nullableOf(fieldSchema) : fieldSchema;
-  }
-
-  /**
-   * Normalize the given field name to be compatible with
-   * <a href="https://avro.apache.org/docs/current/spec.html#names">Avro names</a>
-   */
-  private static String normalizeAvroName(String name) {
-    String finalName = name;
-    // Make sure the name starts with allowed character
-    if (!AVRO_NAME_START_PATTERN.matcher(name).find()) {
-      finalName = "A" + finalName;
-    }
-
-    // Replace any not allowed characters with "_".
-    return AVRO_NAME_REPLACE_PATTERN.matcher(finalName).replaceAll("_");
   }
 }
