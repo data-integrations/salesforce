@@ -48,10 +48,12 @@ public class MapToRecordTransformerTest {
         Schema.Field.of("nested_long", Schema.of(Schema.Type.LONG)),
         Schema.Field.of("nested_timestamp", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))))));
 
+    // Create the record as if coming from the reader. Field names can contains "." for composite table.
+    // After the transform, they should all mapped to Avro allowed names with "." replaced with "_".
     ImmutableMap<String, Object> records = ImmutableMap.<String, Object>builder()
-      .put("string_field", "testValue")
-      .put("int_field", "1")
-      .put("long_field", "12345678912345")
+      .put("string.field", "testValue")
+      .put("int.field", "1")
+      .put("long.field", "12345678912345")
       .put("float_field", "1.1")
       .put("double_field", "2.023")
       .put("boolean_field", "true")
@@ -67,9 +69,9 @@ public class MapToRecordTransformerTest {
 
     MapToRecordTransformer recordTransformer = new MapToRecordTransformer();
     StructuredRecord structuredRecord = recordTransformer.transform(schema, records);
-    Assert.assertEquals(records.get("string_field"), structuredRecord.get("string_field"));
-    Assert.assertEquals(Integer.valueOf((String) records.get("int_field")), structuredRecord.get("int_field"));
-    Assert.assertEquals(Long.valueOf((String) records.get("long_field")), structuredRecord.get("long_field"));
+    Assert.assertEquals(records.get("string.field"), structuredRecord.get("string_field"));
+    Assert.assertEquals(Integer.valueOf((String) records.get("int.field")), structuredRecord.get("int_field"));
+    Assert.assertEquals(Long.valueOf((String) records.get("long.field")), structuredRecord.get("long_field"));
     Assert.assertEquals(Float.valueOf((String) records.get("float_field")), structuredRecord.get("float_field"));
     Assert.assertEquals(Double.valueOf((String) records.get("double_field")), structuredRecord.get("double_field"));
     Assert.assertEquals(Boolean.valueOf((String) records.get("boolean_field")), structuredRecord.get("boolean_field"));
