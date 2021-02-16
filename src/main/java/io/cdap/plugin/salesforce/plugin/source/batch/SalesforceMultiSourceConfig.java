@@ -29,6 +29,7 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,21 +70,22 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   private String sObjectNameField;
 
   public SalesforceMultiSourceConfig(String referenceName,
-                              String consumerKey,
-                              String consumerSecret,
-                              String username,
-                              String password,
-                              String loginUrl,
-                              @Nullable String datetimeAfter,
-                              @Nullable String datetimeBefore,
-                              @Nullable String duration,
-                              @Nullable String offset,
-                              @Nullable String whiteList,
-                              @Nullable String blackList,
-                              @Nullable String sObjectNameField,
-                              @Nullable String securityToken) {
+                                     @Nullable String consumerKey,
+                                     @Nullable String consumerSecret,
+                                     @Nullable String username,
+                                     @Nullable String password,
+                                     @Nullable String loginUrl,
+                                     @Nullable String datetimeAfter,
+                                     @Nullable String datetimeBefore,
+                                     @Nullable String duration,
+                                     @Nullable String offset,
+                                     @Nullable String whiteList,
+                                     @Nullable String blackList,
+                                     @Nullable String sObjectNameField,
+                                     @Nullable String securityToken,
+                                     @Nullable OAuthInfo oAuthInfo) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;

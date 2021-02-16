@@ -88,8 +88,8 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       throw e;
     }
 
-    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(
-      USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL);
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(USERNAME, PASSWORD, CONSUMER_KEY,
+                                                                        CONSUMER_SECRET, LOGIN_URL);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
   }
 

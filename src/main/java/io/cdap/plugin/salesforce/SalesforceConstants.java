@@ -29,7 +29,10 @@ public class SalesforceConstants {
   public static final String PROPERTY_PASSWORD = "password";
   public static final String PROPERTY_SECURITY_TOKEN = "securityToken";
   public static final String PROPERTY_LOGIN_URL = "loginUrl";
+  public static final String PROPERTY_OAUTH_INFO = "oAuthInfo";
 
+  public static final String CONFIG_OAUTH_TOKEN = "mapred.salesforce.oauth.token";
+  public static final String CONFIG_OAUTH_INSTANCE_URL = "mapred.salesforce.oauth.instance.url";
   public static final String CONFIG_CONSUMER_KEY = "mapred.salesforce.consumer.key";
   public static final String CONFIG_PASSWORD = "mapred.salesforce.password";
   public static final String CONFIG_USERNAME = "mapred.salesforce.user";

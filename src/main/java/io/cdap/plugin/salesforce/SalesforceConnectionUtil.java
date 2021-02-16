@@ -20,6 +20,7 @@ import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -42,32 +43,22 @@ public class SalesforceConnectionUtil {
   }
 
   /**
-   * Creates {@link AuthenticatorCredentials} instance based on given parameters.
-   *
-   * @param username Salesforce username
-   * @param password Salesforce password
-   * @param consumerKey Salesforce consumer key
-   * @param consumerSecret Salesforce consumer secret
-   * @param loginUrl Salesforce authentication url
-   * @return authenticator credentials
-   */
-  public static AuthenticatorCredentials getAuthenticatorCredentials(String username, String password,
-                                                                     String consumerKey, String consumerSecret,
-                                                                     String loginUrl) {
-    return new AuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
-  }
-
-  /**
    * Creates {@link AuthenticatorCredentials} instance based on given {@link Configuration}.
    *
    * @param conf hadoop job configuration
    * @return authenticator credentials
    */
   public static AuthenticatorCredentials getAuthenticatorCredentials(Configuration conf) {
-    return getAuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
-                                       conf.get(SalesforceConstants.CONFIG_PASSWORD),
-                                       conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
-                                       conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
-                                       conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
+    String oAuthToken = conf.get(SalesforceConstants.CONFIG_OAUTH_TOKEN);
+    String instanceURL = conf.get(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL);
+    if (oAuthToken != null && instanceURL != null) {
+      return new AuthenticatorCredentials(new OAuthInfo(oAuthToken, instanceURL));
+    }
+
+    return new AuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
+                                        conf.get(SalesforceConstants.CONFIG_PASSWORD),
+                                        conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
+                                        conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
+                                        conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
   }
 }

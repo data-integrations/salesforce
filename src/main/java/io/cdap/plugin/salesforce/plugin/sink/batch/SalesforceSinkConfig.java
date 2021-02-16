@@ -33,6 +33,7 @@ import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 
 import java.util.List;
 import java.util.Set;
@@ -102,13 +103,19 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Macro
   private String errorHandling;
 
-  public SalesforceSinkConfig(String referenceName, String clientId,
-                              String clientSecret, String username,
-                              String password, String loginUrl, String sObject,
+  public SalesforceSinkConfig(String referenceName,
+                              @Nullable String clientId,
+                              @Nullable String clientSecret,
+                              @Nullable String username,
+                              @Nullable String password,
+                              @Nullable String loginUrl,
+                              String sObject,
                               String operation, String externalIdField,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
-                              String errorHandling, @Nullable String securityToken) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken);
+                              String errorHandling,
+                              @Nullable String securityToken,
+                              @Nullable OAuthInfo oAuthInfo) {
+    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, oAuthInfo);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;

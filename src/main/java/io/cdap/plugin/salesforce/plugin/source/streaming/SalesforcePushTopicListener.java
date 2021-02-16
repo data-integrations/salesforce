@@ -17,9 +17,9 @@
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
 import io.cdap.plugin.salesforce.SalesforceConstants;
-import io.cdap.plugin.salesforce.authenticator.AuthResponse;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.cometd.client.BayeuxClient;
@@ -102,9 +102,7 @@ public class SalesforcePushTopicListener {
   }
 
   private BayeuxClient getClient(AuthenticatorCredentials credentials) throws Exception {
-    AuthResponse authResponse = Authenticator.oauthLogin(credentials);
-    String acessToken = authResponse.getAccessToken();
-    String instanceUrl = authResponse.getInstanceUrl();
+    OAuthInfo oAuthInfo = Authenticator.getOAuthInfo(credentials);
 
     SslContextFactory sslContextFactory = new SslContextFactory();
 
@@ -125,12 +123,12 @@ public class SalesforcePushTopicListener {
       @Override
       protected void customize(Request exchange) {
         super.customize(exchange);
-        exchange.header("Authorization", "OAuth " + acessToken);
+        exchange.header("Authorization", "OAuth " + oAuthInfo.getAccessToken());
       }
     };
 
     // Now set up the Bayeux client itself
-    BayeuxClient client = new BayeuxClient(instanceUrl + DEFAULT_PUSH_ENDPOINT, transport);
+    BayeuxClient client = new BayeuxClient(oAuthInfo.getInstanceURL() + DEFAULT_PUSH_ENDPOINT, transport);
     client.handshake();
 
     return client;

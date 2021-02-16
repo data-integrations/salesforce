@@ -16,21 +16,41 @@
 
 package io.cdap.plugin.salesforce.authenticator;
 
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+
 import java.io.Serializable;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /**
  * Stores information to connect to salesforce via oauth2
  */
 public class AuthenticatorCredentials implements Serializable {
+
+  private final OAuthInfo oAuthInfo;
   private final String username;
   private final String password;
   private final String consumerKey;
   private final String consumerSecret;
   private final String loginUrl;
 
+  public AuthenticatorCredentials(OAuthInfo oAuthInfo) {
+    this(Objects.requireNonNull(oAuthInfo), null, null, null, null, null);
+  }
+
   public AuthenticatorCredentials(String username, String password,
                                   String consumerKey, String consumerSecret, String loginUrl) {
+    this(null, Objects.requireNonNull(username), Objects.requireNonNull(password), Objects.requireNonNull(consumerKey),
+         Objects.requireNonNull(consumerSecret), Objects.requireNonNull(loginUrl));
+  }
+
+  private AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
+                                   @Nullable String username,
+                                   @Nullable String password,
+                                   @Nullable String consumerKey,
+                                   @Nullable String consumerSecret,
+                                   @Nullable String loginUrl) {
+    this.oAuthInfo = oAuthInfo;
     this.username = username;
     this.password = password;
     this.consumerKey = consumerKey;
@@ -38,22 +58,32 @@ public class AuthenticatorCredentials implements Serializable {
     this.loginUrl = loginUrl;
   }
 
+  @Nullable
+  public OAuthInfo getOAuthInfo() {
+    return oAuthInfo;
+  }
+
+  @Nullable
   public String getUsername() {
     return username;
   }
 
+  @Nullable
   public String getPassword() {
     return password;
   }
 
+  @Nullable
   public String getConsumerKey() {
     return consumerKey;
   }
 
+  @Nullable
   public String getConsumerSecret() {
     return consumerSecret;
   }
 
+  @Nullable
   public String getLoginUrl() {
     return loginUrl;
   }

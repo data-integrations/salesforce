@@ -30,6 +30,7 @@ import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.parser.SOQLParsingException;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 
 import java.io.IOException;
@@ -64,21 +65,22 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
-                                String consumerKey,
-                                String consumerSecret,
-                                String username,
-                                String password,
-                                String loginUrl,
-                                @Nullable String query,
-                                @Nullable String sObjectName,
-                                @Nullable String datetimeAfter,
-                                @Nullable String datetimeBefore,
-                                @Nullable String duration,
-                                @Nullable String offset,
-                                @Nullable String schema,
-                                @Nullable String securityToken) {
+                         @Nullable String consumerKey,
+                         @Nullable String consumerSecret,
+                         @Nullable String username,
+                         @Nullable String password,
+                         @Nullable String loginUrl,
+                         @Nullable String query,
+                         @Nullable String sObjectName,
+                         @Nullable String datetimeAfter,
+                         @Nullable String datetimeBefore,
+                         @Nullable String duration,
+                         @Nullable String offset,
+                         @Nullable String schema,
+                         @Nullable String securityToken,
+                         @Nullable OAuthInfo oAuthInfo) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;

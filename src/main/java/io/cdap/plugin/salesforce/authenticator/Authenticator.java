@@ -20,6 +20,7 @@ import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -39,12 +40,12 @@ public class Authenticator {
    */
   public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
     try {
-      AuthResponse authResponse = oauthLogin(credentials);
+      OAuthInfo oAuthInfo = getOAuthInfo(credentials);
       ConnectorConfig connectorConfig = new ConnectorConfig();
-      connectorConfig.setSessionId(authResponse.getAccessToken());
+      connectorConfig.setSessionId(oAuthInfo.getAccessToken());
       String apiVersion = SalesforceConstants.API_VERSION;
-      String restEndpoint = String.format("%s/services/async/%s", authResponse.getInstanceUrl(), apiVersion);
-      String serviceEndPoint = String.format("%s/services/Soap/u/%s", authResponse.getInstanceUrl(), apiVersion);
+      String restEndpoint = String.format("%s/services/async/%s", oAuthInfo.getInstanceURL(), apiVersion);
+      String serviceEndPoint = String.format("%s/services/Soap/u/%s", oAuthInfo.getInstanceURL(), apiVersion);
       connectorConfig.setRestEndpoint(restEndpoint);
       connectorConfig.setServiceEndpoint(serviceEndPoint);
       // This should only be false when doing debugging.
@@ -65,7 +66,12 @@ public class Authenticator {
    *
    * @return AuthResponse response to http request
    */
-  public static AuthResponse oauthLogin(AuthenticatorCredentials credentials) throws Exception {
+  public static OAuthInfo getOAuthInfo(AuthenticatorCredentials credentials) throws Exception {
+    OAuthInfo oAuthInfo = credentials.getOAuthInfo();
+    if (oAuthInfo != null) {
+      return oAuthInfo;
+    }
+
     SslContextFactory sslContextFactory = new SslContextFactory();
     HttpClient httpClient = new HttpClient(sslContextFactory);
     try {
@@ -83,7 +89,7 @@ public class Authenticator {
           String.format("Cannot authenticate to Salesforce with given credentials. ServerResponse='%s'", response));
       }
 
-      return authResponse;
+      return new OAuthInfo(authResponse.getAccessToken(), authResponse.getInstanceUrl());
     } finally {
       httpClient.stop();
     }
