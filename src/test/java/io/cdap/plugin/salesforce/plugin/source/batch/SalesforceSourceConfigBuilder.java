@@ -109,6 +109,6 @@ public class SalesforceSourceConfigBuilder {
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                       query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema,
-                                      securityToken);
+                                      securityToken, null);
   }
 }

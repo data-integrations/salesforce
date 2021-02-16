@@ -17,6 +17,11 @@
       "label": "Authentication",
       "properties": [
         {
+          "widget-type" : "hidden",
+          "label": "OAuth Information",
+          "name": "oAuthInfo"
+        },
+        {
           "widget-type": "textbox",
           "label": "Username",
           "name": "username"
