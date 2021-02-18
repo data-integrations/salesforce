@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -86,7 +87,9 @@ public class SalesforceBulkRecordReaderTest {
 
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsDeleted\u0628\u0633\u0645", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field
+                                      .of(SalesforceSchemaUtil.normalizeAvroName("IsDeleted\u0628\u0633\u0645"),
+                                          Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
                                     Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
@@ -95,7 +98,7 @@ public class SalesforceBulkRecordReaderTest {
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
       .add(new ImmutableMap.Builder<String, Object>()
              .put("Id", "0061i000003XNcBAAW\u0628\u0633\u0645")
-             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put(SalesforceSchemaUtil.normalizeAvroName("IsDeleted\u0628\u0633\u0645"), false)
              .put("ExpectedRevenue", 1500.0)
              .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17897)
@@ -103,7 +106,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .add(new ImmutableMap.Builder<String, Object>()
              .put("Id", "0061i000003XNcCAAW")
-             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put(SalesforceSchemaUtil.normalizeAvroName("IsDeleted\u0628\u0633\u0645"), false)
              .put("ExpectedRevenue", 112500.0)
              .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17885)
@@ -111,7 +114,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .add(new ImmutableMap.Builder<String, Object>()
              .put("Id", "0061i000003XNcDAAW")
-             .put("IsDeleted\u0628\u0633\u0645", false)
+             .put(SalesforceSchemaUtil.normalizeAvroName("IsDeleted\u0628\u0633\u0645"), false)
              .put("ExpectedRevenue", 220000.0)
              .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17850)
