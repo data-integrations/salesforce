@@ -18,8 +18,10 @@ package io.cdap.plugin.salesforce.plugin.sink.batch;
 import com.google.common.collect.ImmutableMap;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  *  Provides SalesforceOutputFormat's class name and configuration.
@@ -34,16 +36,25 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
    */
   public SalesforceOutputFormatProvider(SalesforceSinkConfig config) {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
-      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
-      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
-      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
-      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
-      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
       .put(SalesforceSinkConstants.CONFIG_SOBJECT, config.getSObject())
       .put(SalesforceSinkConstants.CONFIG_OPERATION, config.getOperation())
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString());
+
+    OAuthInfo oAuthInfo = config.getOAuthInfo();
+    if (oAuthInfo != null) {
+      configBuilder
+        .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
+        .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
+    } else {
+      configBuilder
+        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getUsername()))
+        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getPassword()))
+        .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConsumerKey()))
+        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConsumerSecret()))
+        .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getLoginUrl()));
+    }
 
     if (config.getExternalIdField() != null) {
       configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());

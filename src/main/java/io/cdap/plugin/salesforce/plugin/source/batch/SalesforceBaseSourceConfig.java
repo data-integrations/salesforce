@@ -28,6 +28,7 @@ import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -76,17 +77,18 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   private String offset;
 
   protected SalesforceBaseSourceConfig(String referenceName,
-                                       String consumerKey,
-                                       String consumerSecret,
-                                       String username,
-                                       String password,
-                                       String loginUrl,
+                                       @Nullable String consumerKey,
+                                       @Nullable String consumerSecret,
+                                       @Nullable String username,
+                                       @Nullable String password,
+                                       @Nullable String loginUrl,
                                        @Nullable String datetimeAfter,
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
                                        @Nullable String offset,
-                                       @Nullable String securityToken) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken);
+                                       @Nullable String securityToken,
+                                       @Nullable OAuthInfo oAuthInfo) {
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;

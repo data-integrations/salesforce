@@ -33,6 +33,7 @@ import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.soap.SObjectBuilder;
 import io.cdap.plugin.salesforce.soap.SObjectUtil;
 import org.slf4j.Logger;
@@ -105,10 +106,16 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
   @Name("pushTopicNotifyForFields")
   private String pushTopicNotifyForFields;
 
-  public SalesforceStreamingSourceConfig(String referenceName, String consumerKey, String consumerSecret,
-                                         String username, String password, String loginUrl,
-                                         String pushTopicName, String sObjectName, @Nullable String securityToken) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken);
+  public SalesforceStreamingSourceConfig(String referenceName,
+                                         @Nullable String consumerKey,
+                                         @Nullable String consumerSecret,
+                                         @Nullable String username,
+                                         @Nullable String password,
+                                         @Nullable String loginUrl,
+                                         String pushTopicName, String sObjectName,
+                                         @Nullable String securityToken,
+                                         @Nullable OAuthInfo oAuthInfo) {
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
   }
