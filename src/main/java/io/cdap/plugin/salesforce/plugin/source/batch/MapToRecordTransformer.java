@@ -46,7 +46,12 @@ public class MapToRecordTransformer {
 
   private Object convertValue(String fieldName, Object value, Schema fieldSchema) {
     if (fieldSchema.isNullable()) {
-      return convertValue(fieldName, value, fieldSchema.getNonNullable());
+      return value == null ? null : convertValue(fieldName, value, fieldSchema.getNonNullable());
+    }
+
+    if (value == null) {
+      throw new RuntimeException(
+          String.format("Found null value for non nullable field %s", fieldName));
     }
 
     Schema.Type fieldSchemaType = fieldSchema.getType();

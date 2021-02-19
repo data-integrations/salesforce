@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -89,5 +90,31 @@ public class MapToRecordTransformerTest {
     Assert.assertEquals(Long.valueOf(arrayField.get(0).get("nested_long")), arrayRecord.get(0).get("nested_long"));
     Assert.assertEquals(ZonedDateTime.parse(arrayField.get(0).get("nested_timestamp"), DateTimeFormatter.ISO_DATE_TIME),
                         arrayRecord.get(0).getTimestamp("nested_timestamp", ZoneOffset.UTC));
+  }
+
+  @Test
+  public void testNullableFields() {
+    Schema schema = Schema.recordOf("output",
+        Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+        Schema.Field.of("double_field", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))));
+    Map<String, Object> records = new HashMap<>();
+    records.put("string_field", null);
+    records.put("double_field", null);
+    MapToRecordTransformer recordTransformer = new MapToRecordTransformer();
+    StructuredRecord structuredRecord = recordTransformer.transform(schema, records);
+    Assert.assertNull(structuredRecord.get("string_field"));
+    Assert.assertNull(structuredRecord.get("double_field"));
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void testNonNullableFieldWithNull() {
+    Schema schema = Schema.recordOf("output",
+        Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+        Schema.Field.of("double_field", Schema.of(Schema.Type.DOUBLE)));
+    Map<String, Object> records = new HashMap<>();
+    records.put("string_field", "");
+    records.put("double_field", null);
+    MapToRecordTransformer recordTransformer = new MapToRecordTransformer();
+    recordTransformer.transform(schema, records);
   }
 }
