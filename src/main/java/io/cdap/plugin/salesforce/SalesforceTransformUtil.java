@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce;
 
+import com.esotericsoftware.minlog.Log;
 import io.cdap.cdap.api.data.schema.Schema;
 
 import java.time.Instant;
@@ -39,11 +40,32 @@ public class SalesforceTransformUtil {
     switch (logicalType) {
       case DATE:
         // date will be in yyyy-mm-dd format
-        return Math.toIntExact(LocalDate.parse(value).toEpochDay());
+        LocalDate parsedLocalDate;
+        try {
+          parsedLocalDate = LocalDate.parse(value);
+        } catch (Exception ex) {
+          Log.warn(String.format("Error parsing value '%s' for field '%s'.", value, fieldName), ex);
+          parsedLocalDate = LocalDate.now();
+        }
+        return Math.toIntExact(parsedLocalDate.toEpochDay());
       case TIMESTAMP_MICROS:
-        return TimeUnit.MILLISECONDS.toMicros(Instant.parse(value).toEpochMilli());
+        Instant parsedTimestamp;
+        try {
+          parsedTimestamp = Instant.parse(value);
+        } catch (Exception ex) {
+          Log.warn(String.format("Error parsing value '%s' for field '%s'.", value, fieldName), ex);
+          parsedTimestamp = Instant.now();
+        }
+        return TimeUnit.MILLISECONDS.toMicros(parsedTimestamp.toEpochMilli());
       case TIME_MICROS:
-        return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value).toNanoOfDay());
+        LocalTime parsedTime;
+        try {
+          parsedTime = LocalTime.parse(value);
+        } catch (Exception ex) {
+          Log.warn(String.format("Error parsing value '%s' for field '%s'.", value, fieldName), ex);
+          parsedTime = LocalTime.now();
+        }
+        return TimeUnit.NANOSECONDS.toMicros(parsedTime.toNanoOfDay());
       default:
         throw new IllegalArgumentException(
           String.format("Field '%s' is of unsupported type '%s'", fieldName, logicalType.getToken()));
