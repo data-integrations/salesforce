@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.etl;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeSObjectResult;
@@ -26,6 +27,8 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -535,5 +538,60 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     subQueryResults.sort(Comparator.comparing(record -> record.get("Name")));
     Assert.assertEquals("Fred", subQueryResults.get(0).get("Name"));
     Assert.assertEquals("Wilma", subQueryResults.get(1).get("Name"));
+  }
+
+  @Test
+  public void testPKChunkEnable() throws Exception {
+    ImmutableMap<String, String> properties = new ImmutableMap.Builder<String, String>()
+      .put("enablePKChunk", "true")
+      .put("chunkSize", "2")
+      .build();
+    testPKChunk(properties);
+  }
+
+  @Test
+  public void testPKChunkEnableWithDefaultChunkSize() throws Exception {
+    ImmutableMap<String, String> properties = new ImmutableMap.Builder<String, String>().put("enablePKChunk", "true")
+      .build();
+    testPKChunk(properties);
+  }
+
+  private void testPKChunk(ImmutableMap<String, String> properties) throws Exception {
+    String sObjectName = createCustomObject("IT_PKChunk", null);
+
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+      .add(new SObjectBuilder()
+             .setType(sObjectName)
+             .put("Name", "record1")
+             .build())
+      .add(new SObjectBuilder()
+             .setType(sObjectName)
+             .put("Name", "record2")
+             .build())
+      .add(new SObjectBuilder()
+             .setType(sObjectName)
+             .put("Name", "record3")
+             .build())
+      .add(new SObjectBuilder()
+             .setType(sObjectName)
+             .put("Name", "record4")
+             .build())
+      .build();
+
+    addSObjects(sObjects, true);
+
+
+    ImmutableMap.Builder<String, String> baseProperties = getBaseProperties("SalesforceRederPKChunk");
+    baseProperties.putAll(properties);
+    baseProperties.put(SalesforceSourceConstants.PROPERTY_QUERY, "Select Name from " + sObjectName);
+
+    List<StructuredRecord> results = getPipelineResults(baseProperties.build(), SalesforceBatchSource.NAME,
+                                                        "SalesforceBatch");
+    results.sort(Comparator.comparing(record -> record.get("Name")));
+    Assert.assertEquals(4, results.size());
+    Assert.assertEquals("record1", results.get(0).get("Name"));
+    Assert.assertEquals("record2", results.get(1).get("Name"));
+    Assert.assertEquals("record3", results.get(2).get("Name"));
+    Assert.assertEquals("record4", results.get(3).get("Name"));
   }
 }

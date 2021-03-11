@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -25,9 +26,12 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.parser.SOQLParsingException;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
@@ -38,6 +42,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
+import static io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK;
 
 /**
  * This class {@link SalesforceSourceConfig} provides all the configuration required for
@@ -63,6 +69,19 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Description("Schema of the data to read. Can be imported or fetched by clicking the `Get Schema` button.")
   private String schema;
 
+  @Name(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
+  @Macro
+  @Nullable
+  @Description("Primary key (PK) Chunking splits query on large tables into chunks based on the record IDs, or " +
+    "primary keys, of the queried records.")
+  private Boolean enablePKChunk;
+
+  @Name(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
+  @Macro
+  @Nullable
+  @Description("Specify size of chunk. Maximum Size is 250,000. Default Size is 100,000.")
+  private Integer chunkSize;
+
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
@@ -78,12 +97,16 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String offset,
                          @Nullable String schema,
                          @Nullable String securityToken,
-                         @Nullable OAuthInfo oAuthInfo) {
+                         @Nullable OAuthInfo oAuthInfo,
+                         @Nullable Boolean enablePKChunk,
+                         @Nullable Integer chunkSize) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;
+    this.enablePKChunk = enablePKChunk;
+    this.chunkSize = chunkSize;
   }
 
   /**
@@ -161,6 +184,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       }
     }
     validateSchema(collector);
+    validatePKChunk(collector);
   }
 
   private void validateSchema(FailureCollector collector) {
@@ -200,6 +224,80 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       collector.addFailure(
         String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
         .withStacktrace(e.getStackTrace());
+    }
+  }
+
+  private void validatePKChunk(FailureCollector collector) {
+    if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
+      || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)) {
+      return;
+    }
+
+    if (!getEnablePKChunk()) {
+      return;
+    }
+
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
+      if (SalesforceQueryParser.isRestrictedPKQuery(query)) {
+          collector.addFailure(
+            String.format("SOQL Query contains restricted clauses when PK Chunk is Enabled. Unsupported query: '%s'.",
+                          query),
+            "Set Enable PK Chunk to false, because 'WHERE' is the only supported conditions clause.")
+            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        }
+
+      String sObject = SalesforceQueryParser.getObjectDescriptorFromQuery(query).getName();
+      checkForPKSupportedObject(sObject, collector);
+    }
+
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME) && !Strings.isNullOrEmpty(getSObjectName())) {
+      checkForPKSupportedObject(getSObjectName(), collector);
+    }
+
+    if (getChunkSize() > SalesforceSourceConstants.MAX_PK_CHUNK_SIZE) {
+      collector.addFailure(
+        String.format("Chunk Size '%d' is bigger than maximum allowed size '%d'.", getChunkSize(),
+                      SalesforceSourceConstants.MAX_PK_CHUNK_SIZE),
+        String.format("Allowed values are between the range of '%d' and '%d'.",
+                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
+        .withConfigProperty(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
+    } else if (getChunkSize() < SalesforceSourceConstants.MIN_PK_CHUNK_SIZE) {
+      collector.addFailure(
+        String.format("Chunk Size %d is lower than minimum allowed size '%d'.", getChunkSize(),
+                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE),
+        String.format("Allowed values are between the range of '%d' and '%d'.",
+                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
+        .withConfigProperty(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
+    }
+  }
+
+  private void checkForPKSupportedObject(String sObject, FailureCollector collector) {
+    if (canAttemptToEstablishConnection()) {
+      if (!isCustomObject(sObject, collector)) {
+        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
+          collector.addFailure(String.format("SObject: %s is not supported with PKChunk enabled.", sObject),
+                               "Please check documentation for supported Objects.");
+        }
+      }
+    }
+  }
+
+  public boolean getEnablePKChunk() {
+    return enablePKChunk == null ? false : enablePKChunk;
+  }
+
+  public int getChunkSize() {
+    return chunkSize == null ? SalesforceSourceConstants.DEFAULT_PK_CHUNK_SIZE : chunkSize;
+  }
+
+  private boolean isCustomObject(String sObjectName, FailureCollector collector) {
+    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+    try {
+      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
+      return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
+    } catch (ConnectionException e) {
+      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      throw collector.getOrThrowException();
     }
   }
 }

@@ -304,4 +304,28 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
       return Boolean.FALSE;
     }
   }
+
+  /**
+   * Visits query fields that are restricted by Bulk API with PKChunk Enable.
+   * Returns true if there is condition clause other than 'WHERE', false otherwise.
+   * For example: SELECT Name FROM Opportunity LIMIT 10.
+   */
+  public static class RestrictedPKQueryVisitor extends SOQLBaseVisitor<Boolean> {
+
+    @Override
+    public Boolean visitStatement(SOQLParser.StatementContext ctx) {
+      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
+      if (
+        fromStatementContext.WITH() != null ||
+          fromStatementContext.GROUP() != null ||
+          fromStatementContext.ORDER() != null ||
+          fromStatementContext.LIMIT() != null ||
+          fromStatementContext.OFFSET() != null ||
+          fromStatementContext.FOR() != null) {
+        return true;
+      }
+
+      return ctx.fieldList().accept(new RestrictedFieldVisitor());
+    }
+  }
 }

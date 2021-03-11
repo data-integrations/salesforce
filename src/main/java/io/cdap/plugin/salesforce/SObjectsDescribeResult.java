@@ -221,4 +221,8 @@ public class SObjectsDescribeResult {
     cache.put(name.toLowerCase(), describe);
     return describe;
   }
+
+  public static boolean isCustomObject(PartnerConnection connection, String name) throws ConnectionException {
+    return describe(connection, name, new HashMap<>()).isCustom();
+  }
 }

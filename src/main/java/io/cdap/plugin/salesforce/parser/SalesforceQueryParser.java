@@ -65,6 +65,18 @@ public class SalesforceQueryParser {
     return visitor.visit(parser.statement());
   }
 
+  /**
+   * Checks if query has restricted syntax that cannot be processed by Bulk API with PK Enable.
+   *
+   * @param query SOQL query
+   * @return true if query has restricted syntax, false otherwise
+   */
+  public static boolean isRestrictedPKQuery(String query) {
+    SOQLParser parser = initParser(query);
+    SalesforceQueryVisitor.RestrictedPKQueryVisitor visitor = new SalesforceQueryVisitor.RestrictedPKQueryVisitor();
+    return visitor.visit(parser.statement());
+  }
+
   private static SOQLParser initParser(String query) {
     SOQLLexer lexer = new SOQLLexer(CharStreams.fromString(query));
     lexer.removeErrorListeners();

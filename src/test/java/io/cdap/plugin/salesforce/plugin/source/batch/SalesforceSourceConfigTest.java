@@ -16,11 +16,17 @@
 
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import io.cdap.cdap.etl.api.validation.CauseAttributes;
+import io.cdap.cdap.etl.api.validation.ValidationException;
+import io.cdap.cdap.etl.api.validation.ValidationFailure;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -184,5 +190,88 @@ public class SalesforceSourceConfigTest {
           // expected failure, do nothing
         }
       });
+  }
+
+  @Test
+  public void testValidPKChunkConfig() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("Select Name from Table")
+      .setEnablePKChunk(true)
+      .setReferenceName("Source").build();
+    testValidPKChunkConfiguration(config);
+  }
+
+  @Test
+  public void testValidPkChunkConfigWithMaxChunkSize() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("Select Name from Table")
+      .setEnablePKChunk(true)
+      .setChunkSize(SalesforceSourceConstants.MAX_PK_CHUNK_SIZE)
+      .setReferenceName("Source").build();
+    testValidPKChunkConfiguration(config);
+  }
+
+  @Test
+  public void testValidPkChunkConfigWithMinChunkSize() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("Select Name from Table")
+      .setEnablePKChunk(true)
+      .setChunkSize(SalesforceSourceConstants.MIN_PK_CHUNK_SIZE)
+      .setReferenceName("Source").build();
+    testValidPKChunkConfiguration(config);
+  }
+
+  private void testValidPKChunkConfiguration(SalesforceSourceConfig config) {
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    mock.validate(collector);
+    Assert.assertEquals(0, collector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testPKChunkWithRestrictedQuery() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setReferenceName("Source")
+      .setQuery("Select Max(Id) MX from Table")
+      .setEnablePKChunk(true)
+      .build();
+    testPKChunkInvalidConfig(config, SalesforceSourceConstants.PROPERTY_QUERY);
+  }
+
+  @Test
+  public void testPKChunkWithChunkSizeAboveMax() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("Select Name from Table")
+      .setEnablePKChunk(true)
+      .setChunkSize(SalesforceSourceConstants.MAX_PK_CHUNK_SIZE + 1)
+      .setReferenceName("Source").build();
+    testPKChunkInvalidConfig(config, SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
+  }
+
+  @Test
+  public void testPKChunkWithChunkSizeBelowMin() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("Select Name from Table")
+      .setEnablePKChunk(true)
+      .setChunkSize(SalesforceSourceConstants.MIN_PK_CHUNK_SIZE - 1)
+      .setReferenceName("Source").build();
+    testPKChunkInvalidConfig(config, SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
+  }
+
+  private void testPKChunkInvalidConfig(SalesforceSourceConfig config, String stageConfigName) {
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    ValidationFailure failure;
+    try {
+      mock.validate(collector);
+      Assert.assertEquals(1, collector.getValidationFailures().size());
+      failure = collector.getValidationFailures().get(0);
+    } catch (ValidationException e) {
+      Assert.assertEquals(1, e.getFailures().size());
+      failure = e.getFailures().get(0);
+    }
+    Assert.assertEquals(stageConfigName, failure.getCauses().get(0).getAttribute(CauseAttributes.STAGE_CONFIG));
   }
 }

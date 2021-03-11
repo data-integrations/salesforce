@@ -142,6 +142,27 @@ public class SalesforceQueryParserTest {
 
   @Test
   public void testRestrictedQuery() {
+    bulkApiRestrictedQuery();
+  }
+
+  @Test
+  public void testPKRestrictedQuery() {
+    bulkApiRestrictedQuery();
+    Stream.of(
+      "SELECT Name FROM Opportunity LIMIT 10",
+      "SELECT Id FROM UserProfileFeed WITH UserId='005D0000001AamR'",
+      "SELECT Title FROM KnowledgeArticleVersion WHERE PublishStatus='online' WITH DATA CATEGORY Geography__c " +
+        "ABOVE usa__c",
+      "SELECT Name FROM Account ORDER BY Name DESC",
+      "SELECT Name, ID FROM Contact FOR REFERENCE",
+      "SELECT Name, ID FROM Contact FOR VIEW",
+      "SELECT Id FROM Account FOR UPDATE"
+    )
+      .forEach(query -> Assert.assertTrue(String.format("Query '%s' should have been restricted", query),
+                                          SalesforceQueryParser.isRestrictedPKQuery(query)));
+  }
+
+  private void bulkApiRestrictedQuery() {
     Stream.of(
       "SELECT MAX(CloseDate) Amt FROM Opportunity",
       "SELECT Name n, MAX(Amount) max FROM Opportunity GROUP BY Name",
@@ -153,7 +174,7 @@ public class SalesforceQueryParserTest {
         "FROM Account GROUP BY CUBE(Type, BillingCountry) ORDER BY GROUPING(Type), GROUPING(BillingCountry)",
       "SELECT Name FROM Opportunity LIMIT 10 OFFSET 2")
       .forEach(query -> Assert.assertTrue(String.format("Query '%s' should have been restricted", query),
-        SalesforceQueryParser.isRestrictedQuery(query)));
+                                          SalesforceQueryParser.isRestrictedQuery(query)));
   }
 
   @Test

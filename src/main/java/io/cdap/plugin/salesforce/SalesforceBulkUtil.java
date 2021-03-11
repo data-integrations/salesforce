@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -109,21 +110,59 @@ public final class SalesforceBulkUtil {
    *
    * @param bulkConnection bulk connection instance
    * @param query a SOQL query
+   * @param enablePKChunk enable PK Chunk
    * @return an array of batches
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws IOException failed to close the query
    */
-  public static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query)
+  public static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     JobInfo job = createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
-
+    BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
-      bulkConnection.createBatchFromStream(job, bout);
+      batchInfo = bulkConnection.createBatchFromStream(job, bout);
     }
+    return enablePKChunk ? waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId()) :
+      bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+  }
 
-    return bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+  /** When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
+   * decide how many batches will be created
+   * @param bulkConnection bulk connection instance
+   * @param jobId a job id
+   * @param initialBatchId a batch id
+   * @return Array with Batches created by Salesforce API
+   *
+   * @throws AsyncApiException if there is an issue creating the job
+   */
+  private static BatchInfo[] waitForBatchChunks(BulkConnection bulkConnection, String jobId, String initialBatchId)
+    throws AsyncApiException {
+    BatchInfo initialBatchInfo = null;
+    for (int i = 0; i < GET_BATCH_RESULTS_TRIES; i++) {
+      //check if the job is aborted
+      if (bulkConnection.getJobStatus(jobId).getState() == JobStateEnum.Aborted) {
+        LOG.info(String.format("Job with Id: '%s' is aborted", jobId));
+        return new BatchInfo[0];
+      }
+      initialBatchInfo = bulkConnection.getBatchInfo(jobId, initialBatchId);
+
+      if (initialBatchInfo.getState() == BatchStateEnum.NotProcessed) {
+        BatchInfo[] result = bulkConnection.getBatchInfoList(jobId).getBatchInfo();
+        return Arrays.stream(result).filter(batchInfo -> batchInfo.getState() != BatchStateEnum.NotProcessed)
+          .toArray(BatchInfo[]::new);
+      } else if (initialBatchInfo.getState() == BatchStateEnum.Failed) {
+        throw new BulkAPIBatchException("Batch failed", initialBatchInfo);
+      } else {
+        try {
+          Thread.sleep(GET_BATCH_RESULTS_SLEEP_MS);
+        } catch (InterruptedException e) {
+          throw new RuntimeException("Job is aborted", e);
+        }
+      }
+    }
+    throw new BulkAPIBatchException("Timeout waiting for batch results", initialBatchInfo);
   }
 
   /**
