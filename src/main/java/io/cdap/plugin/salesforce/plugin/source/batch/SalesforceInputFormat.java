@@ -64,8 +64,16 @@ public class SalesforceInputFormat extends InputFormat {
     List<String> queries = GSON.fromJson(configuration.get(SalesforceSourceConstants.CONFIG_QUERIES), QUERIES_TYPE);
     BulkConnection bulkConnection = getBulkConnection(configuration);
 
+    boolean enablePKChunk = configuration.getBoolean(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, false);
+    if (enablePKChunk) {
+      int chunkSize = configuration.getInt(SalesforceSourceConstants.CONFIG_CHUNK_SIZE,
+                                           SalesforceSourceConstants.DEFAULT_PK_CHUNK_SIZE);
+      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK,
+                               String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+    }
+
     return queries.parallelStream()
-      .map(query -> getQuerySplits(query, bulkConnection))
+      .map(query -> getQuerySplits(query, bulkConnection, enablePKChunk))
       .flatMap(Collection::stream)
       .collect(Collectors.toList());
   }
@@ -87,8 +95,8 @@ public class SalesforceInputFormat extends InputFormat {
     return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, getDelegateRecordReader(query, schema));
   }
 
-  private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection) {
-    return Stream.of(getBatches(query, bulkConnection))
+  private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
+    return Stream.of(getBatches(query, bulkConnection, enablePKChunk))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
   }
@@ -116,15 +124,16 @@ public class SalesforceInputFormat extends InputFormat {
    *
    * @param query SOQL query
    * @param bulkConnection bulk connection
+   * @param enablePKChunk enable PK Chunking
    * @return array of batch info
    */
-  private BatchInfo[] getBatches(String query, BulkConnection bulkConnection) {
+  private BatchInfo[] getBatches(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query);
+       BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query, enablePKChunk);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
