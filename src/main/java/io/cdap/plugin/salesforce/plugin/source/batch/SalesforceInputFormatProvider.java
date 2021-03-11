@@ -66,6 +66,28 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     this.conf = configBuilder.build();
   }
 
+  public SalesforceInputFormatProvider(SalesforceSourceConfig config,
+                                       List<String> queries,
+                                       Map<String, String> schemas,
+                                       @Nullable String sObjectNameField) {
+    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
+      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
+      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
+      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
+      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
+      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
+      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
+      .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas))
+      .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(config.getEnablePKChunk()))
+      .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(config.getChunkSize()));
+
+    if (sObjectNameField != null) {
+      builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
+    }
+
+    this.conf = builder.build();
+  }
+
   @Override
   public Map<String, String> getInputFormatConfiguration() {
     return conf;

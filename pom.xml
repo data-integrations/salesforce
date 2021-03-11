@@ -31,7 +31,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
-    <cdap.version>6.2.0</cdap.version>
+    <cdap.version>6.4.0-SNAPSHOT</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
