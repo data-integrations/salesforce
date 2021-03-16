@@ -41,6 +41,51 @@ Examples:
 Salesforce and generate SOQL query (`select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`). 
 Ignored if SOQL query is provided. 
 
+There are also **sObjects** that are not supported in the Bulk API of Salesforce. 
+When a job is created using an object that is not supported in the Bulk API, "_Entity is not supported by the Bulk API_" is thrown.
+These objects are also not supported by _Einstein Analytics_ as it also uses Bulk API for querying data.
+
+Below is a non-comprehensive list of **sObjects** that are not currently available in the Bulk API:
+- *Feed (e.g. AccountFeed, AssetFeed, ...)
+- *Share (e.g. AccountBrandShare, ChannelProgramLevelShare, ...)
+- *History (e.g. AccountHistory, ActivityHistory, ...)
+- *EventRelation (e.g. AcceptedEventRelation, DeclinedEventRelation, ...)
+- AggregateResult
+- AttachedContentDocument
+- CaseStatus
+- CaseTeamMember
+- CaseTeamRole
+- CaseTeamTemplate
+- CaseTeamTemplateMember
+- CaseTeamTemplateRecord
+- CombinedAttachment
+- ContentFolderItem
+- ContractStatus
+- EventWhoRelation
+- FolderedContentDocument
+- KnowledgeArticleViewStat
+- KnowledgeArticleVoteStat
+- LookedUpFromActivity
+- Name
+- NoteAndAttachment
+- OpenActivity
+- OwnedContentDocument
+- PartnerRole
+- RecentlyViewed
+- ServiceAppointmentStatus
+- SolutionStatus
+- TaskPriority
+- TaskStatus
+- TaskWhoRelation
+- UserRecordAccess
+- WorkOrderLineItemStatus
+- WorkOrderStatus
+
+**Cases when BULK API is not used:**
+When query length sends the query to Salesforce in order to receive the array of batch info, there is one case in which Bulk API 
+is not used. If query is within the limit, it executes the original query, otherwise, switches to wide object logic, 
+for example generates Id query to retrieve batch info only for Ids that will be used later to retrieve data using SOAP API. 
+
 **Last Modified After:** Filter data to only include records where the system field `LastModifiedDate` is greater than 
 or equal to the specified date. The date must be provided in the Salesforce date format:
 
