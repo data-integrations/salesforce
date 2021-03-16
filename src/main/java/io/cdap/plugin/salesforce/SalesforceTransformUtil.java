@@ -20,6 +20,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,7 +44,7 @@ public class SalesforceTransformUtil {
       case TIMESTAMP_MICROS:
         return TimeUnit.MILLISECONDS.toMicros(Instant.parse(value).toEpochMilli());
       case TIME_MICROS:
-        return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value).toNanoOfDay());
+        return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(value, DateTimeFormatter.ISO_TIME).toNanoOfDay());
       default:
         throw new IllegalArgumentException(
           String.format("Field '%s' is of unsupported type '%s'", fieldName, logicalType.getToken()));
