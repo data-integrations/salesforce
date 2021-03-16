@@ -36,9 +36,11 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +99,34 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     );
 
     Assert.assertEquals(expectedSchema.toString(), recordSchema.toString());
+  }
+
+  @Test
+  public void testDateTypesConversion() throws Exception {
+
+    CustomField dateField = createDateCustomField("Date__c");
+    CustomField dateTimeField = createDateTimeCustomField("DateTime__c");
+    CustomField timeField = createTimeCustomField("Time__c");
+
+    String sObjectName = createCustomObject("IT_SObjectSchema", new CustomField[]{dateField, dateTimeField,
+      timeField});
+    Calendar calendar = new GregorianCalendar(2020, 12, 13, 23, 4, 34);
+
+    SObject sObject = new SObjectBuilder()
+      .setType(sObjectName)
+      .put("Date__c", calendar)
+      .put("DateTime__c", calendar)
+      .put("Time__c", calendar)
+      .build();
+    addSObjects(Collections.singletonList(sObject), false);
+
+    String query = String.format("SELECT Date__c, DateTime__c, Time__c  FROM %s", sObjectName);
+    List<StructuredRecord> records = getResultsBySOQLQuery(query);
+    Assert.assertEquals(1, records.size());
+    StructuredRecord structuredRecord = records.get(0);
+    Assert.assertEquals((Integer) 18640, structuredRecord.get("Date__c"));
+    Assert.assertEquals((Long) 1610575474000000L, structuredRecord.get("DateTime__c"));
+    Assert.assertEquals((Long) 79474000000L, structuredRecord.get("Time__c"));
   }
 
   @Test
