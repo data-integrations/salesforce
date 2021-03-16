@@ -33,17 +33,18 @@ import java.util.Map;
 public class SalesforceBulkRecordReaderTest {
   @Test
   public void testTypes() throws Exception {
-    String csvString = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\"\n" +
-      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\"\n" +
-      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\"\n" +
-      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\"";
+    String csvString = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
 
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
                                     Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE))
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("Time", Schema.of(Schema.LogicalType.TIME_MICROS))
     );
 
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
@@ -53,6 +54,7 @@ public class SalesforceBulkRecordReaderTest {
              .put("ExpectedRevenue", 1500.0)
              .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17897)
+             .put("Time", 43230000000L)
              .build()
       )
       .add(new ImmutableMap.Builder<String, Object>()
@@ -61,6 +63,7 @@ public class SalesforceBulkRecordReaderTest {
              .put("ExpectedRevenue", 112500.0)
              .put("LastModifiedDate", 1550819001000000L)
              .put("CloseDate", 17885)
+             .put("Time", 43240000000L)
              .build()
       )
       .add(new ImmutableMap.Builder<String, Object>()
@@ -68,6 +71,7 @@ public class SalesforceBulkRecordReaderTest {
              .put("IsDeleted", false)
              .put("ExpectedRevenue", 220000.0)
              .put("LastModifiedDate", 1550819001000000L)
+             .put("Time", 43250000000L)
              .put("CloseDate", 17850)
              .build()
       )
