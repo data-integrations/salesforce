@@ -37,9 +37,7 @@ import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -117,24 +115,9 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
   @Override
   public void transform(KeyValue<Schema, Map<String, String>> input,
-                        Emitter<StructuredRecord> emitter) {
-    try {
-      StructuredRecord record = transformer.transform(input.getKey(), input.getValue());
-      emitter.emit(record);
-    } catch (Exception e) {
-      // hacky check to see if this is a header placed in the middle of all the data due to chunking
-      Set<String> schemaFieldNames = input.getKey().getFields().stream()
-        .map(Schema.Field::getName)
-        .collect(Collectors.toSet());
-      Set<String> columnValues = new HashSet<>(input.getValue().values());
-      if (columnValues.containsAll(schemaFieldNames)) {
-        // looks like a header, ignore it
-        // can potentially fail if the configured schema has extra fields that are not in the data
-        // but in those cases, those fields should probably be removed anyway.
-        return;
-      }
-      throw e;
-    }
+                        Emitter<StructuredRecord> emitter) throws Exception {
+    StructuredRecord record = transformer.transform(input.getKey(), input.getValue());
+    emitter.emit(record);
   }
 
   /**
