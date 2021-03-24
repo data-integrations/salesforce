@@ -141,6 +141,48 @@
           }
         }
       ]
+    },
+    {
+      "label": "Advanced",
+      "properties": [
+        {
+          "widget-type": "toggle",
+          "name": "enablePKChunk",
+          "label": "Enable PK Chunking",
+          "widget-attributes": {
+            "default": "false",
+            "on": {
+              "value": "true",
+              "label": "True"
+            },
+            "off": {
+              "value": "false",
+              "label": "False"
+            }
+          }
+        },
+        {
+          "name": "chunkSize",
+          "label" : "Chunk Size",
+          "widget-type": "textbox",
+          "widget-attributes" : {
+            "placeholder": "100000"
+          }
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "name": "enablePKChunk",
+      "condition": {
+        "expression": "enablePKChunk == true"
+      },
+      "show": [
+        {
+          "name": "chunkSize"
+        }
+      ]
     }
   ],
   "outputs": [

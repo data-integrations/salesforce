@@ -225,7 +225,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     loginConfig.setAuthEndpoint(METADATA_LOGIN_URL);
     loginConfig.setServiceEndpoint(METADATA_LOGIN_URL);
     loginConfig.setManualLogin(true);
-    LoginResult loginResult = new PartnerConnection(loginConfig).login(USERNAME, PASSWORD);
+    LoginResult loginResult = new PartnerConnection(loginConfig).login(USERNAME, PASSWORD + SECURITY_TOKEN);
 
     ConnectorConfig metadataConfig = new ConnectorConfig();
     metadataConfig.setServiceEndpoint(loginResult.getMetadataServerUrl());
@@ -265,7 +265,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     metadataConnection.deleteMetadata("CustomObject", fullNames);
   }
 
-  private List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties,
+  protected List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties,
                                                      String pluginName,
                                                      String applicationPrefix) throws Exception {
     ETLStage source = new ETLStage("SalesforceReader",

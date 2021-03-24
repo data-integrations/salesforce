@@ -34,6 +34,8 @@ public class SalesforceSourceConfigBuilder {
   private String offset;
   private String schema;
   private String securityToken;
+  private Boolean enablePKChunk;
+  private Integer chunkSize;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -105,10 +107,19 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setEnablePKChunk(Boolean enablePKChunk) {
+    this.enablePKChunk = enablePKChunk;
+    return this;
+  }
+
+  public SalesforceSourceConfigBuilder setChunkSize(Integer chunkSize) {
+    this.chunkSize = chunkSize;
+    return this;
+  }
 
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                       query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema,
-                                      securityToken, null);
+                                      securityToken, null, enablePKChunk, chunkSize);
   }
 }
