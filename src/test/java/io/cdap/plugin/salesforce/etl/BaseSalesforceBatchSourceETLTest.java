@@ -187,6 +187,24 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     return customField;
   }
 
+  protected CustomField createDateCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.Date);
+    return customField;
+  }
+
+  protected CustomField createDateTimeCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.DateTime);
+    return customField;
+  }
+
+  protected CustomField createTimeCustomField(String fullName) {
+    CustomField customField = createCustomField(fullName);
+    customField.setType(FieldType.Time);
+    return customField;
+  }
+
   protected CustomField createLocationCustomField(String fullName) {
     CustomField customField = createCustomField(fullName);
     customField.setType(FieldType.Location);
