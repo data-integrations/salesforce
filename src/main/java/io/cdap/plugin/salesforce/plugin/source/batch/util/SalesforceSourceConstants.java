@@ -15,6 +15,9 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch.util;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Salesforce batch source constants
  */
@@ -29,14 +32,95 @@ public class SalesforceSourceConstants {
   public static final String PROPERTY_QUERY = "query";
   public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
 
+  public static final String PROPERTY_PK_CHUNK_ENABLE_NAME = "enablePKChunk";
+  public static final String PROPERTY_CHUNK_SIZE_NAME = "chunkSize";
+
   public static final String PROPERTY_WHITE_LIST = "whiteList";
   public static final String PROPERTY_BLACK_LIST = "blackList";
   public static final String PROPERTY_SOBJECT_NAME_FIELD = "sObjectNameField";
 
   public static final String CONFIG_QUERIES = "mapred.salesforce.input.queries";
   public static final String CONFIG_SCHEMAS = "mapred.salesforce.input.schemas";
+
+  public static final String CONFIG_PK_CHUNK_ENABLE = "mapred.salesforce.input.pk.chunk";
+  public static final String CONFIG_CHUNK_SIZE = "mapred.salesforce.input.schemas.chunk.size";
+  public static final String HEADER_ENABLE_PK_CHUNK = "Sforce-Enable-PKChunking";
+  public static final String HEADER_VALUE_PK_CHUNK = "chunkSize=%d";
+
   public static final String CONFIG_SOBJECT_NAME_FIELD = "mapred.salesforce.input.sObjectNameField";
 
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
-
+  // https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/
+  // async_api_headers_enable_pk_chunking.htm
+  public static final int MAX_PK_CHUNK_SIZE = 250000;
+  public static final int DEFAULT_PK_CHUNK_SIZE = 100000;
+  public static final int MIN_PK_CHUNK_SIZE = 1;
+  // https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/
+  // async_api_headers_enable_pk_chunking.htm
+  public static final List<String> SUPPORTED_OBJECTS_WITH_PK_CHUNK = Arrays.asList("Account",
+                                                                                   "AccountContactRelation",
+                                                                                   "AccountTeamMember",
+                                                                                   "AiVisitSummary",
+                                                                                   "Asset",
+                                                                                   "B2BMktActivity",
+                                                                                   "B2BMktProspect",
+                                                                                   "Campaign",
+                                                                                   "CampaignMember",
+                                                                                   "CandidateAnswer",
+                                                                                   "Case",
+                                                                                   "CaseArticle",
+                                                                                   "CaseComment",
+                                                                                   "Claim",
+                                                                                   "ClaimParticipant",
+                                                                                   "Contact",
+                                                                                   "ContractLineItem",
+                                                                                   "ConversationEntry",
+                                                                                   "CustomerProperty",
+                                                                                   "EinsteinAnswerFeedback",
+                                                                                   "EmailMessage",
+                                                                                   "EngagementScore",
+                                                                                   "Event",
+                                                                                   "EventRelation",
+                                                                                   "FeedItem",
+                                                                                   "Individual",
+                                                                                   "InsurancePolicy",
+                                                                                   "InsurancePolicyAsset",
+                                                                                   "InsurancePolicyParticipant",
+                                                                                   "Lead",
+                                                                                   "LeadInsight",
+                                                                                   "LiveChatTranscript",
+                                                                                   "LoginHistory",
+                                                                                   "LoyaltyLedger",
+                                                                                   "LoyaltyMemberCurrency",
+                                                                                   "LoyaltyMemberTier",
+                                                                                   "LoyaltyPartnerProduct",
+                                                                                   "LoyaltyProgramMember",
+                                                                                   "LoyaltyProgramPartner",
+                                                                                   "Note",
+                                                                                   "ObjectTerritory2Association",
+                                                                                   "Opportunity",
+                                                                                   "OpportunityContactRole",
+                                                                                   "OpportunityHistory",
+                                                                                   "OpportunityLineItem",
+                                                                                   "OpportunitySplit",
+                                                                                   "OpportunityTeamMember",
+                                                                                   "Pricebook2",
+                                                                                   "PricebookEntry",
+                                                                                   "Product2",
+                                                                                   "ProductConsumed",
+                                                                                   "ProductRequired",
+                                                                                   "QuickText",
+                                                                                   "Quote",
+                                                                                   "QuoteLineItem",
+                                                                                   "ReplyText",
+                                                                                   "ScoreIntelligence",
+                                                                                   "ServiceContract",
+                                                                                   "Task",
+                                                                                   "TermDocumentFrequency",
+                                                                                   "TransactionJournal",
+                                                                                   "User",
+                                                                                   "UserRole",
+                                                                                   "VoiceCall",
+                                                                                   "WorkOrder",
+                                                                                   "WorkOrderLineItem");
 }

@@ -113,3 +113,99 @@ The Salesforce types will be automatically mapped to schema types as shown below
 |             | textarea, phone, id, url, email, encryptedstring,                          |              |
 |             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |
 
+**Enable PK Chunking:**
+Primary key (PK) Chunking splits query on large tables into chunks based on the record IDs, or primary keys, of the queried records.
+
+Salesforce recommends that you enable PK chunking when querying tables with more than 10 million records or when a bulk query consistently times out. 
+However, the effectiveness of PK chunking depends on the specifics of the query and the queried data.
+
+For example, let’s say you enable PK chunking for the following query on an Account table with 10,000,000 records.
+
+`SELECT Name FROM Account`
+
+Assuming a chunk size of 250,000 the query is split into the following 40 queries. Each query is processed parallely
+
+| Queries |         
+| ------- | 
+| SELECT Name FROM Account WHERE Id >= 001300000000000 AND Id < 00130000000132G |
+| SELECT Name FROM Account WHERE Id >= 00130000000132G AND Id < 00130000000264W |
+| SELECT Name FROM Account WHERE Id >= 00130000000264W AND Id < 00130000000396m |
+| ... |
+| SELECT Name FROM Account WHERE Id >= 00130000000euQ4 AND Id < 00130000000fxSK |
+
+PK chunking works only with queries that don’t include `SELECT` clauses or conditions other than `WHERE`.
+
+PK chunking only works with the following objects:
+
+| Objects |         
+| ------- | 
+|Account|
+|AccountContactRelation|
+|AccountTeamMember|
+|AiVisitSummary|
+|Asset|
+|B2BMktActivity|
+|B2BMktProspect|
+|Campaign|
+|CampaignMember|
+|CandidateAnswer|
+|Case|
+|CaseArticle|
+|CaseComment|
+|Claim|
+|ClaimParticipant|
+|Contact|
+|ContractLineItem|
+|ConversationEntry|
+|CustomerProperty|
+|EinsteinAnswerFeedback|
+|EmailMessage|
+|EngagementScore|
+|Event|
+|EventRelation|
+|FeedItem|
+|Individual|
+|InsurancePolicy|
+|InsurancePolicyAsset|
+|InsurancePolicyParticipant|
+|Lead|
+|LeadInsight|
+|LiveChatTranscript|
+|LoginHistory|
+|LoyaltyLedger|
+|LoyaltyMemberCurrency|
+|LoyaltyMemberTier|
+|LoyaltyPartnerProduct|
+|LoyaltyProgramMember|
+|LoyaltyProgramPartner|
+|Note|
+|ObjectTerritory2Association|
+|Opportunity|
+|OpportunityContactRole|
+|OpportunityHistory|
+|OpportunityLineItem|
+|OpportunitySplit|
+|OpportunityTeamMember|
+|Pricebook2|
+|PricebookEntry|
+|Product2|
+|ProductConsumed|
+|ProductRequired|
+|QuickText|
+|Quote|
+|QuoteLineItem|
+|ReplyText|
+|ScoreIntelligence|
+|ServiceContract|
+|Task|
+|TermDocumentFrequency|
+|TransactionJournal|
+|User|
+|UserRole|
+|VoiceCall|
+|WorkOrder|
+|WorkOrderLineItem|
+
+Support also includes custom objects, and any Sharing and History tables that support standard objects.
+
+**Chunk Size:** Specify size of chunk. Maximum Size is 250,000. Default Size is 100,000. 
