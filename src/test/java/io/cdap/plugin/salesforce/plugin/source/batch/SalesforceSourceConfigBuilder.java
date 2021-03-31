@@ -36,6 +36,7 @@ public class SalesforceSourceConfigBuilder {
   private String securityToken;
   private Boolean enablePKChunk;
   private Integer chunkSize;
+  private String parent;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -117,9 +118,14 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setParent(String parent) {
+    this.parent = parent;
+    return this;
+  }
+
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                       query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema,
-                                      securityToken, enablePKChunk, chunkSize);
+                                      securityToken, enablePKChunk, chunkSize, parent);
   }
 }
