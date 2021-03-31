@@ -46,8 +46,8 @@ import javax.annotation.Nullable;
 import static io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK;
 
 /**
- * This class {@link SalesforceSourceConfig} provides all the configuration required for
- * configuring the {@link SalesforceBatchSource} plugin.
+ * This class {@link SalesforceSourceConfig} provides all the configuration required for configuring the {@link
+ * SalesforceBatchSource} plugin.
  */
 public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
@@ -82,6 +82,12 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Description("Specify size of chunk. Maximum Size is 250,000. Default Size is 100,000.")
   private Integer chunkSize;
 
+  @Name(SalesforceSourceConstants.PROPERTY_PARENT_NAME)
+  @Macro
+  @Nullable
+  @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
+  private String parent;
+
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
@@ -99,7 +105,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String securityToken,
                          @Nullable OAuthInfo oAuthInfo,
                          @Nullable Boolean enablePKChunk,
-                         @Nullable Integer chunkSize) {
+                         @Nullable Integer chunkSize,
+                         @Nullable String parent) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo);
     this.query = query;
@@ -107,11 +114,12 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     this.schema = schema;
     this.enablePKChunk = enablePKChunk;
     this.chunkSize = chunkSize;
+    this.parent = parent;
   }
 
   /**
-   * Returns SOQL to retrieve data from Salesforce. If user has provided SOQL, returns given SOQL.
-   * If user has provided sObject name, generates SOQL based on sObject metadata and provided filters.
+   * Returns SOQL to retrieve data from Salesforce. If user has provided SOQL, returns given SOQL. If user has provided
+   * sObject name, generates SOQL based on sObject metadata and provided filters.
    *
    * @param logicalStartTime application start time
    * @return SOQL query
@@ -127,12 +135,17 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   @Nullable
+  public String getParent() {
+    return parent;
+  }
+
+  @Nullable
   public Schema getSchema() {
     try {
       return Strings.isNullOrEmpty(schema) ? null : Schema.parseJson(schema);
     } catch (IOException e) {
       throw new InvalidConfigException("Unable to parse output schema: " +
-        schema, e, SalesforceSourceConstants.PROPERTY_SCHEMA);
+                                         schema, e, SalesforceSourceConstants.PROPERTY_SCHEMA);
     }
   }
 
@@ -143,7 +156,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       return false;
     }
     throw new InvalidConfigException("SOQL query or SObject name must be provided",
-                                             SalesforceSourceConstants.PROPERTY_QUERY);
+                                     SalesforceSourceConstants.PROPERTY_QUERY);
   }
 
   @Override
@@ -229,7 +242,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
   private void validatePKChunk(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
-      || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)) {
+      || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
+      || containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME)) {
       return;
     }
 
@@ -239,19 +253,29 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (SalesforceQueryParser.isRestrictedPKQuery(query)) {
-          collector.addFailure(
-            String.format("SOQL Query contains restricted clauses when PK Chunk is Enabled. Unsupported query: '%s'.",
-                          query),
-            "Set Enable PK Chunk to false, because 'WHERE' is the only supported conditions clause.")
-            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-        }
+        collector.addFailure(
+          String.format("SOQL Query contains restricted clauses when PK Chunk is Enabled. Unsupported query: '%s'.",
+                        query),
+          "Set Enable PK Chunk to false, because 'WHERE' is the only supported conditions clause.")
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+      }
 
-      String sObject = SalesforceQueryParser.getObjectDescriptorFromQuery(query).getName();
-      checkForPKSupportedObject(sObject, collector);
+      // If a parent object is defined then use that to check for PK support, otherwise use the object from the query
+      if (!containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME) && !Strings.isNullOrEmpty(getParent())) {
+        checkForPKSupportedObject(getParent(), collector);
+      } else {
+        String sObject = SalesforceQueryParser.getObjectDescriptorFromQuery(query).getName();
+        checkForPKSupportedObject(sObject, collector);
+      }
     }
 
+    // If a parent object is defined then use that to check for PK support, otherwise use the object from the config
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME) && !Strings.isNullOrEmpty(getSObjectName())) {
-      checkForPKSupportedObject(getSObjectName(), collector);
+      if (!containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME) && !Strings.isNullOrEmpty(getParent())) {
+        checkForPKSupportedObject(getParent(), collector);
+      } else {
+        checkForPKSupportedObject(getSObjectName(), collector);
+      }
     }
 
     if (getChunkSize() > SalesforceSourceConstants.MAX_PK_CHUNK_SIZE) {
@@ -275,8 +299,9 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     if (canAttemptToEstablishConnection()) {
       if (!isCustomObject(sObject, collector)) {
         if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
-          collector.addFailure(String.format("SObject: %s is not supported with PKChunk enabled.", sObject),
-                               "Please check documentation for supported Objects.");
+          collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
+                               "Please check documentation for supported Objects. If this is a history " +
+                                 "or shared table, you may need to specify a SObject Parent in the Advanced section.");
         }
       }
     }
