@@ -168,6 +168,14 @@
           "widget-attributes" : {
             "placeholder": "100000"
           }
+        },
+        {
+          "name": "parent",
+          "label" : "SObject Parent Name",
+          "widget-type": "textbox",
+          "widget-attributes" : {
+            "placeholder": "Salesforce object parent name"
+          }
         }
       ]
     }
@@ -181,6 +189,9 @@
       "show": [
         {
           "name": "chunkSize"
+        },
+        {
+          "name": "parent"
         }
       ]
     }

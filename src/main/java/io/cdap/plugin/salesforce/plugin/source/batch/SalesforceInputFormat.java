@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.sforce.async.AsyncApiException;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Input format class which generates input splits for each given query
- * and initializes appropriate record reader.
+ * Input format class which generates input splits for each given query and initializes appropriate record reader.
  */
 public class SalesforceInputFormat extends InputFormat {
 
@@ -66,10 +67,17 @@ public class SalesforceInputFormat extends InputFormat {
 
     boolean enablePKChunk = configuration.getBoolean(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, false);
     if (enablePKChunk) {
+      String parent = configuration.get(SalesforceSourceConstants.CONFIG_CHUNK_PARENT);
       int chunkSize = configuration.getInt(SalesforceSourceConstants.CONFIG_CHUNK_SIZE,
                                            SalesforceSourceConstants.DEFAULT_PK_CHUNK_SIZE);
-      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK,
-                               String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+
+      List<String> chunkHeaderValues = new ArrayList<>();
+      chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+      if (!Strings.isNullOrEmpty(parent)) {
+        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
+      }
+
+      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
     }
 
     return queries.parallelStream()
@@ -117,10 +125,9 @@ public class SalesforceInputFormat extends InputFormat {
   }
 
   /**
-   * Based on query length sends query to Salesforce to receive array of batch info.
-   * If query is within limit, executes original query. If not, switches to wide object logic,
-   * i.e. generates Id query to retrieve batch info for Ids only that will be used later
-   * to retrieve data using SOAP API.
+   * Based on query length sends query to Salesforce to receive array of batch info. If query is within limit, executes
+   * original query. If not, switches to wide object logic, i.e. generates Id query to retrieve batch info for Ids only
+   * that will be used later to retrieve data using SOAP API.
    *
    * @param query SOQL query
    * @param bulkConnection bulk connection
@@ -133,7 +140,7 @@ public class SalesforceInputFormat extends InputFormat {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-       BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query, enablePKChunk);
+      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query, enablePKChunk);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
@@ -144,14 +151,14 @@ public class SalesforceInputFormat extends InputFormat {
   private RecordReader<Schema, Map<String, ?>> getDelegateRecordReader(String query, Schema schema) {
     if (SalesforceQueryParser.isRestrictedQuery(query)) {
       LOG.info("The SOQL query uses an aggregate function call or offset. "
-        + "Reads will be performed serially and not in parallel.");
+                 + "Reads will be performed serially and not in parallel.");
       return new SalesforceSoapRecordReader(schema, query, new SoapRecordToMapTransformer());
     }
     if (SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
       return new SalesforceBulkRecordReader(schema);
     }
     LOG.info("The SOQL query is a wide query. "
-      + "An additional SOAP request will be performed for each record.");
+               + "An additional SOAP request will be performed for each record.");
     return new SalesforceWideRecordReader(schema, query, new SoapRecordToMapTransformer());
   }
 }
