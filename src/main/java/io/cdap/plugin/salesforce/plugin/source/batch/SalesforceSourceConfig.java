@@ -132,9 +132,10 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     return sObjectName;
   }
 
-  @Nullable
   public String getParent() {
-    return parent;
+    // Return empty string instead of null to avoid error when passing this value as a Configuration
+    // in SalesforceInputFormat
+    return parent == null ? "" : parent;
   }
 
   @Nullable
