@@ -30,6 +30,46 @@ A Salesforce connected application must be created in order to get a client secr
 
 **SObject Name:** Salesforce object name to insert records into.
 
+There are also **sObjects** that are not supported in the Bulk API of Salesforce.
+When a job is created using an object that is not supported in the Bulk API, "_Entity is not supported by the Bulk API_" is thrown.
+These objects are also not supported by _Einstein Analytics_ as it also uses Bulk API for querying data.
+
+Below is a non-comprehensive list of **sObjects** that are not currently available in the Bulk API:
+- *Feed (e.g. AccountFeed, AssetFeed, ...)
+- *Share (e.g. AccountBrandShare, ChannelProgramLevelShare, ...)
+- *History (e.g. AccountHistory, ActivityHistory, ...)
+- *EventRelation (e.g. AcceptedEventRelation, DeclinedEventRelation, ...)
+- AggregateResult
+- AttachedContentDocument
+- CaseStatus
+- CaseTeamMember
+- CaseTeamRole
+- CaseTeamTemplate
+- CaseTeamTemplateMember
+- CaseTeamTemplateRecord
+- CombinedAttachment
+- ContentFolderItem
+- ContractStatus
+- EventWhoRelation
+- FolderedContentDocument
+- KnowledgeArticleViewStat
+- KnowledgeArticleVoteStat
+- LookedUpFromActivity
+- Name
+- NoteAndAttachment
+- OpenActivity
+- OwnedContentDocument
+- PartnerRole
+- RecentlyViewed
+- ServiceAppointmentStatus
+- SolutionStatus
+- TaskPriority
+- TaskStatus
+- TaskWhoRelation
+- UserRecordAccess
+- WorkOrderLineItemStatus
+- WorkOrderStatus
+
 **Operation:** Operation used for writing data into Salesforce.<br>
 Insert - adds records.<br>
 Upsert - upserts the records. Salesforce will decide if sObjects 
