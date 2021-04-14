@@ -63,30 +63,15 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }
 
-    this.conf = configBuilder.build();
-  }
-
-  public SalesforceInputFormatProvider(SalesforceSourceConfig config,
-                                       List<String> queries,
-                                       Map<String, String> schemas,
-                                       @Nullable String sObjectNameField) {
-    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
-      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
-      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
-      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
-      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
-      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
-      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
-      .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas))
-      .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(config.getEnablePKChunk()))
-      .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(config.getChunkSize()))
-      .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, config.getParent());
-
-    if (sObjectNameField != null) {
-      builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
+    if (config instanceof SalesforceSourceConfig) {
+      SalesforceSourceConfig sourceConfig = (SalesforceSourceConfig) config;
+      configBuilder
+        .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(sourceConfig.getEnablePKChunk()))
+        .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(sourceConfig.getChunkSize()))
+        .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, sourceConfig.getParent());
     }
 
-    this.conf = builder.build();
+    this.conf = configBuilder.build();
   }
 
   @Override
