@@ -31,7 +31,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
-    <cdap.version>6.4.0-SNAPSHOT</cdap.version>
+    <cdap.version>6.4.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
@@ -443,8 +443,8 @@
                 Plugins use the new macro substitution that supports object, which is introduced in 6.4.0.
                 The cdap API version that this project depends on is still 6.2.0 since there is no new API needed.
                -->
-              <parent>system:cdap-data-pipeline[6.4.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
-              <parent>system:cdap-data-streams[6.4.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-pipeline[6.4.0,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-streams[6.4.0,7.0.0-SNAPSHOT)</parent>
             </cdapArtifacts>
           </configuration>
           <executions>
