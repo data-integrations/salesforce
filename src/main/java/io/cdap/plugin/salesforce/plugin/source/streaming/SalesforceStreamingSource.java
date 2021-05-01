@@ -81,7 +81,8 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
       if (!Strings.isNullOrEmpty(query)
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)) {
+        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
+        && config.canAttemptToEstablishConnection()) {
 
         Schema schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
                                                        SObjectDescriptor.fromQuery(query));
