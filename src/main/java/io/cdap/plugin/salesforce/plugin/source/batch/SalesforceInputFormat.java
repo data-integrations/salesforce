@@ -20,8 +20,13 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
+import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
+import com.sforce.async.JobInfo;
+import com.sforce.async.JobStateEnum;
+import com.sforce.async.OperationEnum;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
@@ -39,9 +44,11 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +110,8 @@ public class SalesforceInputFormat extends InputFormat {
     return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, getDelegateRecordReader(query, schema));
   }
 
+
+
   private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
     return Stream.of(getBatches(query, bulkConnection, enablePKChunk))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
@@ -140,7 +149,7 @@ public class SalesforceInputFormat extends InputFormat {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = SalesforceBulkUtil.runBulkQuery(bulkConnection, query, enablePKChunk);
+      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
@@ -160,5 +169,65 @@ public class SalesforceInputFormat extends InputFormat {
     LOG.info("The SOQL query is a wide query. "
                + "An additional SOAP request will be performed for each record.");
     return new SalesforceWideRecordReader(schema, query, new SoapRecordToMapTransformer());
+  }
+
+  /**
+   * Start batch job of reading a given guery result.
+   *
+   * @param bulkConnection bulk connection instance
+   * @param query a SOQL query
+   * @param enablePKChunk enable PK Chunk
+   * @return an array of batches
+   * @throws AsyncApiException  if there is an issue creating the job
+   * @throws IOException failed to close the query
+   */
+  public BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
+    throws AsyncApiException, IOException {
+
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
+    BatchInfo batchInfo;
+    try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
+      batchInfo = bulkConnection.createBatchFromStream(job, bout);
+    }
+    return enablePKChunk ? waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId()) :
+      bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+  }
+
+  /** When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
+   * decide how many batches will be created
+   * @param bulkConnection bulk connection instance
+   * @param jobId a job id
+   * @param initialBatchId a batch id
+   * @return Array with Batches created by Salesforce API
+   *
+   * @throws AsyncApiException if there is an issue creating the job
+   */
+  private BatchInfo[] waitForBatchChunks(BulkConnection bulkConnection, String jobId, String initialBatchId)
+    throws AsyncApiException {
+    BatchInfo initialBatchInfo = null;
+    for (int i = 0; i < SalesforceSourceConstants.GET_BATCH_RESULTS_TRIES; i++) {
+      //check if the job is aborted
+      if (bulkConnection.getJobStatus(jobId).getState() == JobStateEnum.Aborted) {
+        LOG.info(String.format("Job with Id: '%s' is aborted", jobId));
+        return new BatchInfo[0];
+      }
+      initialBatchInfo = bulkConnection.getBatchInfo(jobId, initialBatchId);
+
+      if (initialBatchInfo.getState() == BatchStateEnum.NotProcessed) {
+        BatchInfo[] result = bulkConnection.getBatchInfoList(jobId).getBatchInfo();
+        return Arrays.stream(result).filter(batchInfo -> batchInfo.getState() != BatchStateEnum.NotProcessed)
+          .toArray(BatchInfo[]::new);
+      } else if (initialBatchInfo.getState() == BatchStateEnum.Failed) {
+        throw new BulkAPIBatchException("Batch failed", initialBatchInfo);
+      } else {
+        try {
+          Thread.sleep(SalesforceSourceConstants.GET_BATCH_RESULTS_SLEEP_MS);
+        } catch (InterruptedException e) {
+          throw new RuntimeException("Job is aborted", e);
+        }
+      }
+    }
+    throw new BulkAPIBatchException("Timeout waiting for batch results", initialBatchInfo);
   }
 }
