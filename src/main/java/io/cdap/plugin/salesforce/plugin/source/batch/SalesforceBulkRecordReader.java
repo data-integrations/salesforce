@@ -52,8 +52,9 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
 
   private CSVParser csvParser;
   private Iterator<CSVRecord> parserIterator;
-
   private Map<String, ?> value;
+  private String jobId;
+  private BulkConnection bulkConnection;
 
   public SalesforceBulkRecordReader(Schema schema) {
     this.schema = schema;
@@ -72,14 +73,14 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     throws IOException, InterruptedException {
 
     SalesforceSplit salesforceSplit = (SalesforceSplit) inputSplit;
-    String jobId = salesforceSplit.getJobId();
+    jobId = salesforceSplit.getJobId();
     String batchId = salesforceSplit.getBatchId();
     LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
 
     Configuration conf = taskAttemptContext.getConfiguration();
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       InputStream queryResponseStream = SalesforceBulkUtil.waitForBatchResults(bulkConnection, jobId, batchId);
       setupParser(queryResponseStream);
     } catch (AsyncApiException e) {
@@ -122,6 +123,11 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     if (csvParser != null) {
       // this also closes the inputStream
       csvParser.close();
+    }
+    try {
+      SalesforceBulkUtil.closeJob(bulkConnection, jobId);
+    } catch (AsyncApiException e) {
+      throw new IOException(e);
     }
   }
 
