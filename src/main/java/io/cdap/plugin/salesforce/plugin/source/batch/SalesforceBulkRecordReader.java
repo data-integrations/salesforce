@@ -124,10 +124,12 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       // this also closes the inputStream
       csvParser.close();
     }
-    try {
-      SalesforceBulkUtil.closeJob(bulkConnection, jobId);
-    } catch (AsyncApiException e) {
-      throw new IOException(e);
+    if (bulkConnection != null) {
+      try {
+        SalesforceBulkUtil.closeJob(bulkConnection, jobId);
+      } catch (AsyncApiException e) {
+        throw new IOException(e);
+      }
     }
   }
 
