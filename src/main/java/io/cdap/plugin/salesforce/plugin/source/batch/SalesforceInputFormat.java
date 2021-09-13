@@ -190,8 +190,16 @@ public class SalesforceInputFormat extends InputFormat {
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);
     }
-    return enablePKChunk ? waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId()) :
-      bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+
+    if (enablePKChunk) {
+      return waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId());
+    }
+    BatchInfo[] batchInfos = bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+    LOG.info("Job id {}, status: {}", job.getId(), bulkConnection.getJobStatus(job.getId()).getState());
+    if (batchInfos.length > 0) {
+      LOG.info("Batch size {}, state {}", batchInfos.length, batchInfos[0].getState());
+    }
+    return batchInfos;
   }
 
   /** When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
@@ -212,7 +220,15 @@ public class SalesforceInputFormat extends InputFormat {
         LOG.info(String.format("Job with Id: '%s' is aborted", jobId));
         return new BatchInfo[0];
       }
-      initialBatchInfo = bulkConnection.getBatchInfo(jobId, initialBatchId);
+      try {
+        initialBatchInfo = bulkConnection.getBatchInfo(jobId, initialBatchId);
+      } catch (AsyncApiException e) {
+        if (i == SalesforceSourceConstants.GET_BATCH_RESULTS_TRIES - 1) {
+          throw e;
+        }
+        LOG.warn("Failed to get info for batch {}. Will retry after some time.", initialBatchId, e);
+        continue;
+      }
 
       if (initialBatchInfo.getState() == BatchStateEnum.NotProcessed) {
         BatchInfo[] result = bulkConnection.getBatchInfoList(jobId).getBatchInfo();

@@ -20,7 +20,6 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
-import com.sforce.async.QueryResultList;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
@@ -41,12 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,9 +59,22 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   private Map<String, ?> value;
   private String jobId;
   private BulkConnection bulkConnection;
+  private String batchId;
+  private String[] resultIds;
+  private int resultIdIndex;
+  private String[] csvHeaders;
 
   public SalesforceBulkRecordReader(Schema schema) {
+    this(schema, null, null, null);
+  }
+
+  @VisibleForTesting
+  SalesforceBulkRecordReader(Schema schema, String jobId, String batchId, String[] resultIds) {
     this.schema = schema;
+    this.resultIdIndex = 0;
+    this.jobId = jobId;
+    this.batchId = batchId;
+    this.resultIds = resultIds;
   }
 
   /**
@@ -83,15 +91,15 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
 
     SalesforceSplit salesforceSplit = (SalesforceSplit) inputSplit;
     jobId = salesforceSplit.getJobId();
-    String batchId = salesforceSplit.getBatchId();
+    batchId = salesforceSplit.getBatchId();
     LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
 
     Configuration conf = taskAttemptContext.getConfiguration();
     try {
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      InputStream queryResponseStream = waitForBatchResults(bulkConnection, jobId, batchId);
-      setupParser(queryResponseStream);
+      resultIds = waitForBatchResults(bulkConnection);
+      setupParser();
     } catch (AsyncApiException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
@@ -103,9 +111,27 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
    * @return returns false if no more data to read
    */
   @Override
-  public boolean nextKeyValue() {
-    if (!parserIterator.hasNext()) {
+  public boolean nextKeyValue() throws IOException {
+    if (parserIterator == null) {
       return false;
+    }
+    while (!parserIterator.hasNext()) {
+      if (resultIdIndex == resultIds.length) {
+        // No more result ids to process.
+        return false;
+      }
+      // Close CSV parser for previous result.
+      if (csvParser != null && !csvParser.isClosed()) {
+        // this also closes the inputStream
+        csvParser.close();
+        csvParser = null;
+      }
+      try {
+        // Parse the next result.
+        setupParser();
+      } catch (AsyncApiException e) {
+        throw new IOException("Failed to query results", e);
+      }
     }
 
     value = parserIterator.next().toMap();
@@ -129,9 +155,10 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
 
   @Override
   public void close() throws IOException {
-    if (csvParser != null) {
+    if (csvParser != null && !csvParser.isClosed()) {
       // this also closes the inputStream
       csvParser.close();
+      csvParser = null;
     }
     if (bulkConnection != null) {
       try {
@@ -143,54 +170,63 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   }
 
   @VisibleForTesting
-  void setupParser(InputStream queryResponseStream) throws IOException {
-    CSVFormat csvFormat = CSVFormat.DEFAULT.
-      withHeader().
-      withQuoteMode(QuoteMode.ALL).
-      withAllowMissingColumnNames(false);
-
-    csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
-
-    if (csvParser.getHeaderMap().isEmpty()) {
-      throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
+  void setupParser() throws IOException, AsyncApiException {
+    if (resultIdIndex >= resultIds.length) {
+      throw new IllegalArgumentException(String.format("Invalid resultIdIndex %d, should be less than %d",
+                                                       resultIdIndex, resultIds.length));
     }
+    InputStream queryResponseStream = bulkConnection.getQueryResultStream(jobId, batchId, resultIds[resultIdIndex]);
 
+    if (resultIdIndex == 0) {
+      CSVFormat csvFormat = CSVFormat.DEFAULT
+        .withHeader()
+        .withQuoteMode(QuoteMode.ALL)
+        .withAllowMissingColumnNames(false);
+      csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
+      if (csvParser.getHeaderMap().isEmpty()) {
+        throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
+      }
+      // Read and save the CSV headers from the first query result.
+      csvHeaders = csvParser.getHeaderMap().keySet().toArray(new String[0]);
+    } else {
+      CSVFormat csvFormat = CSVFormat.DEFAULT
+        .withHeader(csvHeaders)
+        .withQuoteMode(QuoteMode.ALL);
+      csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
+    }
     parserIterator = csvParser.iterator();
+    resultIdIndex++;
   }
 
   /**
    * Wait until a batch with given batchId succeeds, or throw an exception
    *
    * @param bulkConnection bulk connection instance
-   * @param jobId a job id
-   * @param batchId a batch id
-   * @return an input stream which represents a current batch response, which is a bunch of lines in csv format.
-   *
+   * @return array of batch result ids
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws InterruptedException sleep interrupted
    */
-  public InputStream waitForBatchResults(BulkConnection bulkConnection, String jobId, String batchId)
+  private String[] waitForBatchResults(BulkConnection bulkConnection)
     throws AsyncApiException, InterruptedException {
 
     BatchInfo info = null;
     for (int i = 0; i < SalesforceSourceConstants.GET_BATCH_RESULTS_TRIES; i++) {
-      info = bulkConnection.getBatchInfo(jobId, batchId);
+      try {
+        info = bulkConnection.getBatchInfo(jobId, batchId);
+      } catch (AsyncApiException e) {
+        if (i == SalesforceSourceConstants.GET_BATCH_RESULTS_TRIES - 1) {
+          throw e;
+        }
+        LOG.warn("Failed to get info for batch {}. Will retry after some time.", batchId, e);
+        continue;
+      }
 
       if (info.getState() == BatchStateEnum.Completed) {
-        QueryResultList list =
-          bulkConnection.getQueryResultList(jobId, batchId);
-        String[] resultIds = list.getResult();
-
-        List<InputStream> streams = new ArrayList<>(resultIds.length);
-        for (String resultId : resultIds) {
-          streams.add(bulkConnection.getQueryResultStream(jobId, batchId, resultId));
-        }
-
-        return new SequenceInputStream(Collections.enumeration(streams));
+        return bulkConnection.getQueryResultList(jobId, batchId).getResult();
       } else if (info.getState() == BatchStateEnum.Failed) {
-
         throw new BulkAPIBatchException("Batch failed", info);
       } else {
+        LOG.debug("Batch {} job {} state {}", batchId, jobId, info.getState());
         Thread.sleep(SalesforceSourceConstants.GET_BATCH_RESULTS_SLEEP_MS);
       }
     }

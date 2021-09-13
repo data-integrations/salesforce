@@ -17,11 +17,14 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.sforce.async.BulkConnection;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -33,11 +36,13 @@ import java.util.Map;
 
 public class SalesforceBulkRecordReaderTest {
   @Test
-  public void testTypes() throws Exception {
-    String csvString = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
-      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n" +
+  public void testMultipleResults() throws Exception {
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
+    String csvString2 =
       "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
-      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+        "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+
 
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
@@ -78,7 +83,59 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2}, schema, expectedRecords);
+  }
+
+  @Test
+  public void testEmptyResult() throws Exception {
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n";
+    String csvString2 = "";
+    String csvString3 =
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
+        "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("Time", Schema.of(Schema.LogicalType.TIME_MICROS))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcBAAW")
+             .put("IsDeleted", false)
+             .put("ExpectedRevenue", 1500.0)
+             .put("LastModifiedDate", 1550819001000000L)
+             .put("CloseDate", 17897)
+             .put("Time", 43230000000L)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcCAAW")
+             .put("IsDeleted", false)
+             .put("ExpectedRevenue", 112500.0)
+             .put("LastModifiedDate", 1550819001000000L)
+             .put("CloseDate", 17885)
+             .put("Time", 43240000000L)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("Id", "0061i000003XNcDAAW")
+             .put("IsDeleted", false)
+             .put("ExpectedRevenue", 220000.0)
+             .put("LastModifiedDate", 1550819001000000L)
+             .put("Time", 43250000000L)
+             .put("CloseDate", 17850)
+             .build()
+      )
+      .build();
+
+    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2, csvString3}, schema, expectedRecords);
   }
 
   @Test
@@ -126,7 +183,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
   }
 
   @Test
@@ -144,7 +201,7 @@ public class SalesforceBulkRecordReaderTest {
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
 
     try {
-      assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+      assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
       Assert.fail("Expected to throw exception due to not different number of arguments");
     } catch (IOException ex) {
       Assert.assertTrue(ex.getMessage().contains("invalid char between encapsulated token and delimiter"));
@@ -163,7 +220,7 @@ public class SalesforceBulkRecordReaderTest {
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
 
     try {
-      assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+      assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
       Assert.fail("Expected to throw exception due to not different number of arguments");
     } catch (IllegalStateException ex) {
       Assert.assertTrue(ex.getMessage().
@@ -219,15 +276,27 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(csvString, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
   }
 
-
-  private void assertRecordReaderOutputRecords(String csvString, Schema schema,
+  private void assertRecordReaderOutputRecords(String[] csvStrings, Schema schema,
                                                List<Map<String, Object>> expectedRecords) throws Exception {
     MapToRecordTransformer transformer = new MapToRecordTransformer();
-    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema);
-    reader.setupParser(new ByteArrayInputStream(csvString.getBytes(StandardCharsets.UTF_8)));
+    String jobId = "job";
+    String batchId = "batch";
+    String[] resultIds = new String[csvStrings.length];
+    for (int i = 0; i < csvStrings.length; i++) {
+      resultIds[i] = String.format("result%d", i);
+    }
+
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
+    BulkConnection mock = Mockito.mock(BulkConnection.class);
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
+    for (int i = 0; i < csvStrings.length; i++) {
+      Mockito.when(mock.getQueryResultStream(jobId, batchId, resultIds[i]))
+        .thenReturn(new ByteArrayInputStream(csvStrings[i].getBytes(StandardCharsets.UTF_8)));
+    }
+    reader.setupParser();
 
     Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
     fieldsField.setAccessible(true);
