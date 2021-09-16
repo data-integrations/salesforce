@@ -62,7 +62,6 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   private String batchId;
   private String[] resultIds;
   private int resultIdIndex;
-  private String[] csvHeaders;
 
   public SalesforceBulkRecordReader(Schema schema) {
     this(schema, null, null, null);
@@ -99,6 +98,7 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       resultIds = waitForBatchResults(bulkConnection);
+      LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
       setupParser();
     } catch (AsyncApiException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
@@ -177,22 +177,13 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     }
     InputStream queryResponseStream = bulkConnection.getQueryResultStream(jobId, batchId, resultIds[resultIdIndex]);
 
-    if (resultIdIndex == 0) {
-      CSVFormat csvFormat = CSVFormat.DEFAULT
-        .withHeader()
-        .withQuoteMode(QuoteMode.ALL)
-        .withAllowMissingColumnNames(false);
-      csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
-      if (csvParser.getHeaderMap().isEmpty()) {
-        throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
-      }
-      // Read and save the CSV headers from the first query result.
-      csvHeaders = csvParser.getHeaderMap().keySet().toArray(new String[0]);
-    } else {
-      CSVFormat csvFormat = CSVFormat.DEFAULT
-        .withHeader(csvHeaders)
-        .withQuoteMode(QuoteMode.ALL);
-      csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
+    CSVFormat csvFormat = CSVFormat.DEFAULT
+      .withHeader()
+      .withQuoteMode(QuoteMode.ALL)
+      .withAllowMissingColumnNames(false);
+    csvParser = CSVParser.parse(queryResponseStream, StandardCharsets.UTF_8, csvFormat);
+    if (csvParser.getHeaderMap().isEmpty()) {
+      throw new IllegalStateException("Empty response was received from Salesforce, but csv header was expected.");
     }
     parserIterator = csvParser.iterator();
     resultIdIndex++;

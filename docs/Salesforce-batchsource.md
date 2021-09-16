@@ -163,6 +163,9 @@ Primary key (PK) Chunking splits query on large tables into chunks based on the 
 
 Salesforce recommends that you enable PK chunking when querying tables with more than 10 million records or when a bulk query consistently times out. 
 However, the effectiveness of PK chunking depends on the specifics of the query and the queried data.
+We do not recommend enabling PK chunking when querying a large table and filtering out most of the data.
+A separate query is created for each chunk, so enabling PK chunking on a large table can end up counting as
+thousands of queries against the quota.
 
 For example, let’s say you enable PK chunking for the following query on an Account table with 10,000,000 records.
 

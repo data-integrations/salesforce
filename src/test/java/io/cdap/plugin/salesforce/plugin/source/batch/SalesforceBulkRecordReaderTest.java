@@ -39,10 +39,9 @@ public class SalesforceBulkRecordReaderTest {
   public void testMultipleResults() throws Exception {
     String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
-    String csvString2 =
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
         "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
-
 
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
@@ -88,12 +87,12 @@ public class SalesforceBulkRecordReaderTest {
 
   @Test
   public void testEmptyResult() throws Exception {
-    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n";
-    String csvString2 = "";
-    String csvString3 =
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n" +
-      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
-        "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n";
+      String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+    String csvString3 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n";
 
 
     Schema schema = Schema.recordOf("output",
