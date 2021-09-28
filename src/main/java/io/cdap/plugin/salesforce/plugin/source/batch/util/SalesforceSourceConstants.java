@@ -126,4 +126,17 @@ public class SalesforceSourceConstants {
                                                                                    "VoiceCall",
                                                                                    "WorkOrder",
                                                                                    "WorkOrderLineItem");
+
+  /**
+   * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch
+   */
+  public static final long GET_BATCH_WAIT_TIME_SECONDS = 600;
+  /**
+   * Sleep time between polling the batch status
+   */
+  public static final long GET_BATCH_RESULTS_SLEEP_MS = 500;
+  /**
+   * Number of tries while polling the batch status
+   */
+  public static final long GET_BATCH_RESULTS_TRIES = GET_BATCH_WAIT_TIME_SECONDS * (1000 / GET_BATCH_RESULTS_SLEEP_MS);
 }

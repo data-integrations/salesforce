@@ -27,18 +27,12 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
-import com.sforce.async.QueryResultList;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.awaitility.Awaitility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.SequenceInputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,19 +46,6 @@ import javax.annotation.Nullable;
  */
 public final class SalesforceBulkUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBulkUtil.class);
-
-  /**
-   * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch
-   */
-  private static final long GET_BATCH_WAIT_TIME_SECONDS = 600;
-  /**
-   * Sleep time between polling the batch status
-   */
-  private static final long GET_BATCH_RESULTS_SLEEP_MS = 500;
-  /**
-   * Number of tries while polling the batch status
-   */
-  private static final long GET_BATCH_RESULTS_TRIES = GET_BATCH_WAIT_TIME_SECONDS * (1000 / GET_BATCH_RESULTS_SLEEP_MS);
 
 
   /**
@@ -103,106 +84,6 @@ public final class SalesforceBulkUtil {
     job.setId(jobId);
     job.setState(JobStateEnum.Closed);
     bulkConnection.updateJob(job);
-  }
-
-
-  /**
-   * Start batch job of reading a given guery result.
-   *
-   * @param bulkConnection bulk connection instance
-   * @param query a SOQL query
-   * @param enablePKChunk enable PK Chunk
-   * @return an array of batches
-   * @throws AsyncApiException  if there is an issue creating the job
-   * @throws IOException failed to close the query
-   */
-  public static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
-    throws AsyncApiException, IOException {
-
-    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
-    BatchInfo batchInfo;
-    try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
-      batchInfo = bulkConnection.createBatchFromStream(job, bout);
-    }
-    return enablePKChunk ? waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId()) :
-      bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
-  }
-
-  /** When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
-   * decide how many batches will be created
-   * @param bulkConnection bulk connection instance
-   * @param jobId a job id
-   * @param initialBatchId a batch id
-   * @return Array with Batches created by Salesforce API
-   *
-   * @throws AsyncApiException if there is an issue creating the job
-   */
-  private static BatchInfo[] waitForBatchChunks(BulkConnection bulkConnection, String jobId, String initialBatchId)
-    throws AsyncApiException {
-    BatchInfo initialBatchInfo = null;
-    for (int i = 0; i < GET_BATCH_RESULTS_TRIES; i++) {
-      //check if the job is aborted
-      if (bulkConnection.getJobStatus(jobId).getState() == JobStateEnum.Aborted) {
-        LOG.info(String.format("Job with Id: '%s' is aborted", jobId));
-        return new BatchInfo[0];
-      }
-      initialBatchInfo = bulkConnection.getBatchInfo(jobId, initialBatchId);
-
-      if (initialBatchInfo.getState() == BatchStateEnum.NotProcessed) {
-        BatchInfo[] result = bulkConnection.getBatchInfoList(jobId).getBatchInfo();
-        return Arrays.stream(result).filter(batchInfo -> batchInfo.getState() != BatchStateEnum.NotProcessed)
-          .toArray(BatchInfo[]::new);
-      } else if (initialBatchInfo.getState() == BatchStateEnum.Failed) {
-        throw new BulkAPIBatchException("Batch failed", initialBatchInfo);
-      } else {
-        try {
-          Thread.sleep(GET_BATCH_RESULTS_SLEEP_MS);
-        } catch (InterruptedException e) {
-          throw new RuntimeException("Job is aborted", e);
-        }
-      }
-    }
-    throw new BulkAPIBatchException("Timeout waiting for batch results", initialBatchInfo);
-  }
-
-  /**
-   * Wait until a batch with given batchId succeeds, or throw an exception
-   *
-   * @param bulkConnection bulk connection instance
-   * @param jobId a job id
-   * @param batchId a batch id
-   * @return an input stream which represents a current batch response, which is a bunch of lines in csv format.
-   *
-   * @throws AsyncApiException  if there is an issue creating the job
-   * @throws InterruptedException sleep interrupted
-   */
-  public static InputStream waitForBatchResults(BulkConnection bulkConnection, String jobId, String batchId)
-    throws AsyncApiException, InterruptedException {
-
-    BatchInfo info = null;
-    for (int i = 0; i < GET_BATCH_RESULTS_TRIES; i++) {
-      info = bulkConnection.getBatchInfo(jobId, batchId);
-
-      if (info.getState() == BatchStateEnum.Completed) {
-        QueryResultList list =
-          bulkConnection.getQueryResultList(jobId, batchId);
-        String[] resultIds = list.getResult();
-
-        List<InputStream> streams = new ArrayList<>(resultIds.length);
-        for (String resultId : resultIds) {
-          streams.add(bulkConnection.getQueryResultStream(jobId, batchId, resultId));
-        }
-
-        return new SequenceInputStream(Collections.enumeration(streams));
-      } else if (info.getState() == BatchStateEnum.Failed) {
-
-        throw new BulkAPIBatchException("Batch failed", info);
-      } else {
-        Thread.sleep(GET_BATCH_RESULTS_SLEEP_MS);
-      }
-    }
-    throw new BulkAPIBatchException("Timeout waiting for batch results", info);
   }
 
   /**
@@ -264,8 +145,8 @@ public final class SalesforceBulkUtil {
       .collect(Collectors.toSet());
 
     Awaitility.await()
-      .atMost(GET_BATCH_WAIT_TIME_SECONDS, TimeUnit.SECONDS)
-      .pollInterval(GET_BATCH_RESULTS_SLEEP_MS, TimeUnit.MILLISECONDS)
+      .atMost(SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS, TimeUnit.SECONDS)
+      .pollInterval(SalesforceSourceConstants.GET_BATCH_RESULTS_SLEEP_MS, TimeUnit.MILLISECONDS)
       .until(() -> {
         BatchInfo[] statusList =
           bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
