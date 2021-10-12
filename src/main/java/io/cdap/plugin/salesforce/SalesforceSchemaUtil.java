@@ -22,7 +22,6 @@ import com.sforce.soap.partner.FieldType;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.cdap.api.data.schema.Schema.Type;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
