@@ -151,7 +151,8 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("DateField", Schema.of(Schema.LogicalType.DATE)),
       Schema.Field.of("TimestampField", Schema.nullableOf(Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))),
       Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)));
+      Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("ArrayField", Schema.arrayOf(Schema.of(Schema.Type.STRING))));
 
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
@@ -173,12 +174,14 @@ public class SalesforceSchemaUtilTest {
     Schema actualSchema = Schema.recordOf("actualSchema",
       Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
       Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
+      Schema.Field.of("Addresses", Schema.arrayOf(Schema.of(Schema.Type.STRING))),
       Schema.Field.of("ExtraField", Schema.of(Schema.Type.STRING)),
       Schema.Field.of("Comment", Schema.of(Schema.Type.STRING)));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
       Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
       Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
+      Schema.Field.of("Addresses", Schema.nullableOf(Schema.arrayOf(Schema.of(Schema.Type.STRING)))),
       Schema.Field.of("Comment", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
 
     SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
@@ -204,6 +207,19 @@ public class SalesforceSchemaUtilTest {
 
     Schema providedSchema = Schema.recordOf("providedSchema",
       Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
+
+    thrown.expect(IllegalArgumentException.class);
+
+    SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
+  }
+
+  @Test
+  public void testCheckCompatibilityIncorrectArrayElementType() {
+    Schema actualSchema = Schema.recordOf("actualSchema",
+      Schema.Field.of("Addresses", Schema.arrayOf(Schema.of(Schema.Type.STRING))));
+
+    Schema providedSchema = Schema.recordOf("providedSchema",
+      Schema.Field.of("Addresses", Schema.arrayOf(Schema.of(Schema.Type.INT))));
 
     thrown.expect(IllegalArgumentException.class);
 
