@@ -22,6 +22,7 @@ import com.sforce.soap.partner.FieldType;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.api.data.schema.Schema.Type;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
@@ -53,6 +54,8 @@ public class SalesforceSchemaUtil {
     .put(FieldType.datetime, Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))
     .put(FieldType.time, Schema.of(Schema.LogicalType.TIME_MICROS))
     .put(FieldType.string, Schema.of(Schema.Type.STRING))
+    .put(FieldType.picklist, Schema.of(Schema.Type.ARRAY))
+    .put(FieldType.multipicklist, Schema.of(Schema.Type.ARRAY))
     .build();
 
   private static final Set<Schema.Type> SUPPORTED_TYPES =
