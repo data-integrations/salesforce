@@ -63,8 +63,6 @@ public class SalesforceSchemaUtilTest {
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
       Collections.singletonList("CreatedDateTime"), "DayOnlyFunc", SalesforceFunctionType.DATE));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
-      Collections.singletonList("Addresses"), null, SalesforceFunctionType.NONE));
-    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
       Collections.singletonList("Percent"), "GroupingFunc", SalesforceFunctionType.INT_REQUIRED));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
       Collections.singletonList("Amount"), "AvgFunc", SalesforceFunctionType.DOUBLE));
@@ -94,7 +92,6 @@ public class SalesforceSchemaUtilTest {
     opportunityFields.put("CreatedDate", getFieldWithType("CreatedDate", FieldType.date, false));
     opportunityFields.put("CreatedDateTime", getFieldWithType("CreatedDateTime", FieldType.datetime, false));
     opportunityFields.put("CreatedTime", getFieldWithType("CreatedTime", FieldType.time, false));
-    opportunityFields.put("Addresses", getFieldWithType("Addresses", FieldType.picklist, false));
 
     Map<String, Field> accountFields = new LinkedHashMap<>();
     accountFields.put("NumberOfEmployees", getFieldWithType("NumberOfEmployees", FieldType._long, false));
@@ -134,7 +131,6 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
       Schema.Field.of("SumFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
       Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Addresses", Schema.of(Schema.Type.ARRAY)),
       Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
         Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
         Schema.Field.of("Owner_Status", Schema.of(Schema.Type.STRING))))));
