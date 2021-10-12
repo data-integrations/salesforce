@@ -63,7 +63,7 @@ public class SalesforceSchemaUtilTest {
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
       Collections.singletonList("CreatedDateTime"), "DayOnlyFunc", SalesforceFunctionType.DATE));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
-      Collections.singletonList("Addresses"), "Ad", SalesforceFunctionType.NONE));
+      Collections.singletonList("Addresses"), null, SalesforceFunctionType.NONE));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
       Collections.singletonList("Percent"), "GroupingFunc", SalesforceFunctionType.INT_REQUIRED));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
