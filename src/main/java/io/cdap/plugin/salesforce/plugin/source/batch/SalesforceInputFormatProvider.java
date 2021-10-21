@@ -38,13 +38,12 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
   private final Map<String, String> conf;
 
   public SalesforceInputFormatProvider(SalesforceBaseSourceConfig config,
-                                       List<String> queries,
                                        Map<String, String> schemas,
+                                       List<SalesforceSplit> querySplits,
                                        @Nullable String sObjectNameField) {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
-      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
-
+    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
     OAuthInfo oAuthInfo = config.getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder
@@ -62,15 +61,6 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }
-
-    if (config instanceof SalesforceSourceConfig) {
-      SalesforceSourceConfig sourceConfig = (SalesforceSourceConfig) config;
-      configBuilder
-        .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(sourceConfig.getEnablePKChunk()))
-        .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(sourceConfig.getChunkSize()))
-        .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, sourceConfig.getParent());
-    }
-
     this.conf = configBuilder.build();
   }
 
