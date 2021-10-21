@@ -16,7 +16,9 @@
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
@@ -33,10 +35,14 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -49,12 +55,13 @@ import java.util.stream.Collectors;
 @Description("Read data from Salesforce.")
 public class SalesforceBatchSource extends BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
-
   public static final String NAME = "Salesforce";
 
   private final SalesforceSourceConfig config;
   private Schema schema;
   private MapToRecordTransformer transformer;
+  private List<String> jobIds = new ArrayList<>();
+  private AuthenticatorCredentials authenticatorCredentials;
 
   public SalesforceBatchSource(SalesforceSourceConfig config) {
     this.config = config;
@@ -103,14 +110,39 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
     String query = config.getQuery(context.getLogicalStartTime());
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(config,
-        Collections.singletonList(query), ImmutableMap.of(sObjectName, schema.toString()), null)));
+    authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
+                                                                                    config.getPassword(),
+                                                                                    config.getConsumerKey(),
+                                                                                    config.getConsumerSecret(),
+                                                                                    config.getLoginUrl());
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    boolean enablePKChunk = config.getEnablePKChunk();
+    if (enablePKChunk) {
+      String parent = config.getParent();
+      int chunkSize = config.getChunkSize();
+      List<String> chunkHeaderValues = new ArrayList<>();
+      chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+      if (!Strings.isNullOrEmpty(parent)) {
+        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
+      }
+      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
+    }
+    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection, enablePKChunk);
+    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
+    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
+    config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
 
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
     this.transformer = new MapToRecordTransformer();
+  }
+
+  @Override
+  public void onRunFinish(boolean succeeded, BatchSourceContext context) {
+    super.onRunFinish(succeeded, context);
+    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials);
   }
 
   @Override
@@ -151,4 +183,5 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     }
     return actualSchema;
   }
+
 }

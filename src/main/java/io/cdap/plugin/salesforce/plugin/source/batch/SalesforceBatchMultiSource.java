@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
@@ -31,8 +32,12 @@ import io.cdap.cdap.etl.api.action.SettableArguments;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,6 +59,8 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
 
   private final SalesforceMultiSourceConfig config;
   private MapToRecordTransformer transformer;
+  private List<String> jobIds = new ArrayList<>();
+  private AuthenticatorCredentials authenticatorCredentials;
 
   public SalesforceBatchMultiSource(SalesforceMultiSourceConfig config) {
     this.config = config;
@@ -81,8 +88,19 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
 
     String sObjectNameField = config.getSObjectNameField();
+    authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
+                                                                                    config.getPassword(),
+                                                                                    config.getConsumerKey(),
+                                                                                    config.getConsumerSecret(),
+                                                                                    config.getLoginUrl());
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    List<SalesforceSplit> querySplits = queries.parallelStream()
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false))
+      .flatMap(Collection::stream).collect(Collectors.toList());
+    // store the jobIds so be used in onRunFinish() to close the connections
+    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-      config, queries, getSchemaWithNameField(sObjectNameField, schemas), sObjectNameField)));
+      config, getSchemaWithNameField(sObjectNameField, schemas), querySplits, sObjectNameField)));
     /* TODO PLUGIN-510
      *  As part of [CDAP-16290], recordLineage function was introduced with out implementation.
      *  To avoid compilation errors the code block is commented for future fix.
@@ -92,6 +110,12 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
                     "Read", "Read from Salesforce MultiObjects.");
     }
      */
+  }
+
+  @Override
+  public void onRunFinish(boolean succeeded, BatchSourceContext context) {
+    super.onRunFinish(succeeded, context);
+    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials);
   }
 
   @Override

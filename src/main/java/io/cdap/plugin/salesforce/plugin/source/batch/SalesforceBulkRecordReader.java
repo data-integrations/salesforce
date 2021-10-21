@@ -22,7 +22,6 @@ import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
-import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -159,13 +158,6 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       // this also closes the inputStream
       csvParser.close();
       csvParser = null;
-    }
-    if (bulkConnection != null) {
-      try {
-        SalesforceBulkUtil.closeJob(bulkConnection, jobId);
-      } catch (AsyncApiException e) {
-        throw new IOException(e);
-      }
     }
   }
 

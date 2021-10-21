@@ -40,12 +40,9 @@ public class SalesforceSourceConstants {
   public static final String PROPERTY_BLACK_LIST = "blackList";
   public static final String PROPERTY_SOBJECT_NAME_FIELD = "sObjectNameField";
 
-  public static final String CONFIG_QUERIES = "mapred.salesforce.input.queries";
   public static final String CONFIG_SCHEMAS = "mapred.salesforce.input.schemas";
+  public static final String CONFIG_QUERY_SPLITS = "mapred.salesforce.input.query.splits";
 
-  public static final String CONFIG_PK_CHUNK_ENABLE = "mapred.salesforce.input.pk.chunk";
-  public static final String CONFIG_CHUNK_SIZE = "mapred.salesforce.input.schemas.chunk.size";
-  public static final String CONFIG_CHUNK_PARENT = "mapred.salesforce.input.schemas.chunk.parent";
   public static final String HEADER_ENABLE_PK_CHUNK = "Sforce-Enable-PKChunking";
   public static final String HEADER_VALUE_PK_CHUNK = "chunkSize=%d";
   public static final String HEADER_PK_CHUNK_PARENT = "parent=%s";
