@@ -20,7 +20,7 @@ package io.cdap.plugin.salesforce;
  */
 public class SalesforceConstants {
 
-  public static final String API_VERSION = "45.0";
+  public static final String API_VERSION = "53.0";
   public static final String REFERENCE_NAME_DELIMITER = ".";
 
   public static final String PROPERTY_CONSUMER_KEY = "consumerKey";
