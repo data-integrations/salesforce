@@ -51,7 +51,7 @@ public class SalesforcePushTopicListener {
    * Timeout of 110 seconds is enforced by Salesforce Streaming API and is not configurable.
    * So we enforce the same on client.
    */
-  private static final int CONNECTION_TIMEOUT_SECONDS = 110;
+  private static final int CONNECTION_TIMEOUT_SECONDS = 1100;
   private static final long HANDSHAKE_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(110);
 
   private static final int HANDSHAKE_CHECK_INTERVAL_MS = 1000;
