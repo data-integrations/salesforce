@@ -20,9 +20,12 @@ import com.google.common.collect.Sets;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfigBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -163,4 +166,48 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
     Assert.assertEquals(expectedSObjects, actualSObjects);
   }
 
+  @Test
+  public void testValidWhiteListSObjects() {
+     SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+       .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+       .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("Account,Contact").build();
+
+     MockFailureCollector collector = new MockFailureCollector();
+     salesforceMultiSourceConfig.validateSObjects(collector);
+     Assert.assertEquals(collector.getValidationFailures().size(), 0);
+  }
+
+  @Test
+  public void testValidBlackListSObjects() {
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setBlackList("Contact").build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    salesforceMultiSourceConfig.validateSObjects(collector);
+    Assert.assertEquals(collector.getValidationFailures().size(), 0);
+  }
+
+  @Test
+  public void testInvalidWhiteListSObjects() {
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("invalidObject1,invalidObject2").build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    salesforceMultiSourceConfig.validateSObjects(collector);
+    Assert.assertEquals(collector.getValidationFailures().size(), 1);
+  }
+
+  @Test
+  public void testInvalidBlackListSObjects() {
+
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setBlackList("invalidObject1,invalidObject2").build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    salesforceMultiSourceConfig.validateSObjects(collector);
+    Assert.assertEquals(collector.getValidationFailures().size(),  1);
+  }
 }
