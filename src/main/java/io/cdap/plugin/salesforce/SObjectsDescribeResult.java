@@ -103,7 +103,7 @@ public class SObjectsDescribeResult {
             String.format("Relationship field name '%s' is absent in SObject '%s' describe result",
               featuredSObjects.getRelationship(), lastDescribe.getName()));
         }
-        lastDescribe = describe(connection, name, cache);
+        lastDescribe = describe(connection, relationshipName, cache);
       }
 
         /*
