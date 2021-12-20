@@ -70,6 +70,12 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
     config.validate(stageConfigurer.getFailureCollector()); // validate before macros are substituted
+
+    // if connection params are macro or null
+    if (!config.canAttemptToEstablishConnection()) {
+      return;
+    }
+    config.validateSObjects(stageConfigurer.getFailureCollector());
     stageConfigurer.setOutputSchema(null);
   }
 
@@ -77,6 +83,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     FailureCollector collector = context.getFailureCollector();
     config.validate(collector);
+    config.validateSObjects(collector);
     collector.getOrThrowException();
 
     List<String> queries = config.getQueries(context.getLogicalStartTime());
