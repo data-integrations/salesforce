@@ -49,6 +49,7 @@
     <json.version>20180813</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
+    <testSourceLocation>${project.basedir}/src/test/java/</testSourceLocation>
   </properties>
 
   <repositories>
@@ -431,6 +432,7 @@
 
 
   <build>
+    <testSourceDirectory>${testSourceLocation}</testSourceDirectory>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -570,6 +572,10 @@
               <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
               <includeTestSourceDirectory>true</includeTestSourceDirectory>
+              <testSourceDirectories>
+                <testSourceDirectory>src/test/java</testSourceDirectory>
+                <testSourceDirectory>src/e2e-test/java</testSourceDirectory>
+              </testSourceDirectories>
               <excludes>**/org/apache/cassandra/**,**/org/apache/hadoop/**</excludes>
             </configuration>
             <goals>
@@ -632,5 +638,94 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>e2e-tests</id>
+      <properties>
+        <testSourceLocation>src/e2e-test/java</testSourceLocation>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.18.1</version>
+            <configuration>
+              <skipTests>true</skipTests>
+            </configuration>
+          </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <version>3.0.0-M5</version>
+            <configuration>
+              <includes>
+                <include>TestRunner.java</include>
+              </includes>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <plugin>
+            <groupId>net.masterthought</groupId>
+            <artifactId>maven-cucumber-reporting</artifactId>
+            <version>5.5.0</version>
+            <executions>
+              <execution>
+                <id>execution</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>generate</goal>
+                </goals>
+                <configuration>
+                  <projectName>Cucumber Reports</projectName> <!-- Replace with project name -->
+                  <outputDirectory>target/cucumber-reports/advanced-reports</outputDirectory>
+                  <buildNumber>1</buildNumber>
+                  <skip>false</skip>
+                  <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
+                  <jsonFiles> <!-- supports wildcard or name pattern -->
+                    <param>**/*.json</param>
+                  </jsonFiles> <!-- optional, defaults to outputDirectory if not specified -->
+                  <classificationDirectory>${project.build.directory}/cucumber-reports</classificationDirectory>
+                  <checkBuildResult>true</checkBuildResult>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>31.0.1-jre</version>
+            <scope>compile</scope>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>io.cdap.tests.e2e</groupId>
+          <artifactId>cdap-e2e-framework</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.ehcache</groupId>
+          <artifactId>ehcache</artifactId>
+          <version>3.8.1</version>
+        </dependency>
+      </dependencies>
+    </profile>
+  </profiles>
 
 </project>
