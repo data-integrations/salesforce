@@ -26,6 +26,7 @@ import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfig
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -161,6 +162,91 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
       .collect(Collectors.toSet());
 
     Assert.assertEquals(expectedSObjects, actualSObjects);
+  }
+
+  @Test
+  public void testValidateWhiteListSObjects() throws Exception {
+
+    List<String> whiteListSObjects = Arrays.asList("Account", "Contact");
+
+    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> invalidWhiteListedSObject = whiteListSObjects.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    Assert.assertTrue(invalidWhiteListedSObject.isEmpty());
+
+  }
+
+  @Test
+  public void testInvalidateWhiteListSObjects() throws Exception {
+
+    List<String> invalidWhiteListSObjects = Arrays.asList("fdd", "ohhs", "kjjfr");
+
+    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> expectedSObject = invalidWhiteListSObjects.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    Assert.assertEquals(expectedSObject.size(), 3);
+    Assert.assertFalse(expectedSObject.isEmpty());
+
+  }
+
+  @Test
+  public void testValidateBlackListSObjects() throws Exception {
+
+    List<String> blackListSObjects = Arrays.asList("Account", "Contact");
+
+    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> expectedSObject = blackListSObjects.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+
+    Assert.assertTrue(expectedSObject.isEmpty());
+
+  }
+
+  @Test
+  public void testInvalidateBlackListSObjects() throws Exception {
+
+    List<String> invalidBlackListSObjects = Arrays.asList("ottt", "Account", "ktts");
+    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> expectedSObject = invalidBlackListSObjects.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    Assert.assertEquals(expectedSObject.size(), 2);
+    Assert.assertFalse(expectedSObject.isEmpty());
+  }
+
+  @Test
+  public void testGetQueries() throws Exception {
+
+    List<String> invalidBlackListSObjects = Arrays.asList("ottt", "Account", "ktts");
+    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> expectedSObject = invalidBlackListSObjects.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    Assert.assertEquals(expectedSObject.size(), 2);
+    Assert.assertFalse(expectedSObject.isEmpty());
   }
 
 }
