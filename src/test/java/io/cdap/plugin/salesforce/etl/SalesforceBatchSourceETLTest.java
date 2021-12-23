@@ -30,6 +30,7 @@ import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -571,6 +572,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
   }
 
   @Test
+  @Ignore
   public void testPKChunkEnable() throws Exception {
     ImmutableMap<String, String> properties = new ImmutableMap.Builder<String, String>()
       .put("enablePKChunk", "true")

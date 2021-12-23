@@ -33,6 +33,7 @@
     <avro.version>1.7.7</avro.version>
     <cdap.version>6.4.0</cdap.version>
     <junit.version>4.12</junit.version>
+    <powermock.version>2.0.2</powermock.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
@@ -42,10 +43,9 @@
     <salesforce.api.version>53.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
     <antlr.version>4.7.2</antlr.version>
-    <mockito.version>2.23.0</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
-    <jackson2.version>2.9.9</jackson2.version>
+    <jackson2.version>2.6.7</jackson2.version>
     <json.version>20180813</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
@@ -349,9 +349,15 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -474,7 +480,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.14.1</version>
         <configuration>
-          <argLine>-Xmx3g -Djava.awt.headless=true -XX:+UseConcMarkSweepGC
+          <argLine>${surefireArgLine} -Xmx3g -Djava.awt.headless=true -XX:+UseConcMarkSweepGC
             -Djava.net.preferIPv4Stack=true
           </argLine>
           <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
@@ -629,6 +635,47 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.2</version>
+        <executions>
+          <execution>
+            <id>default-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>post-unit-test</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <excludes>
+                <exclude>**/soql/*</exclude>
+                <exclude>**/util/*</exclude>
+              </excludes>
+              <!-- Sets the path to the file which contains the execution data. -->
+              <dataFile>target/jacoco.exec</dataFile>
+              <!-- Sets the output directory for the code coverage report. -->
+              <outputDirectory>target/jacoco-ut</outputDirectory>
+
+            </configuration>
+          </execution>
+        </executions>
+        <configuration>
+          <propertyName>surefireArgLine</propertyName>
+        </configuration>
       </plugin>
     </plugins>
   </build>

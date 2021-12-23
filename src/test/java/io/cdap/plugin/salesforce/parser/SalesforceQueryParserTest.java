@@ -82,6 +82,18 @@ public class SalesforceQueryParserTest {
 
     queries.put("SELECT Id, Name, Domain FROM Domain",
       new Object[]{"Domain", new String[]{"Id", "Name", "Domain"}});
+
+    queries.put("SELECT MIN(AnnualRevenue) revenue FROM Account",
+                new Object[]{"Account", new String[]{"revenue"}});
+
+    queries.put("SELECT SUM(Amount) amt FROM Opportunity WHERE IsClosed = false AND Probability > 60",
+                new Object[]{"Opportunity", new String[]{"amt"}});
+
+    queries.put("SELECT Max(AnnualRevenue) revenue FROM Account",
+                new Object[]{"Account", new String[]{"revenue"}});
+
+    queries.put("SELECT AVG(Amount) avgAmt FROM Opportunity WHERE Type = 'New Customer'",
+                new Object[]{"Opportunity", new String[]{"avgAmt"}});
   }
 
   @Test

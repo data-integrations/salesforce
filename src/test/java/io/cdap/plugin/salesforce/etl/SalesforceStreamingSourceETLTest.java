@@ -23,6 +23,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.test.ProgramManager;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -38,6 +39,7 @@ import java.util.Set;
  * {@inheritDoc}
  */
 public class SalesforceStreamingSourceETLTest extends BaseSalesforceStreamingSourceETLTest {
+
   @Test
   public void testTypesConversion() throws Exception {
     String query = "SELECT Id, IsDeleted, Type, Probability, ExpectedRevenue, TotalOpportunityQuantity, " +

@@ -32,7 +32,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
-
 /**
  * Tests for {@link SalesforceSourceConfig}.
  */
@@ -273,5 +272,50 @@ public class SalesforceSourceConfigTest {
       failure = e.getFailures().get(0);
     }
     Assert.assertEquals(stageConfigName, failure.getCauses().get(0).getAttribute(CauseAttributes.STAGE_CONFIG));
+  }
+
+  @Test
+  public void testValidateFilters() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("")
+      .setSObjectName("Account")
+      .setDatetimeBefore("test")
+      .setDatetimeAfter("test")
+      .setDuration("5 days")
+      .setOffset("5 days")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    try {
+      mock.validate(collector);
+      Assert.assertEquals(2, collector.getValidationFailures().size());
+    } catch (ValidationException e) {
+      Assert.assertEquals(1, e.getFailures().size());
+    }
+  }
+
+  @Test
+  public void testValidateFiltersWithNonEmptyinvalidValues() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("")
+      .setSObjectName("Account")
+      .setDatetimeBefore("test")
+      .setDatetimeAfter("test")
+      .setDuration("-1 days")
+      .setOffset("-1 days")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    try {
+      mock.validate(collector);
+      Assert.assertEquals(4, collector.getValidationFailures().size());
+    } catch (ValidationException e) {
+      Assert.assertEquals(1, e.getFailures().size());
+    }
+
   }
 }
