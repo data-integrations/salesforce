@@ -20,13 +20,15 @@ import com.google.common.collect.Sets;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
 import com.sforce.soap.partner.sobject.SObject;
+import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfigBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -165,88 +167,59 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
   }
 
   @Test
-  public void testValidateWhiteListSObjects() throws Exception {
+  public void testValidateSObjects() throws Exception {
 
-    List<String> whiteListSObjects = Arrays.asList("Account", "Contact");
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("Account,Contact").
+      setBlackList("Contact").build();
 
-    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
-      .filter(DescribeGlobalSObjectResult::getQueryable)
-      .map(DescribeGlobalSObjectResult::getName)
-      .collect(Collectors.toList());
+    List<String> sObjects = getSObjects();
+    MockFailureCollector collector = new MockFailureCollector();
 
-    List<String> invalidWhiteListedSObject = whiteListSObjects.stream().filter(name -> !sObjects.contains(name)).
-      collect(Collectors.toList());
+    salesforceMultiSourceConfig.validateSObjects(collector);
 
+    List<String> invalidWhiteListedSObject = salesforceMultiSourceConfig.getWhiteList().stream().filter(name ->
+      !sObjects.contains(name)).collect(Collectors.toList());
+    List<String> invalidBlackListSObject = salesforceMultiSourceConfig.getWhiteList().stream().filter(name ->
+      !sObjects.contains(name)).collect(Collectors.toList());
+
+    Assert.assertEquals(collector.getValidationFailures().size(), 0);
     Assert.assertTrue(invalidWhiteListedSObject.isEmpty());
-
+    Assert.assertTrue(invalidBlackListSObject.isEmpty());
   }
 
   @Test
-  public void testInvalidateWhiteListSObjects() throws Exception {
+  public void testInvalidSObjects() throws Exception {
 
-    List<String> invalidWhiteListSObjects = Arrays.asList("fdd", "ohhs", "kjjfr");
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("Account, Contact, kjjfr, ottt, knff").
+      setBlackList("Contact,llls,kioe,lsp").build();
 
+    List<String> sObjects = getSObjects();
+    MockFailureCollector collector = new MockFailureCollector();
+
+    salesforceMultiSourceConfig.validateSObjects(collector);
+
+    List<String> invalidWhiteListedSObject = salesforceMultiSourceConfig.getWhiteList().stream().filter(name ->
+        !sObjects.contains(name)).collect(Collectors.toList());
+
+    List<String> invalidBlackListSObject = salesforceMultiSourceConfig.getWhiteList().stream().filter(name ->
+         !sObjects.contains(name)).collect(Collectors.toList());
+
+    Assert.assertEquals(collector.getValidationFailures().size(), 2);
+    Assert.assertEquals(invalidWhiteListedSObject.size(), 3);
+    Assert.assertEquals(invalidBlackListSObject.size(), 3);
+
+  }
+
+  private List<String> getSObjects() throws ConnectionException {
     List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
       .filter(DescribeGlobalSObjectResult::getQueryable)
       .map(DescribeGlobalSObjectResult::getName)
       .collect(Collectors.toList());
-
-    List<String> expectedSObject = invalidWhiteListSObjects.stream().filter(name -> !sObjects.contains(name)).
-      collect(Collectors.toList());
-
-    Assert.assertEquals(expectedSObject.size(), 3);
-    Assert.assertFalse(expectedSObject.isEmpty());
-
-  }
-
-  @Test
-  public void testValidateBlackListSObjects() throws Exception {
-
-    List<String> blackListSObjects = Arrays.asList("Account", "Contact");
-
-    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
-      .filter(DescribeGlobalSObjectResult::getQueryable)
-      .map(DescribeGlobalSObjectResult::getName)
-      .collect(Collectors.toList());
-
-    List<String> expectedSObject = blackListSObjects.stream().filter(name -> !sObjects.contains(name)).
-      collect(Collectors.toList());
-
-
-    Assert.assertTrue(expectedSObject.isEmpty());
-
-  }
-
-  @Test
-  public void testInvalidateBlackListSObjects() throws Exception {
-
-    List<String> invalidBlackListSObjects = Arrays.asList("ottt", "Account", "ktts");
-    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
-      .filter(DescribeGlobalSObjectResult::getQueryable)
-      .map(DescribeGlobalSObjectResult::getName)
-      .collect(Collectors.toList());
-
-    List<String> expectedSObject = invalidBlackListSObjects.stream().filter(name -> !sObjects.contains(name)).
-      collect(Collectors.toList());
-
-    Assert.assertEquals(expectedSObject.size(), 2);
-    Assert.assertFalse(expectedSObject.isEmpty());
-  }
-
-  @Test
-  public void testGetQueries() throws Exception {
-
-    List<String> invalidBlackListSObjects = Arrays.asList("ottt", "Account", "ktts");
-    List<String> sObjects = Stream.of(partnerConnection.describeGlobal().getSobjects())
-      .filter(DescribeGlobalSObjectResult::getQueryable)
-      .map(DescribeGlobalSObjectResult::getName)
-      .collect(Collectors.toList());
-
-    List<String> expectedSObject = invalidBlackListSObjects.stream().filter(name -> !sObjects.contains(name)).
-      collect(Collectors.toList());
-
-    Assert.assertEquals(expectedSObject.size(), 2);
-    Assert.assertFalse(expectedSObject.isEmpty());
+    return  sObjects;
   }
 
 }

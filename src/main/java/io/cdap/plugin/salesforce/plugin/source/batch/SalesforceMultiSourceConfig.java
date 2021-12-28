@@ -157,6 +157,44 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   /**
+   * validate whiteList and blackList SObjects
+   */
+  public void validateSObjects(FailureCollector collector) {
+    DescribeGlobalResult describeGlobalResult;
+    try {
+      PartnerConnection partnerConnection =
+        SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
+      describeGlobalResult = partnerConnection.describeGlobal();
+    } catch (ConnectionException e) {
+      throw new IllegalArgumentException("Unable to connect to Salesforce", e);
+    }
+    Set<String> whileList = getWhiteList();
+    Set<String> blackList = getBlackList();
+
+    List<String> sObjects = Stream.of(describeGlobalResult.getSobjects())
+      .filter(DescribeGlobalSObjectResult::getQueryable)
+      .map(DescribeGlobalSObjectResult::getName)
+      .collect(Collectors.toList());
+
+    List<String> invalidWhiteListedSObject = whileList.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    if (!invalidWhiteListedSObject.isEmpty()) {
+      collector.addFailure(String.format("Invalid SObject name  '%s'.",  String.join(", ",
+       invalidWhiteListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_WHITE_LIST);
+    }
+
+    List<String> invalidBlackListedSObject = blackList.stream().filter(name -> !sObjects.contains(name)).
+      collect(Collectors.toList());
+
+    if (!invalidBlackListedSObject.isEmpty()) {
+      collector.addFailure(String.format("Invalid SObject name  '%s'.", String.join(", ",
+      invalidBlackListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_BLACK_LIST);
+    }
+
+  }
+
+  /**
    * Retrieves all queryable SObjects in Salesforce and applies white and black list filters.
    *
    * @return list of SObjects

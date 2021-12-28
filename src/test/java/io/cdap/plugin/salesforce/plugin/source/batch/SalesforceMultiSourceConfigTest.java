@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
@@ -26,6 +27,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -100,6 +103,14 @@ public class SalesforceMultiSourceConfigTest {
   }
 
   @Test
+  public void  testValidateSObjects() {
+    SalesforceMultiSourceConfig mock = Mockito.mock(SalesforceMultiSourceConfig.class);
+    MockFailureCollector collector = new MockFailureCollector();
+    mock.validateSObjects(collector);
+    verify(mock).validateSObjects(collector);
+  }
+
+  @Test
   public void testGetOffset() {
     SalesforceMultiSourceConfig config = new SalesforceMultiSourceConfigBuilder()
       .setOffset("2   YEARS, 4 MONTHS, 1 DAYS, 2 HOURS, 30 MINUTES, 40 SECONDS ")
@@ -130,5 +141,6 @@ public class SalesforceMultiSourceConfigTest {
     Assert.assertEquals(new Integer(30), duration.get(ChronoUnit.MINUTES));
     Assert.assertEquals(new Integer(40), duration.get(ChronoUnit.SECONDS));
   }
+
 
 }
