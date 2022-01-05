@@ -74,7 +74,6 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
                                     Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
@@ -83,7 +82,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
       StructuredRecord.builder(schema)
         .set("Name", "testInsertOpportunity1")
         .set("StageName", "Prospecting")
-        .set("CloseDate", 17897).set("IsPrivate", true)
+        .set("CloseDate", 17897)
         .set("Amount", 123.0)
         .set("ForecastCategoryName", "Omitted")
         .build(),
@@ -91,7 +90,6 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testInsertOpportunity2")
         .set("StageName", "Closed Won")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
         .set("Amount", 0.0)
         .set("ForecastCategoryName", "Closed")
         .build()
@@ -178,7 +176,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+                                //    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
                                     Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
@@ -187,7 +185,8 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
       StructuredRecord.builder(schema)
         .set("Name", "testUpsertOpportunity1")
         .set("StageName", "Prospecting")
-        .set("CloseDate", 17897).set("IsPrivate", true)
+        .set("CloseDate", 17897)
+        //.set("IsPrivate", true)
         .set("Amount", 123.0)
         .set("ForecastCategoryName", "Omitted")
         .build(),
@@ -195,7 +194,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testUpsertOpportunity2")
         .set("StageName", "Closed Won")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
+      //  .set("IsPrivate", false)
         .set("Amount", 0.0)
         .set("ForecastCategoryName", "Closed")
         .build()
@@ -213,7 +212,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                              Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
                              Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
                              Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+                           //  Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
                              Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
                              Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
@@ -224,7 +223,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testUpsertOpportunity1Stage2")
         .set("StageName", "Prospecting")
         .set("CloseDate", 17897)
-        .set("IsPrivate", true)
+      //  .set("IsPrivate", true)
         .set("Amount", 123.0)
         .set("ForecastCategoryName", "Omitted")
         .build(),
@@ -233,7 +232,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testUpsertOpportunity2Stage2")
         .set("StageName", "Closed Won")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
+      //  .set("IsPrivate", false)
         .set("Amount", 0.0)
         .set("ForecastCategoryName", "Closed")
         .build()
@@ -296,7 +295,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+                             //       Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
                                     Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
                                     Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
@@ -306,7 +305,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testMultipleBatches1")
         .set("StageName", "Prospecting")
         .set("CloseDate", 17897)
-        .set("IsPrivate", true)
+       // .set("IsPrivate", true)
         .set("Amount", 123.0)
         .set("ForecastCategoryName", "Omitted")
         .build(),
@@ -314,7 +313,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testMultipleBatches2")
         .set("StageName", "Closed Won")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
+       // .set("IsPrivate", false)
         .set("Amount", 5343.0)
         .set("ForecastCategoryName", "Closed")
         .build(),
@@ -322,7 +321,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testMultipleBatches3")
         .set("StageName", "Needs Analysis")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
+       // .set("IsPrivate", false)
         .set("Amount", 11.0)
         .set("ForecastCategoryName", "Closed")
         .build(),
@@ -330,7 +329,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testMultipleBatches4")
         .set("StageName", "Value Proposition")
         .set("CloseDate", 17897)
-        .set("IsPrivate", true)
+       // .set("IsPrivate", true)
         .set("Amount", 88.0)
         .set("ForecastCategoryName", "Closed")
         .build(),
@@ -338,7 +337,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
         .set("Name", "testMultipleBatches5")
         .set("StageName", "Negotiation/Review")
         .set("CloseDate", 17897)
-        .set("IsPrivate", false)
+       // .set("IsPrivate", false)
         .set("Amount", 0.0)
         .set("ForecastCategoryName", "Closed")
         .build()
@@ -387,7 +386,7 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
 
     MockFailureCollector collector = new MockFailureCollector();
     getDefaultConfig(sObject).validate(schema, collector);
-    Assert.assertEquals(1, collector.getValidationFailures().size());
+    Assert.assertEquals(2, collector.getValidationFailures().size());
   }
 
   @Test
@@ -406,6 +405,6 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
 
     MockFailureCollector collector = new MockFailureCollector();
     getDefaultConfig(sObject).validate(schema, collector);
-    Assert.assertEquals(1, collector.getValidationFailures().size());
+    Assert.assertEquals(2, collector.getValidationFailures().size());
   }
 }

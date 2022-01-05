@@ -220,7 +220,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     MockSource.writeInput(inputManager, input);
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
+    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  10, TimeUnit.MINUTES);
   }
 
   protected SalesforceSinkConfig getDefaultConfig(String sObject) {

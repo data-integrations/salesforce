@@ -302,7 +302,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     ApplicationManager appManager = deployApplication(pipelineId, new AppRequest<>(APP_ARTIFACT, etlConfig));
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
+    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  10, TimeUnit.MINUTES);
 
     DataSetManager<Table> outputManager = getDataset(outputDatasetName);
     return MockSink.readOutput(outputManager);
