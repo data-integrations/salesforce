@@ -16,254 +16,61 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
-/*import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.QueryResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
-import io.cdap.cdap.etl.api.validation.InvalidStageException;
-import io.cdap.plugin.salesforce.InvalidConfigException;
-import io.cdap.plugin.salesforce.SObjectDescriptor;
-import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
-import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.internal.util.reflection.FieldSetter;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.reflect.Whitebox;
-
-import java.util.ArrayList;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SalesforceStreamingSourceConfig.class, SObjectDescriptor.class, SalesforceQueryUtil.class,
-  SObjectFilterDescriptor.class})*/
 public class SalesforceStreamingSourceConfigTest {
 
-  /*@Test
-  public void testGetQueryForPushTopicQuery() throws NoSuchFieldException {
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", "sObjectName", "securityToken", oAuthInfo);
+  SalesforceStreamingSourceConfig actualSalesforceStreamingSourceConfig;
+  OAuthInfo oAuthInfo;
 
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicQuery"),
-      "pushTopicQuery");
+  @Before
+  public void setUp() {
 
-    assertEquals("pushTopicQuery", config.getQuery());
+    oAuthInfo = new OAuthInfo("token", "https://d5j000001ufckeay.lightning.force.com");
+
+    actualSalesforceStreamingSourceConfig = new SalesforceStreamingSourceConfig(
+      "Reference Name", "Consumer Key", "Consumer Secret", "username", "password", "https://example.org/example",
+      "Push Topic Name", "S Object Name", "token", oAuthInfo);
   }
 
   @Test
-  public void testGetQueryOnNull() throws NoSuchFieldException {
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-
-    assertEquals(null, config.getQuery());
+  public void testConstructor() {
+    assertEquals("Push Topic Name", actualSalesforceStreamingSourceConfig.getPushTopicName());
+    assertNull(actualSalesforceStreamingSourceConfig.getPushTopicNotifyForFields());
+    assertNull(actualSalesforceStreamingSourceConfig.getPushTopicQuery());
+    assertEquals("Reference Name", actualSalesforceStreamingSourceConfig.referenceName);
+    assertEquals("Consumer Key", actualSalesforceStreamingSourceConfig.getConsumerKey());
+    assertEquals("https://example.org/example", actualSalesforceStreamingSourceConfig.getLoginUrl());
+    assertEquals("Push Topic Name", actualSalesforceStreamingSourceConfig.getPushTopicName());
+    assertSame(oAuthInfo, actualSalesforceStreamingSourceConfig.getOAuthInfo());
+    assertEquals("Consumer Secret", actualSalesforceStreamingSourceConfig.getConsumerSecret());
+    assertEquals("passwordtoken", actualSalesforceStreamingSourceConfig.getPassword());
+    assertEquals("username", actualSalesforceStreamingSourceConfig.getUsername());
   }
 
   @Test
-  public void testGetQueryForSObjectName() throws Exception {
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    *//*SalesforceStreamingSourceConfig salesforceStreamingSourceConfig = new SalesforceStreamingSourceConfig(
-      "referenceName", "consumerKey", "consumerSecret", "username", "password", "loginUrl", "pushTopicName",
-      null, "securityToken", oAuthInfo);*//*
-    //SalesforceStreamingSourceConfig config = spy(salesforceStreamingSourceConfig);
-    SalesforceStreamingSourceConfig salesforceStreamingSourceConfig =
-      PowerMockito.spy(new SalesforceStreamingSourceConfig(
-        "referenceName", "consumerKey", "consumerSecret", "username", "password", "loginUrl", "pushTopicName",
-        null, "securityToken", oAuthInfo));
-    FieldSetter.setField(salesforceStreamingSourceConfig,
-      SalesforceStreamingSourceConfig.class.getDeclaredField("sObjectName"), "sObjectName");
-    //when(SObjectDescriptor.fromName(any(), any(), any())).thenReturn(sObjectDescriptorObj);
-    //when(SalesforceQueryUtil.createSObjectQuery(any(),any(),any())).thenReturn("sObjectName");
-    //doReturn("test").when(config, "")
-    //when(salesforceStreamingSourceConfig, "getSObjectQuery").thenReturn("test");
-    PowerMockito.doReturn("sObjectName").when(salesforceStreamingSourceConfig, "getSObjectQuery");
-    assertEquals("sObjectName", salesforceStreamingSourceConfig.getQuery());
-  }
-
-  @Test
-  public void testEnsurePushTopicExistAndWithCorrectFields() throws Exception {
-    SObject sObject = mock(SObject.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", "sObjectName", "securityToken", oAuthInfo);
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicQuery"),
-      "pushTopicQuery");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyCreate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyUpdate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyDelete"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyForFields"),
-      "Enabled");
-    PowerMockito.mockStatic(SalesforceStreamingSourceConfig.class);
-    PowerMockito.when(SalesforceStreamingSourceConfig.fetchPushTopicByName(any(), anyString())).thenReturn(sObject);
-    config.ensurePushTopicExistAndWithCorrectFields();
-  }
-
-  @Test
-  public void testEnsurePushTopicExistAndWithCorrectFieldsOnQueryNull() throws Exception {
-    SObject sObject = mock(SObject.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyCreate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyUpdate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyDelete"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyForFields"),
-      "Enabled");
-    PowerMockito.mockStatic(SalesforceStreamingSourceConfig.class);
-    PowerMockito.when(SalesforceStreamingSourceConfig.fetchPushTopicByName(any(), anyString())).thenReturn(sObject);
-    config.ensurePushTopicExistAndWithCorrectFields();
-  }
-
-  @Test
-  public void testEnsurePushTopicExistAndWithCorrectFieldsOnSObjectNullOnInvalidConfigException() throws Exception {
-    SObject sObject = mock(SObject.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyCreate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyUpdate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyDelete"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyForFields"),
-      "Enabled");
-    PowerMockito.mockStatic(SalesforceStreamingSourceConfig.class);
-    PowerMockito.when(SalesforceStreamingSourceConfig.fetchPushTopicByName(any(), anyString())).thenReturn(null);
-    try {
-      config.ensurePushTopicExistAndWithCorrectFields();
-    } catch (InvalidConfigException e) {
-      e.getMessage();
-    }
-  }
-
-  @Test
-  public void testEnsurePushTopicExistAndWithCorrectFieldsOnPushTopicNull() throws Exception {
-    SObject sObject = mock(SObject.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicQuery"),
-      "pushTopicQuery");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyCreate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyUpdate"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyDelete"),
-      "Enabled");
-    FieldSetter.setField(config, SalesforceStreamingSourceConfig.class.getDeclaredField("pushTopicNotifyForFields"),
-      "Enabled");
-    PowerMockito.mockStatic(SalesforceStreamingSourceConfig.class);
-    PowerMockito.when(SalesforceStreamingSourceConfig.fetchPushTopicByName(any(), anyString())).thenReturn(null);
-    try {
-      config.ensurePushTopicExistAndWithCorrectFields();
-    } catch (InvalidStageException e) {
-      e.getMessage();
-    }
-  }
-
-  @Test
-  public void fetchPushTopicByNameTestOnIllegalArgumentException() throws ConnectionException {
-    SalesforceStreamingSourceConfig config = mock(SalesforceStreamingSourceConfig.class);
-    PartnerConnection partnerConnection = mock(PartnerConnection.class);
-    try {
-      SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, "");
-    } catch (IllegalArgumentException e) {
-      assertEquals("Push topic name '' can only contain latin letters.", e.getMessage());
-    }
-  }
-
-  @Test
-  public void fetchPushTopicByNameTestWhenOneRecord() throws ConnectionException, NoSuchFieldException {
-    SObject sObject = mock(SObject.class);
-    SObject[] sObjectArray = {sObject};
-    QueryResult queryResult = mock(QueryResult.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-    PartnerConnection partnerConnection = mock(PartnerConnection.class);
-
-    PowerMockito.when(partnerConnection.query(anyString())).thenReturn(queryResult);
-    PowerMockito.when(queryResult.getRecords()).thenReturn(sObjectArray);
-    assertEquals(sObject, SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, "test"));
-  }
-
-  @Test
-  public void fetchPushTopicByNameTestWhenZeroRecord() throws ConnectionException, NoSuchFieldException {
-    SObject sObject = mock(SObject.class);
+  public void testFetchPushTopicByNameTestWhenZeroRecord()
+    throws ConnectionException {
     SObject[] sObjectArray = {};
     QueryResult queryResult = mock(QueryResult.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
     PartnerConnection partnerConnection = mock(PartnerConnection.class);
-
-    PowerMockito.when(partnerConnection.query(anyString())).thenReturn(queryResult);
-    PowerMockito.when(queryResult.getRecords()).thenReturn(sObjectArray);
+    Mockito.when(partnerConnection.query(anyString())).thenReturn(queryResult);
+    Mockito.when(queryResult.getRecords()).thenReturn(sObjectArray);
     assertEquals(null, SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, "test"));
   }
 
-  @Test
-  public void fetchPushTopicByNameTestWhenMultipleRecord() throws ConnectionException, NoSuchFieldException {
-    SObject sObject = mock(SObject.class);
-    SObject[] sObjectArray = {sObject, sObject};
-    QueryResult queryResult = mock(QueryResult.class);
-    OAuthInfo oAuthInfo = new OAuthInfo("accessToken", "url");
-    SalesforceStreamingSourceConfig config = new SalesforceStreamingSourceConfig("referenceName", "consumerKey",
-      "consumerSecret", "username", "password", "loginUrl", "pushTopicName", null, "securityToken", oAuthInfo);
-    PartnerConnection partnerConnection = mock(PartnerConnection.class);
-
-    PowerMockito.when(partnerConnection.query(anyString())).thenReturn(queryResult);
-    PowerMockito.when(queryResult.getRecords()).thenReturn(sObjectArray);
-    try {
-      SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, "test");
-    } catch (IllegalStateException e) {
-      assertEquals("Excepted one or zero pushTopics with name = 'test' found 2", e.getMessage());
-    }
-  }
-
-  @Test
-  public void getSObjectQueryTest() throws Exception {
-    PowerMockito.mockStatic(SObjectDescriptor.class);
-    PowerMockito.mockStatic(SalesforceQueryUtil.class);
-    PowerMockito.mockStatic(SObjectFilterDescriptor.class);
-    SObjectDescriptor sObjectDescriptor = spy(new SObjectDescriptor("test", new ArrayList<>()));
-    SObjectFilterDescriptor sObjectFilterDescriptor = mock(SObjectFilterDescriptor.class);
-    SalesforceStreamingSourceConfig config = mock(SalesforceStreamingSourceConfig.class);
-    PowerMockito.when(config.canAttemptToEstablishConnection()).thenReturn(true);
-
-    PowerMockito.when(sObjectDescriptor.getFieldsNames()).thenReturn(new ArrayList<>());
-    PowerMockito.when(SObjectFilterDescriptor.noOp()).thenReturn(sObjectFilterDescriptor);
-    PowerMockito.when(SObjectDescriptor.fromName(anyString(), any(), any())).thenReturn(sObjectDescriptor);
-
-    PowerMockito.when(SalesforceQueryUtil.createSObjectQuery(any(), anyString(), any())).thenReturn("sObjectQuery");
-    try {
-      Whitebox.invokeMethod(config, "getSObjectQuery");
-    } catch (Exception e) {
-      e.getMessage();
-    }
-  }
-
-  @Test
-  public void getSObjectQueryTestWhencanAttemptToEstablishConnectionIsFalse() throws Exception {
-    SalesforceStreamingSourceConfig config = mock(SalesforceStreamingSourceConfig.class);
-    assertNull(Whitebox.invokeMethod(config, "getSObjectQuery"));
-  }*/
 }
