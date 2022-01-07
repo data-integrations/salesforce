@@ -33,6 +33,7 @@
     <avro.version>1.7.7</avro.version>
     <cdap.version>6.4.0</cdap.version>
     <junit.version>4.12</junit.version>
+    <powermock.version>2.0.2</powermock.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
@@ -42,7 +43,6 @@
     <salesforce.api.version>53.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
     <antlr.version>4.7.2</antlr.version>
-    <mockito.version>2.23.0</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
     <jackson2.version>2.6.7</jackson2.version>
@@ -349,9 +349,15 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
