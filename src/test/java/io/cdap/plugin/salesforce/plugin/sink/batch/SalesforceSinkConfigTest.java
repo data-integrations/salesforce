@@ -16,22 +16,41 @@
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.sforce.async.OperationEnum;
+import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.plugin.PluginProperties;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
+import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.internal.util.reflection.FieldSetter;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+/**
+ * Tests for SalesforceSinkConfig
+ */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({SalesforceSinkConfig.class, SObjectDescriptor.class, SObjectsDescribeResult.class})
 public class SalesforceSinkConfigTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
@@ -109,23 +128,98 @@ public class SalesforceSinkConfigTest {
   }
 
   @Test
-  public void testValidateSchema() throws NoSuchFieldException {
+  public void testValidateSchemaWithNullFields() throws NoSuchFieldException, ConnectionException {
     MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
-    Schema schema = Schema.recordOf("output",
-      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
-      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
-    );
     FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "1");
     FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "1");
     FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("errorHandling"),
       ErrorHandling.SKIP.getValue());
     FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("operation"),
       OperationEnum.insert.name());
-    thrown.expect(ValidationException.class);
-    salesforceSinkConfig.validate(schema, mockFailureCollector);
+    Schema schema = Schema.recordOf("output");
+    try {
+      salesforceSinkConfig.validate(schema, mockFailureCollector);
+    } catch (ValidationException e) {
+      assertEquals(1, mockFailureCollector.getValidationFailures().size());
+      assertEquals("Errors were encountered during validation. Sink schema must contain at least one field",
+        e.getMessage());
+    }
   }
 
+  @Test
+  public void testValidateSchemaWithInsertOperation() throws NoSuchFieldException, ConnectionException {
+    MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("errorHandling"),
+      ErrorHandling.SKIP.getValue());
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("operation"),
+      OperationEnum.insert.name());
+    mockStatic(SObjectDescriptor.class);
+    mockStatic(SObjectsDescribeResult.class);
+    SObjectsDescribeResult sObjectsDescribeResult = mock(SObjectsDescribeResult.class);
+    SObjectDescriptor sObjectDescriptor = spy(new SObjectDescriptor("test", new ArrayList<>()));
+    PowerMockito.when(SObjectDescriptor.fromName(any(), any())).thenReturn(sObjectDescriptor);
+    PowerMockito.when(SObjectsDescribeResult.of(any(), anyString(), any())).thenReturn(sObjectsDescribeResult);
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+
+    salesforceSinkConfig.validate(schema, mockFailureCollector);
+    assertEquals(5, mockFailureCollector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testValidateSchemaWithUpsertOperation() throws NoSuchFieldException, ConnectionException {
+    MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("errorHandling"),
+      ErrorHandling.SKIP.getValue());
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("operation"),
+      OperationEnum.upsert.name());
+    mockStatic(SObjectDescriptor.class);
+    mockStatic(SObjectsDescribeResult.class);
+    SObjectsDescribeResult sObjectsDescribeResult = mock(SObjectsDescribeResult.class);
+    SObjectDescriptor sObjectDescriptor = spy(new SObjectDescriptor("test", new ArrayList<>()));
+    PowerMockito.when(SObjectDescriptor.fromName(any(), any())).thenReturn(sObjectDescriptor);
+    PowerMockito.when(SObjectsDescribeResult.of(any(), anyString(), any())).thenReturn(sObjectsDescribeResult);
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+    salesforceSinkConfig.validate(schema, mockFailureCollector);
+    assertEquals(6, mockFailureCollector.getValidationFailures().size());
+  }
+
+  @Test
+  public void testValidateSchemaWithUpdateOperation() throws NoSuchFieldException, ConnectionException {
+    MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("errorHandling"),
+      ErrorHandling.SKIP.getValue());
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("operation"),
+      OperationEnum.update.name());
+    mockStatic(SObjectDescriptor.class);
+    mockStatic(SObjectsDescribeResult.class);
+    SObjectsDescribeResult sObjectsDescribeResult = mock(SObjectsDescribeResult.class);
+    SObjectDescriptor sObjectDescriptor = spy(new SObjectDescriptor("test", new ArrayList<>()));
+    PowerMockito.when(SObjectDescriptor.fromName(any(), any())).thenReturn(sObjectDescriptor);
+    PowerMockito.when(SObjectsDescribeResult.of(any(), anyString(), any())).thenReturn(sObjectsDescribeResult);
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+    salesforceSinkConfig.validate(schema, mockFailureCollector);
+    assertEquals(6, mockFailureCollector.getValidationFailures().size());
+  }
 }
 
