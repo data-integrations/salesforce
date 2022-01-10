@@ -294,6 +294,28 @@ public class SalesforceSourceConfigTest {
     } catch (ValidationException e) {
       Assert.assertEquals(1, e.getFailures().size());
     }
+  }
+
+  @Test
+  public void testValidateFiltersWithNonEmptyinvalidValues() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("")
+      .setSObjectName("Account")
+      .setDatetimeBefore("test")
+      .setDatetimeAfter("test")
+      .setDuration("-1 days")
+      .setOffset("-1 days")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    try {
+      mock.validate(collector);
+      Assert.assertEquals(4, collector.getValidationFailures().size());
+    } catch (ValidationException e) {
+      Assert.assertEquals(1, e.getFailures().size());
+    }
 
   }
 }
