@@ -117,6 +117,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
                                                                                     config.getLoginUrl());
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     boolean enablePKChunk = config.getEnablePKChunk();
+    Enum operation = config.getOperationEnum();
+
     if (enablePKChunk) {
       String parent = config.getParent();
       int chunkSize = config.getChunkSize();
@@ -127,7 +129,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       }
       bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
     }
-    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection, enablePKChunk);
+    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection, enablePKChunk, operation);
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
     config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));

@@ -52,11 +52,11 @@ public final class SalesforceSplitUtil {
    * @param query the query for the sobject
    * @param bulkConnection used to create salesforce jobs
    * @param enablePKChunk indicates if pk chunking is enabled
+   * @param operation indicates they query type
    * @return list of salesforce splits
    */
-  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection,
-                                                     boolean enablePKChunk) {
-    return Stream.of(getBatches(query, bulkConnection, enablePKChunk))
+  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk, Enum operation) {
+    return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
   }
@@ -69,15 +69,17 @@ public final class SalesforceSplitUtil {
    * @param query SOQL query
    * @param bulkConnection bulk connection
    * @param enablePKChunk enable PK Chunking
+   * @param operation indicates they query type
    * @return array of batch info
    */
-  private static BatchInfo[] getBatches(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
+  private static BatchInfo[] getBatches(
+          String query, BulkConnection bulkConnection, boolean enablePKChunk, Enum operation) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk);
+      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk, operation);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
@@ -91,11 +93,12 @@ public final class SalesforceSplitUtil {
    * @param bulkConnection bulk connection instance
    * @param query a SOQL query
    * @param enablePKChunk enable PK Chunk
+   * @param operation to be preformed (query or queryAll)
    * @return an array of batches
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws IOException failed to close the query
    */
-  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
+  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk, Enum operation)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
@@ -124,8 +127,7 @@ public final class SalesforceSplitUtil {
    *
    * @return bulk connection instance
    */
-  public static BulkConnection getBulkConnection(String username, String password,
-                                                 String consumerKey, String consumerSecret, String loginUrl) {
+  public static BulkConnection getBulkConnection(String username, String password, String consumerKey, String consumerSecret, String loginUrl) {
     AuthenticatorCredentials authenticatorCredentials = SalesforceConnectionUtil
       .getAuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
     try {

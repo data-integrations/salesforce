@@ -150,8 +150,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
-                                                                       SalesforceSchemaUtil.COMPOUND_FIELDS);
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(), SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();
 

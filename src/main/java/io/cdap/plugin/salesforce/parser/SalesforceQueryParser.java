@@ -16,11 +16,7 @@
 package io.cdap.plugin.salesforce.parser;
 
 import io.cdap.plugin.salesforce.SObjectDescriptor;
-import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.RecognitionException;
-import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.*;
 import soql.SOQLLexer;
 import soql.SOQLParser;
 

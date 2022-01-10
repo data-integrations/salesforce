@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
+import com.sforce.async.OperationEnum;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
@@ -88,14 +89,18 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
 
     String sObjectNameField = config.getSObjectNameField();
+
     authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
                                                                                     config.getPassword(),
                                                                                     config.getConsumerKey(),
                                                                                     config.getConsumerSecret(),
                                                                                     config.getLoginUrl());
+
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+
+
     List<SalesforceSplit> querySplits = queries.parallelStream()
-      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false))
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, OperationEnum.queryAll))
       .flatMap(Collection::stream).collect(Collectors.toList());
     // store the jobIds so be used in onRunFinish() to close the connections
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));

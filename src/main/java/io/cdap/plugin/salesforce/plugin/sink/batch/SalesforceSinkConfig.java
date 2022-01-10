@@ -110,8 +110,10 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               @Nullable String password,
                               @Nullable String loginUrl,
                               String sObject,
-                              String operation, String externalIdField,
-                              String maxBytesPerBatch, String maxRecordsPerBatch,
+                              String operation,
+                              String externalIdField,
+                              String maxBytesPerBatch,
+                              String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo) {

@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
+import com.sforce.async.OperationEnum;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
@@ -88,6 +89,11 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
   private String parent;
 
+  @Name(SalesforceSourceConstants.PROPERTY_OPERATION)
+  @Description("If set to query, the query result will only return current rows. If set to queryAll, all records, includ" +
+          "ing deletes will be sourced")
+  private String operation;
+
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
@@ -106,7 +112,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable OAuthInfo oAuthInfo,
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
-                         @Nullable String parent) {
+                         @Nullable String parent,
+                         String operation) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo);
     this.query = query;
@@ -115,6 +122,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     this.enablePKChunk = enablePKChunk;
     this.chunkSize = chunkSize;
     this.parent = parent;
+    this.operation = operation;
   }
 
   /**
@@ -311,6 +319,20 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   public boolean getEnablePKChunk() {
     return enablePKChunk == null ? false : enablePKChunk;
   }
+
+  public String getOperation() {
+    return operation;
+  }
+
+  public OperationEnum getOperationEnum() {
+    try {
+      return OperationEnum.valueOf(operation.toLowerCase());
+    } catch (IllegalArgumentException ex) {
+      throw new InvalidConfigException("Unsupported value for operation: " + operation,
+              SalesforceSourceConstants.PROPERTY_OPERATION);
+    }
+  }
+
 
   public int getChunkSize() {
     return chunkSize == null ? SalesforceSourceConstants.DEFAULT_PK_CHUNK_SIZE : chunkSize;
