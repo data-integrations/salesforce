@@ -15,8 +15,10 @@
  */
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
+import com.sforce.async.OperationEnum;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.api.plugin.PluginProperties;
+import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
@@ -25,6 +27,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.internal.util.reflection.FieldSetter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -45,7 +48,7 @@ public class SalesforceSinkConfigTest {
       "External Id Field",
       "Max Bytes Per Batch", "Max Records Per Batch", "An error occurred", "token", oAuthInfo);
   }
-  
+
   @Test
   public void testConfig() {
     assertEquals("Reference Name", salesforceSinkConfig.referenceName);
@@ -92,6 +95,35 @@ public class SalesforceSinkConfigTest {
     MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
     Schema schema = Schema.of(Schema.LogicalType.DATE);
     thrown.expect(InvalidConfigException.class);
+    salesforceSinkConfig.validate(schema, mockFailureCollector);
+  }
+
+  @Test
+  public void testValidateWithZeroMaxBytesAndZeroMaxRecords() throws NoSuchFieldException {
+    MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
+    Schema schema = Schema.of(Schema.LogicalType.DATE);
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "0");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "0");
+    thrown.expect(ValidationException.class);
+    salesforceSinkConfig.validate(schema, mockFailureCollector);
+  }
+
+  @Test
+  public void testValidateSchema() throws NoSuchFieldException {
+    MockFailureCollector mockFailureCollector = new MockFailureCollector("Stage Name");
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+    );
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxBytesPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("maxRecordsPerBatch"), "1");
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("errorHandling"),
+      ErrorHandling.SKIP.getValue());
+    FieldSetter.setField(salesforceSinkConfig, SalesforceSinkConfig.class.getDeclaredField("operation"),
+      OperationEnum.insert.name());
+    thrown.expect(ValidationException.class);
     salesforceSinkConfig.validate(schema, mockFailureCollector);
   }
 
