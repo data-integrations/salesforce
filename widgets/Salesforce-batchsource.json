@@ -147,8 +147,8 @@
       "properties": [
         {
           "widget-type": "radio-group",
-          "label": "SOQL Query Operation",
-          "name": "SOQL Query Operation",
+          "label": "operation",
+          "name": "operation",
           "widget-attributes": {
             "layout": "inline",
             "default": "query",
