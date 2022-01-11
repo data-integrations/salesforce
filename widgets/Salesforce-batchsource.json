@@ -146,6 +146,25 @@
       "label": "Advanced",
       "properties": [
         {
+          "widget-type": "radio-group",
+          "label": "SOQL Query Operation",
+          "name": "SOQL Query Operation",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "query",
+            "options": [
+              {
+                "id": "query",
+                "label": "query"
+              },
+              {
+                "id": "queryAll",
+                "label": "queryAll"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "toggle",
           "name": "enablePKChunk",
           "label": "Enable PK Chunking",
@@ -175,25 +194,6 @@
           "widget-type": "textbox",
           "widget-attributes" : {
             "placeholder": "Salesforce object parent name"
-          }
-        },
-        {
-          "widget-type": "radio-group",
-          "label": "operation",
-          "name": "operation",
-          "widget-attributes": {
-            "layout": "inline",
-            "default": "query",
-            "options": [
-              {
-                "id": "query",
-                "label": "Query"
-              },
-              {
-                "id": "queryAll",
-                "label": "QueryAll"
-              }
-            ]
           }
         }
       ]

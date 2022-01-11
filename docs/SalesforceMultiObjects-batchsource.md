@@ -198,3 +198,6 @@ Below is a non-comprehensive list of **sObjects** that are not currently availab
 - UserRecordAccess
 - WorkOrderLineItemStatus
 - WorkOrderStatus
+
+**Query Operation:** 
+Specify the query operation to run on the table. If query is selected, only current records will be returned. If queryAll is selected, all current and deleted records will be returned. Default operation is query.

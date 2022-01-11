@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.sforce.async.OperationEnum;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -76,6 +77,11 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   @Macro
   private String offset;
 
+  @Name(SalesforceSourceConstants.PROPERTY_OPERATION)
+  @Description("If set to query, the query result will only return current rows. If set to queryAll, all records, includ" +
+          "ing deletes will be sourced")
+  private String operation;
+
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
                                        @Nullable String consumerSecret,
@@ -86,6 +92,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
                                        @Nullable String offset,
+                                       @Nullable String operation,
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
@@ -93,6 +100,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
+    this.operation = operation;
   }
 
   public Map<ChronoUnit, Integer> getDuration() {
@@ -270,4 +278,17 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   private ZonedDateTime parseDatetime(String datetime) throws DateTimeParseException {
     return StringUtils.isBlank(datetime) ? null : ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
   }
+  public String getOperation() {
+    return operation;
+  }
+
+  public OperationEnum getOperationEnum() {
+    try {
+      return OperationEnum.valueOf(operation);
+    } catch (IllegalArgumentException ex) {
+      throw new InvalidConfigException("Unsupported value for operation: " + operation,
+              SalesforceSourceConstants.PROPERTY_OPERATION);
+    }
+  }
+
 }

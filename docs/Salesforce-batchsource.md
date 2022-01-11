@@ -257,3 +257,7 @@ PK chunking only works with the following objects:
 Support also includes custom objects, and any Sharing and History tables that support standard objects.
 
 **Chunk Size:** Specify size of chunk. Maximum Size is 250,000. Default Size is 100,000. 
+
+**Query Operation:**
+Specify the query operation to run on the table. If query is selected, only current records will be returned.
+If queryAll is selected, all current and deleted records will be returned. Default operation is query.
