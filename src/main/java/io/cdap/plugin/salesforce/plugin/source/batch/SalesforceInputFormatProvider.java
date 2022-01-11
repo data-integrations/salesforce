@@ -24,6 +24,7 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConsta
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 /**
@@ -36,46 +37,23 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
   private final Map<String, String> conf;
 
   public SalesforceInputFormatProvider(SalesforceBaseSourceConfig config,
-                                       List<String> queries,
                                        Map<String, String> schemas,
+                                       List<SalesforceSplit> querySplits,
                                        @Nullable String sObjectNameField) {
-    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
-      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
-      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
-      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
-      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
-      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
-      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
+    ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
+    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
+    configBuilder
+      .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getUsername()))
+      .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getPassword()))
+      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConsumerKey()))
+      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConsumerSecret()))
+      .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getLoginUrl()));
 
     if (sObjectNameField != null) {
-      builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
+      configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }
-
-    this.conf = builder.build();
-  }
-
-  public SalesforceInputFormatProvider(SalesforceSourceConfig config,
-                                       List<String> queries,
-                                       Map<String, String> schemas,
-                                       @Nullable String sObjectNameField) {
-    ImmutableMap.Builder<String, String> builder = new ImmutableMap.Builder<String, String>()
-      .put(SalesforceConstants.CONFIG_USERNAME, config.getUsername())
-      .put(SalesforceConstants.CONFIG_PASSWORD, config.getPassword())
-      .put(SalesforceConstants.CONFIG_CONSUMER_KEY, config.getConsumerKey())
-      .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, config.getConsumerSecret())
-      .put(SalesforceConstants.CONFIG_LOGIN_URL, config.getLoginUrl())
-      .put(SalesforceSourceConstants.CONFIG_QUERIES, GSON.toJson(queries))
-      .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas))
-      .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(config.getEnablePKChunk()))
-      .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(config.getChunkSize()))
-      .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, config.getParent());
-
-    if (sObjectNameField != null) {
-      builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
-    }
-
-    this.conf = builder.build();
+    this.conf = configBuilder.build();
   }
 
   @Override
