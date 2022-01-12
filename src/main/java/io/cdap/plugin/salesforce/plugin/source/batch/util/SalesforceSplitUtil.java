@@ -55,7 +55,7 @@ public final class SalesforceSplitUtil {
    * @param operation indicates they query type
    * @return list of salesforce splits
    */
-  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk, Enum operation) {
+  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk, String operation) {
     return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
@@ -73,7 +73,7 @@ public final class SalesforceSplitUtil {
    * @return array of batch info
    */
   private static BatchInfo[] getBatches(
-          String query, BulkConnection bulkConnection, boolean enablePKChunk, Enum operation) {
+          String query, BulkConnection bulkConnection, boolean enablePKChunk, String operation) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
@@ -98,11 +98,11 @@ public final class SalesforceSplitUtil {
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws IOException failed to close the query
    */
-  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk, Enum operation)
+  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk, String operation)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
+    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.valueOf(operation), null);
     BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);
