@@ -143,7 +143,7 @@
       "properties": [
         {
           "widget-type": "radio-group",
-          "label": "operation",
+          "label": "SOQL Operation Type",
           "name": "operation",
           "widget-attributes": {
             "layout": "inline",
