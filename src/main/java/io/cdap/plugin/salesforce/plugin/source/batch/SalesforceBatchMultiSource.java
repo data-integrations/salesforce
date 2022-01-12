@@ -38,9 +38,11 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -59,7 +61,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
 
   private final SalesforceMultiSourceConfig config;
   private MapToRecordTransformer transformer;
-  private List<String> jobIds = new ArrayList<>();
+  private Set<String> jobIds = new HashSet<>();
   private AuthenticatorCredentials authenticatorCredentials;
 
   public SalesforceBatchMultiSource(SalesforceMultiSourceConfig config) {
