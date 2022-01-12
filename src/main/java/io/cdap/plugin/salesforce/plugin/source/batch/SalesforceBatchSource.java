@@ -42,8 +42,10 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConsta
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +62,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
   private final SalesforceSourceConfig config;
   private Schema schema;
   private MapToRecordTransformer transformer;
-  private List<String> jobIds = new ArrayList<>();
+  private Set<String> jobIds = new HashSet<>();
   private AuthenticatorCredentials authenticatorCredentials;
 
   public SalesforceBatchSource(SalesforceSourceConfig config) {
