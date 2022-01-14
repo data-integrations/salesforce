@@ -25,6 +25,7 @@ import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
+import com.sun.tools.internal.xjc.model.CDefaultValue;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
@@ -73,6 +74,8 @@ public class SalesforceInputFormat extends InputFormat {
     BulkConnection bulkConnection = getBulkConnection(configuration);
 
     boolean enablePKChunk = configuration.getBoolean(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, false);
+    String operation = configuration.get(SalesforceSourceConstants.CONFIG_OPERATION);
+
     if (enablePKChunk) {
       String parent = configuration.get(SalesforceSourceConstants.CONFIG_CHUNK_PARENT);
       int chunkSize = configuration.getInt(SalesforceSourceConstants.CONFIG_CHUNK_SIZE,
@@ -88,7 +91,7 @@ public class SalesforceInputFormat extends InputFormat {
     }
 
     return queries.parallelStream()
-      .map(query -> getQuerySplits(query, bulkConnection, enablePKChunk))
+      .map(query -> getQuerySplits(query, bulkConnection, enablePKChunk, operation))
       .flatMap(Collection::stream)
       .collect(Collectors.toList());
   }
@@ -110,10 +113,8 @@ public class SalesforceInputFormat extends InputFormat {
     return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, getDelegateRecordReader(query, schema));
   }
 
-
-
-  private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
-    return Stream.of(getBatches(query, bulkConnection, enablePKChunk))
+  private List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection, boolean enablePKChunk, String operation) {
+    return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
   }
@@ -143,13 +144,13 @@ public class SalesforceInputFormat extends InputFormat {
    * @param enablePKChunk enable PK Chunking
    * @return array of batch info
    */
-  private BatchInfo[] getBatches(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
+  private BatchInfo[] getBatches(String query, BulkConnection bulkConnection, boolean enablePKChunk, String operation) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk);
+      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk, operation);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
@@ -181,11 +182,11 @@ public class SalesforceInputFormat extends InputFormat {
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws IOException failed to close the query
    */
-  public BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
+  public BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk, String operation)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
+    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.valueOf(operation), null);
     BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);

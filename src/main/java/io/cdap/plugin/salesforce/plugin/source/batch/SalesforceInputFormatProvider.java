@@ -69,7 +69,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas))
       .put(SalesforceSourceConstants.CONFIG_PK_CHUNK_ENABLE, String.valueOf(config.getEnablePKChunk()))
       .put(SalesforceSourceConstants.CONFIG_CHUNK_SIZE, String.valueOf(config.getChunkSize()))
-      .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, config.getParent());
+      .put(SalesforceSourceConstants.CONFIG_CHUNK_PARENT, config.getParent())
+      .put(SalesforceSourceConstants.CONFIG_OPERATION, config.getOperation());
 
     if (sObjectNameField != null) {
       builder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);

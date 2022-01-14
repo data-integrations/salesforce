@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.sforce.async.OperationEnum;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -269,4 +270,6 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   private ZonedDateTime parseDatetime(String datetime) throws DateTimeParseException {
     return StringUtils.isBlank(datetime) ? null : ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
   }
+
+
 }

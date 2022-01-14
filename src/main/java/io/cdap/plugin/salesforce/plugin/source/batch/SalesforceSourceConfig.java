@@ -87,6 +87,11 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
   private String parent;
 
+  @Name(SalesforceSourceConstants.PROPERTY_OPERATION)
+  @Description("If set to query, the query result will only return current rows. If set to queryAll, all records, includ" +
+          "ing deletes will be sourced")
+  private String operation;
+
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
@@ -104,7 +109,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String securityToken,
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
-                         @Nullable String parent) {
+                         @Nullable String parent,
+                         @Nullable String operation) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
           datetimeAfter, datetimeBefore, duration, offset, securityToken);
     this.query = query;
@@ -113,6 +119,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     this.enablePKChunk = enablePKChunk;
     this.chunkSize = chunkSize;
     this.parent = parent;
+    this.operation = operation;
   }
 
   /**
@@ -130,6 +137,10 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Nullable
   public String getSObjectName() {
     return sObjectName;
+  }
+
+  public String getOperation() {
+    return operation;
   }
 
   public String getParent() {

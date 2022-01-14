@@ -50,6 +50,9 @@ public class SalesforceSourceConstants {
   public static final String HEADER_VALUE_PK_CHUNK = "chunkSize=%d";
   public static final String HEADER_PK_CHUNK_PARENT = "parent=%s";
 
+  public static final String PROPERTY_OPERATION = "operation";
+  public static final String CONFIG_OPERATION = "mapred.salesforce.input.operation";
+
   public static final String CONFIG_SOBJECT_NAME_FIELD = "mapred.salesforce.input.sObjectNameField";
 
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
