@@ -41,7 +41,7 @@ public class SalesforceBulkRecordReaderTest {
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
     String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
-        "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
 
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
@@ -82,7 +82,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2}, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[]{csvString1, csvString2}, schema, expectedRecords);
   }
 
   @Test
@@ -90,7 +90,7 @@ public class SalesforceBulkRecordReaderTest {
     String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n" +
       "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n";
-      String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
     String csvString3 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n";
 
@@ -134,7 +134,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2, csvString3}, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[]{csvString1, csvString2, csvString3}, schema, expectedRecords);
   }
 
   @Test
@@ -182,7 +182,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[]{csvString}, schema, expectedRecords);
   }
 
   @Test
@@ -200,7 +200,7 @@ public class SalesforceBulkRecordReaderTest {
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
 
     try {
-      assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
+      assertRecordReaderOutputRecords(new String[]{csvString}, schema, expectedRecords);
       Assert.fail("Expected to throw exception due to not different number of arguments");
     } catch (IOException ex) {
       Assert.assertTrue(ex.getMessage().contains("invalid char between encapsulated token and delimiter"));
@@ -219,11 +219,11 @@ public class SalesforceBulkRecordReaderTest {
     List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>().build();
 
     try {
-      assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
+      assertRecordReaderOutputRecords(new String[]{csvString}, schema, expectedRecords);
       Assert.fail("Expected to throw exception due to not different number of arguments");
     } catch (IllegalStateException ex) {
       Assert.assertTrue(ex.getMessage().
-        contains("Empty response was received from Salesforce, but csv header was expected"));
+                          contains("Empty response was received from Salesforce, but csv header was expected"));
     }
   }
 
@@ -275,7 +275,7 @@ public class SalesforceBulkRecordReaderTest {
       )
       .build();
 
-    assertRecordReaderOutputRecords(new String[] {csvString}, schema, expectedRecords);
+    assertRecordReaderOutputRecords(new String[]{csvString}, schema, expectedRecords);
   }
 
   private void assertRecordReaderOutputRecords(String[] csvStrings, Schema schema,

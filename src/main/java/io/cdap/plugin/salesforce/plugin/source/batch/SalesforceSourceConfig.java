@@ -43,8 +43,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
-import static io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK;
-
 /**
  * This class {@link SalesforceSourceConfig} provides all the configuration required for configuring the {@link
  * SalesforceBatchSource} plugin.
@@ -299,7 +297,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private void checkForPKSupportedObject(String sObject, FailureCollector collector) {
     if (canAttemptToEstablishConnection()) {
       if (!isCustomObject(sObject, collector)) {
-        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
+        if (!SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
           collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
                                "Please check documentation for supported Objects. If this is a history " +
                                  "or shared table, you may need to specify a SObject Parent in the Advanced section.");

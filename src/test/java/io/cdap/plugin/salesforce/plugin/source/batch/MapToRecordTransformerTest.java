@@ -36,18 +36,18 @@ public class MapToRecordTransformerTest {
   @Test
   public void testTransform() {
     Schema schema = Schema.recordOf("output",
-      Schema.Field.of("string_field", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("int_field", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("long_field", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("float_field", Schema.of(Schema.Type.FLOAT)),
-      Schema.Field.of("double_field", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("boolean_field", Schema.of(Schema.Type.BOOLEAN)),
-      Schema.Field.of("date_field", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("timestamp_field", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("array_field", Schema.arrayOf(Schema.recordOf("array_field",
-        Schema.Field.of("nested_string", Schema.of(Schema.Type.STRING)),
-        Schema.Field.of("nested_long", Schema.of(Schema.Type.LONG)),
-        Schema.Field.of("nested_timestamp", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))))));
+                                    Schema.Field.of("string_field", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("int_field", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("long_field", Schema.of(Schema.Type.LONG)),
+                                    Schema.Field.of("float_field", Schema.of(Schema.Type.FLOAT)),
+                                    Schema.Field.of("double_field", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                    Schema.Field.of("boolean_field", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("date_field", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("timestamp_field", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                                    Schema.Field.of("array_field", Schema.arrayOf(Schema.recordOf("array_field",
+                                                                                                  Schema.Field.of("nested_string", Schema.of(Schema.Type.STRING)),
+                                                                                                  Schema.Field.of("nested_long", Schema.of(Schema.Type.LONG)),
+                                                                                                  Schema.Field.of("nested_timestamp", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))))));
 
     // Create the record as if coming from the reader. Field names can contains "." for composite table.
     // After the transform, they should all mapped to Avro allowed names with "." replaced with "_".
@@ -97,8 +97,8 @@ public class MapToRecordTransformerTest {
   @Test
   public void testNullableFields() {
     Schema schema = Schema.recordOf("output",
-        Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
-        Schema.Field.of("double_field", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))));
+                                    Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+                                    Schema.Field.of("double_field", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))));
     Map<String, Object> records = new HashMap<>();
     records.put("string_field", null);
     records.put("double_field", null);
@@ -111,8 +111,8 @@ public class MapToRecordTransformerTest {
   @Test(expected = RuntimeException.class)
   public void testNonNullableFieldWithNull() {
     Schema schema = Schema.recordOf("output",
-        Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
-        Schema.Field.of("double_field", Schema.of(Schema.Type.DOUBLE)));
+                                    Schema.Field.of("string_field", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+                                    Schema.Field.of("double_field", Schema.of(Schema.Type.DOUBLE)));
     Map<String, Object> records = new HashMap<>();
     records.put("string_field", "");
     records.put("double_field", null);

@@ -26,7 +26,7 @@ import javax.xml.namespace.QName;
  */
 public class SObjectBuilder {
   private String type;
-  private Map<String, Object> fields = new HashMap<>();
+  private final Map<String, Object> fields = new HashMap<>();
 
   public SObjectBuilder setType(String name) {
     this.type = name;

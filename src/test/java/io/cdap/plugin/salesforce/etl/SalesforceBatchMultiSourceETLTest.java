@@ -20,7 +20,6 @@ import com.google.common.collect.Sets;
 import com.sforce.soap.metadata.CustomField;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
 import com.sforce.soap.partner.sobject.SObject;
-import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
@@ -43,9 +42,9 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
   @Test
   public void testWhiteList() throws Exception {
     String sObjectName1 = createCustomObject("IT_Multi_WL_1",
-      new CustomField[] {createTextCustomField("Position__c")});
+                                             new CustomField[]{createTextCustomField("Position__c")});
     String sObjectName2 = createCustomObject("IT_Multi_WL_2",
-      new CustomField[] {createTextCustomField("City__c")});
+                                             new CustomField[]{createTextCustomField("City__c")});
 
     List<SObject> sObjects = ImmutableList.of(
       new SObjectBuilder()
@@ -72,12 +71,12 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
     String sObjectNameField = SalesforceMultiSourceConfig.SOBJECT_NAME_FIELD_DEFAULT;
 
     Schema expectedSchema1 = Schema.recordOf("schema1",
-                                            Schema.Field.of("Name",
-                                                            Schema.of(Schema.Type.STRING)),
-                                            Schema.Field.of("Position__c",
-                                                            Schema.of(Schema.Type.STRING)),
-                                            Schema.Field.of(sObjectNameField,
-                                                            Schema.of(Schema.Type.STRING))
+                                             Schema.Field.of("Name",
+                                                             Schema.of(Schema.Type.STRING)),
+                                             Schema.Field.of("Position__c",
+                                                             Schema.of(Schema.Type.STRING)),
+                                             Schema.Field.of(sObjectNameField,
+                                                             Schema.of(Schema.Type.STRING))
     );
 
     Schema expectedSchema2 = Schema.recordOf("schema2",
@@ -168,13 +167,13 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
 
   @Test
   public void testValidWhiteListSObjects() {
-     SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
-       .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
-       .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("Account,Contact").build();
+    SalesforceMultiSourceConfig salesforceMultiSourceConfig = new SalesforceMultiSourceConfigBuilder()
+      .setConsumerKey(CONSUMER_KEY).setConsumerSecret(CONSUMER_SECRET).setUsername(USERNAME).setPassword(PASSWORD)
+      .setSecurityToken(SECURITY_TOKEN).setLoginUrl(LOGIN_URL).setWhiteList("Account,Contact").build();
 
-     MockFailureCollector collector = new MockFailureCollector();
-     salesforceMultiSourceConfig.validateSObjects(collector);
-     Assert.assertEquals(collector.getValidationFailures().size(), 0);
+    MockFailureCollector collector = new MockFailureCollector();
+    salesforceMultiSourceConfig.validateSObjects(collector);
+    Assert.assertEquals(collector.getValidationFailures().size(), 0);
   }
 
   @Test
@@ -208,6 +207,6 @@ public class SalesforceBatchMultiSourceETLTest extends BaseSalesforceBatchSource
 
     MockFailureCollector collector = new MockFailureCollector();
     salesforceMultiSourceConfig.validateSObjects(collector);
-    Assert.assertEquals(collector.getValidationFailures().size(),  1);
+    Assert.assertEquals(collector.getValidationFailures().size(), 1);
   }
 }

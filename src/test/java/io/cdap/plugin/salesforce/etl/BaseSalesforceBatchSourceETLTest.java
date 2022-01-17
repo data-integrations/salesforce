@@ -78,10 +78,8 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
 
   private static final String REFERENCE_NAME = "SalesforceBatchSource-input";
   private static final String METADATA_LOGIN_URL = "https://login.salesforce.com/services/Soap/u/45.0";
-
-  private List<String> customObjects = new ArrayList<>();
-
   protected static MetadataConnection metadataConnection;
+  private final List<String> customObjects = new ArrayList<>();
 
   @BeforeClass
   public static void setupTestClass() throws Exception {
@@ -104,6 +102,20 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     metadataConnection = createMetadataConnection();
   }
 
+  private static MetadataConnection createMetadataConnection() throws ConnectionException {
+
+    ConnectorConfig loginConfig = new ConnectorConfig();
+    loginConfig.setAuthEndpoint(METADATA_LOGIN_URL);
+    loginConfig.setServiceEndpoint(METADATA_LOGIN_URL);
+    loginConfig.setManualLogin(true);
+    LoginResult loginResult = new PartnerConnection(loginConfig).login(USERNAME, PASSWORD + SECURITY_TOKEN);
+
+    ConnectorConfig metadataConfig = new ConnectorConfig();
+    metadataConfig.setServiceEndpoint(loginResult.getMetadataServerUrl());
+    metadataConfig.setSessionId(loginResult.getSessionId());
+    return new MetadataConnection(metadataConfig);
+  }
+
   @After
   public void cleanUp() throws ConnectionException {
     deleteCustomObjects();
@@ -114,7 +126,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
    * Custom object full name will be saved in order to be deleted in the end of test run.
    *
    * @param baseName object base name (without `__c` suffix)
-   * @param fields list of custom fields
+   * @param fields   list of custom fields
    * @return object full name
    */
   protected String createCustomObject(String baseName, CustomField[] fields) throws ConnectionException {
@@ -237,20 +249,6 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     return fullName.trim().replaceAll("__c$", "");
   }
 
-  private static MetadataConnection createMetadataConnection() throws ConnectionException {
-
-    ConnectorConfig loginConfig = new ConnectorConfig();
-    loginConfig.setAuthEndpoint(METADATA_LOGIN_URL);
-    loginConfig.setServiceEndpoint(METADATA_LOGIN_URL);
-    loginConfig.setManualLogin(true);
-    LoginResult loginResult = new PartnerConnection(loginConfig).login(USERNAME, PASSWORD + SECURITY_TOKEN);
-
-    ConnectorConfig metadataConfig = new ConnectorConfig();
-    metadataConfig.setServiceEndpoint(loginResult.getMetadataServerUrl());
-    metadataConfig.setSessionId(loginResult.getSessionId());
-    return new MetadataConnection(metadataConfig);
-  }
-
   private CustomObject initCustomObject(String baseName, CustomField[] fields) {
     String fullName = baseName + "_" + System.currentTimeMillis() + "__c";
     CustomObject customObject = new CustomObject();
@@ -284,10 +282,10 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
   }
 
   protected List<StructuredRecord> getPipelineResults(Map<String, String> sourceProperties,
-                                                     String pluginName,
-                                                     String applicationPrefix) throws Exception {
+                                                      String pluginName,
+                                                      String applicationPrefix) throws Exception {
     ETLStage source = new ETLStage("SalesforceReader",
-      new ETLPlugin(pluginName, BatchSource.PLUGIN_TYPE, sourceProperties, null));
+                                   new ETLPlugin(pluginName, BatchSource.PLUGIN_TYPE, sourceProperties, null));
 
     String outputDatasetName = "output-batchsourcetest_" + testName.getMethodName();
     ETLStage sink = new ETLStage("sink", MockSink.getPlugin(outputDatasetName));
@@ -302,7 +300,7 @@ public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETL
     ApplicationManager appManager = deployApplication(pipelineId, new AppRequest<>(APP_ARTIFACT, etlConfig));
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
+    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED, 5, TimeUnit.MINUTES);
 
     DataSetManager<Table> outputManager = getDataset(outputDatasetName);
     return MockSink.readOutput(outputManager);

@@ -32,12 +32,12 @@ public class SObjectFilterDescriptorTest {
   @Test
   public void testIsNoOp() {
     Stream.of(
-      SObjectFilterDescriptor.noOp(),
-      SObjectFilterDescriptor.interval(null, null),
-      SObjectFilterDescriptor.range(System.currentTimeMillis(), Collections.emptyMap(), Collections.emptyMap()),
-      SObjectFilterDescriptor.range(System.currentTimeMillis(),
-                                    Collections.singletonMap(ChronoUnit.DAYS, 0),
-                                    Collections.singletonMap(ChronoUnit.HOURS, 0))
+        SObjectFilterDescriptor.noOp(),
+        SObjectFilterDescriptor.interval(null, null),
+        SObjectFilterDescriptor.range(System.currentTimeMillis(), Collections.emptyMap(), Collections.emptyMap()),
+        SObjectFilterDescriptor.range(System.currentTimeMillis(),
+                                      Collections.singletonMap(ChronoUnit.DAYS, 0),
+                                      Collections.singletonMap(ChronoUnit.HOURS, 0))
       )
       .forEach(filter -> Assert.assertTrue(String.format("Filter must be no-op '%s'", filter), filter.isNoOp()));
   }

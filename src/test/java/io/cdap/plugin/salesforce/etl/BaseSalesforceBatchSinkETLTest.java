@@ -63,10 +63,9 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-pipeline", "3.2.0");
 
   private static final String REFERENCE_NAME = "SalesforceBatchSink-output";
-  private int deployCounter;
-
   @Rule
   public ErrorCollector errorCollector = new ErrorCollector();
+  private int deployCounter;
 
   @BeforeClass
   public static void setupTestClass() throws Exception {
@@ -92,8 +91,8 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
    * Assert that records provided all exist in Salesforce with the exact fields.
    * If not throw and exception.
    *
-   * @param sObject sObject name
-   * @param inputRecords list of records which are checked exist in Salesforce
+   * @param sObject         sObject name
+   * @param inputRecords    list of records which are checked exist in Salesforce
    * @param createdSObjects list of sObjects returned by Salesforce
    * @throws ConnectionException occurs due to failure to connect to Salesforce API
    */
@@ -122,7 +121,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
    * Gets a query for an sObject that is the same as {@link StructuredRecord} provided.
    *
    * @param sObject sObject name
-   * @param record structured record
+   * @param record  structured record
    * @return SOQL query for the given structured record
    */
   protected String getQueryByRecord(String sObject, StructuredRecord record) {
@@ -133,7 +132,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     }
 
     fields = fields.stream()
-      .filter((field) -> !field.getName().toLowerCase().equals("id"))
+      .filter((field) -> !field.getName().equalsIgnoreCase("id"))
       .collect(Collectors.toList());
 
     StringBuilder sb = new StringBuilder("SELECT Id, "); // select id always, since we need it to delete objects.
@@ -187,12 +186,12 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     deployCounter++;
 
     Map<String, String> sinkProperties = new HashMap<>(getBaseProperties(REFERENCE_NAME)
-      .put(SalesforceSinkConfig.PROPERTY_ERROR_HANDLING, "Stop on Error")
-      .put(SalesforceSinkConfig.PROPERTY_SOBJECT, sObject)
-      .put(SalesforceSinkConfig.PROPERTY_OPERATION, "Insert")
-      .put(SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH, "10000000")
-      .put(SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH, "10000")
-      .build());
+                                                         .put(SalesforceSinkConfig.PROPERTY_ERROR_HANDLING, "Stop on Error")
+                                                         .put(SalesforceSinkConfig.PROPERTY_SOBJECT, sObject)
+                                                         .put(SalesforceSinkConfig.PROPERTY_OPERATION, "Insert")
+                                                         .put(SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH, "10000000")
+                                                         .put(SalesforceSinkConfig.PROPERTY_MAX_RECORDS_PER_BATCH, "10000")
+                                                         .build());
 
     sinkProperties.putAll(pluginProperties);
 
@@ -220,7 +219,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     MockSource.writeInput(inputManager, input);
 
     WorkflowManager workflowManager = appManager.getWorkflowManager(SmartWorkflow.NAME);
-    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED,  5, TimeUnit.MINUTES);
+    workflowManager.startAndWaitForRun(ProgramRunStatus.COMPLETED, 5, TimeUnit.MINUTES);
   }
 
   protected SalesforceSinkConfig getDefaultConfig(String sObject) {

@@ -45,14 +45,14 @@ import java.util.stream.Stream;
 
 /**
  * Methods to run ETL with Salesforce Bulk/Streaming plugin as source, and a mock plugin as a sink.
- *
+ * <p>
  * By default all tests will be skipped, since Salesforce credentials are needed.
- *
+ * <p>
  * Instructions to enable the tests:
  * 1. Create/use existing Salesforce account
  * 2. Create connected application within the account to get consumer key and consumer secret.
  * 3. Run the tests using the command below:
- *
+ * <p>
  * mvn clean test
  * -Dsalesforce.test.consumerKey= -Dsalesforce.test.consumerSecret=
  * -Dsalesforce.test.username= -Dsalesforce.test.password=
@@ -60,23 +60,20 @@ import java.util.stream.Stream;
  */
 public abstract class BaseSalesforceETLTest extends HydratorTestBase {
 
-  private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceETLTest.class);
-
+  public static final int SOAP_RECORDS_LIMIT = 200;
   protected static final String CONSUMER_KEY = System.getProperty("salesforce.test.consumerKey");
   protected static final String CONSUMER_SECRET = System.getProperty("salesforce.test.consumerSecret");
   protected static final String USERNAME = System.getProperty("salesforce.test.username");
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
-                                                             "https://login.salesforce.com/services/oauth2/token");
+                                                               "https://login.salesforce.com/services/oauth2/token");
   protected static final String SECURITY_TOKEN = System.getProperty("salesforce.test.securityToken",
-                                                               "");
-
-  public static final int SOAP_RECORDS_LIMIT = 200;
-
+                                                                    "");
+  private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceETLTest.class);
+  protected static PartnerConnection partnerConnection;
   @Rule
   public TestName testName = new TestName();
   protected List<String> createdObjectsIds = new ArrayList<>();
-  protected static PartnerConnection partnerConnection;
 
   @BeforeClass
   public static void initializeTests() throws ConnectionException {
@@ -84,7 +81,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       Assume.assumeNotNull(CONSUMER_KEY, CONSUMER_SECRET, USERNAME, PASSWORD, LOGIN_URL);
     } catch (AssumptionViolatedException e) {
       LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
-        "BaseSalesforceBatchSourceETLTest javadoc");
+                 "BaseSalesforceBatchSourceETLTest javadoc");
       throw e;
     }
 
@@ -112,7 +109,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
    * If save flag is true, saves the objects so that they can be deleted after method is run.
    *
    * @param sObjects list of sobjects to create
-   * @param save if sObjects need to be saved for deletion
+   * @param save     if sObjects need to be saved for deletion
    */
   protected List<String> addSObjects(List<SObject> sObjects, boolean save) {
     // split sObjects into smaller partitions to ensure we don't exceed the limitation

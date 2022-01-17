@@ -111,28 +111,28 @@ public class SalesforceSchemaUtilTest {
     Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult);
 
     Schema expectedSchema = Schema.recordOf("output",
-      Schema.Field.of("Id", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("Amount", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("Percent", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("ConversionRate", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("IsWon", Schema.of(Schema.Type.BOOLEAN)),
-      Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
-      Schema.Field.of("Account_NumberOfEmployees", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("DayOnlyFunc", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("GroupingFunc", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("AvgFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("SumFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
-        Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
-        Schema.Field.of("Owner_Status", Schema.of(Schema.Type.STRING))))));
+                                            Schema.Field.of("Id", Schema.of(Schema.Type.LONG)),
+                                            Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                            Schema.Field.of("Amount", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                            Schema.Field.of("Percent", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                            Schema.Field.of("ConversionRate", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                            Schema.Field.of("IsWon", Schema.of(Schema.Type.BOOLEAN)),
+                                            Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
+                                            Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                                            Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
+                                            Schema.Field.of("Account_NumberOfEmployees", Schema.of(Schema.Type.LONG)),
+                                            Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
+                                            Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
+                                            Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
+                                            Schema.Field.of("DayOnlyFunc", Schema.of(Schema.LogicalType.DATE)),
+                                            Schema.Field.of("GroupingFunc", Schema.of(Schema.Type.INT)),
+                                            Schema.Field.of("AvgFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                            Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
+                                            Schema.Field.of("SumFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                            Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
+                                            Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
+                                                                                                     Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
+                                                                                                     Schema.Field.of("Owner_Status", Schema.of(Schema.Type.STRING))))));
 
     Assert.assertEquals(expectedSchema, actualSchema);
 
@@ -143,15 +143,15 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testValidateSupportedFieldSchemas() {
     Schema schema = Schema.recordOf("schema",
-      Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("LongField", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("DoubleField", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("BooleanField", Schema.nullableOf(Schema.of(Schema.Type.BOOLEAN))),
-      Schema.Field.of("DateField", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("TimestampField", Schema.nullableOf(Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))),
-      Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("ArrayField", Schema.arrayOf(Schema.of(Schema.Type.STRING))));
+                                    Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("LongField", Schema.of(Schema.Type.LONG)),
+                                    Schema.Field.of("DoubleField", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                                    Schema.Field.of("BooleanField", Schema.nullableOf(Schema.of(Schema.Type.BOOLEAN))),
+                                    Schema.Field.of("DateField", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("TimestampField", Schema.nullableOf(Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))),
+                                    Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                                    Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("ArrayField", Schema.arrayOf(Schema.of(Schema.Type.STRING))));
 
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
@@ -160,8 +160,8 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testValidateUnsupportedFieldSchema() {
     Schema schema = Schema.recordOf("schema",
-      Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("BytesField", Schema.of(Schema.Type.BYTES)));
+                                    Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("BytesField", Schema.of(Schema.Type.BYTES)));
 
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSchemaUtil.validateFieldSchemas(schema, collector);
@@ -171,15 +171,15 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testCheckCompatibilitySuccess() {
     Schema actualSchema = Schema.recordOf("actualSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
-      Schema.Field.of("ExtraField", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("Comment", Schema.of(Schema.Type.STRING)));
+                                          Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
+                                          Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
+                                          Schema.Field.of("ExtraField", Schema.of(Schema.Type.STRING)),
+                                          Schema.Field.of("Comment", Schema.of(Schema.Type.STRING)));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
-      Schema.Field.of("Comment", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
+                                            Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
+                                            Schema.Field.of("StartDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
+                                            Schema.Field.of("Comment", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
 
     SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
   }
@@ -187,10 +187,10 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testCheckCompatibilityMissingField() {
     Schema actualSchema = Schema.recordOf("actualSchema",
-      Schema.Field.of("Comment", Schema.of(Schema.Type.STRING)));
+                                          Schema.Field.of("Comment", Schema.of(Schema.Type.STRING)));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
+                                            Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
 
     thrown.expect(IllegalArgumentException.class);
 
@@ -200,10 +200,10 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testCheckCompatibilityIncorrectType() {
     Schema actualSchema = Schema.recordOf("actualSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)));
+                                          Schema.Field.of("Id", Schema.of(Schema.Type.STRING)));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
+                                            Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
 
     thrown.expect(IllegalArgumentException.class);
 
@@ -213,10 +213,10 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testCheckCompatibilityIncorrectLogicalType() {
     Schema actualSchema = Schema.recordOf("actualSchema",
-      Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)));
+                                          Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
-      Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIME_MICROS)));
+                                            Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIME_MICROS)));
 
     thrown.expect(IllegalArgumentException.class);
 
@@ -226,10 +226,10 @@ public class SalesforceSchemaUtilTest {
   @Test
   public void testCheckCompatibilityIncorrectNullability() {
     Schema actualSchema = Schema.recordOf("actualSchema",
-      Schema.Field.of("Id", Schema.nullableOf(Schema.of(Schema.Type.INT))));
+                                          Schema.Field.of("Id", Schema.nullableOf(Schema.of(Schema.Type.INT))));
 
     Schema providedSchema = Schema.recordOf("providedSchema",
-      Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
+                                            Schema.Field.of("Id", Schema.of(Schema.Type.INT)));
 
     thrown.expect(IllegalArgumentException.class);
 

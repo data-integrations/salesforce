@@ -60,6 +60,10 @@ import java.util.stream.Collectors;
  * {@inheritDoc}
  */
 public abstract class BaseSalesforceStreamingSourceETLTest extends BaseSalesforceETLTest {
+  @ClassRule
+  public static final TestConfiguration CONFIG =
+    new TestConfiguration(Constants.Explore.EXPLORE_ENABLED, false,
+                          Constants.AppFabric.SPARK_COMPAT, Compat.SPARK_COMPAT);
   private static final Logger LOG = LoggerFactory.getLogger(BaseSalesforceStreamingSourceETLTest.class);
   private static final ArtifactId APP_ARTIFACT_ID = NamespaceId.DEFAULT.artifact("data-streams", "1.0.0");
   private static final ArtifactSummary APP_ARTIFACT = new ArtifactSummary("data-streams", "1.0.0");
@@ -68,11 +72,6 @@ public abstract class BaseSalesforceStreamingSourceETLTest extends BaseSalesforc
   private static final String SALESFORCE_RECEIVER_NAME_PREFIX = "salesforce_streaming_api_listener";
   private static final int WAIT_FOR_RECORDS_TIMEOUT_SECONDS = 60;
   private static final long WAIT_FOR_RECORDS_POLLING_INTERVAL_MS = 100;
-
-  @ClassRule
-  public static final TestConfiguration CONFIG =
-    new TestConfiguration(Constants.Explore.EXPLORE_ENABLED, false,
-                          Constants.AppFabric.SPARK_COMPAT, Compat.SPARK_COMPAT);
 
   @BeforeClass
   public static void setupTest() throws Exception {
@@ -167,7 +166,7 @@ public abstract class BaseSalesforceStreamingSourceETLTest extends BaseSalesforc
   /**
    * Checks if Spark Receiver has started by checking if spark_salesforce_receiver thread started.
    * This usually happens in ~15 seconds after pipeline status changes to "running".
-   *
+   * <p>
    * We need this to understand when Spark starts listening for events. So we can submit data to
    * Salesforce and receive data.
    *

@@ -57,9 +57,9 @@ public class SalesforceSourceConfigTest {
   @Test
   public void testEmptyDuration() {
     Stream.of(
-      null,
-      "",
-      "      ")
+        null,
+        "",
+        "      ")
       .map(value -> new SalesforceSourceConfigBuilder().setDuration(value).build())
       .map(SalesforceBaseSourceConfig::getDuration)
       .forEach(duration -> Assert.assertEquals(Collections.emptyMap(), duration));
@@ -68,9 +68,9 @@ public class SalesforceSourceConfigTest {
   @Test
   public void testEmptyOffset() {
     Stream.of(
-      null,
-      "",
-      "      ")
+        null,
+        "",
+        "      ")
       .map(value -> new SalesforceSourceConfigBuilder().setOffset(value).build())
       .map(SalesforceBaseSourceConfig::getOffset)
       .forEach(offset -> Assert.assertEquals(Collections.emptyMap(), offset));
@@ -129,13 +129,13 @@ public class SalesforceSourceConfigTest {
   @Test
   public void testGetDurationException() {
     Stream.of(
-      "2 abc",
-      "HOURS HOURS",
-      "1;HOURS",
-      "1    HOURS;2 DAYS",
-      "1 HOURS,2",
-      "1 days, 2 days, 1 hours"
-    )
+        "2 abc",
+        "HOURS HOURS",
+        "1;HOURS",
+        "1    HOURS;2 DAYS",
+        "1 HOURS,2",
+        "1 days, 2 days, 1 hours"
+      )
       .forEach(value -> {
         try {
           SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
@@ -170,13 +170,13 @@ public class SalesforceSourceConfigTest {
   @Test
   public void testGetOffsetException() {
     Stream.of(
-      "2 abc",
-      "HOURS HOURS",
-      "1;HOURS",
-      "1 HOURS;2 DAYS",
-      "1 HOURS,2",
-      "1 days, 2 days, 1 hours"
-    )
+        "2 abc",
+        "HOURS HOURS",
+        "1;HOURS",
+        "1 HOURS;2 DAYS",
+        "1 HOURS,2",
+        "1 days, 2 days, 1 hours"
+      )
       .forEach(value -> {
         try {
           SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
@@ -273,5 +273,43 @@ public class SalesforceSourceConfigTest {
       failure = e.getFailures().get(0);
     }
     Assert.assertEquals(stageConfigName, failure.getCauses().get(0).getAttribute(CauseAttributes.STAGE_CONFIG));
+  }
+
+  @Test
+  public void testValidateFilters() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("")
+      .setSObjectName("Account")
+      .setDatetimeBefore("test")
+      .setDatetimeAfter("test")
+      .setDuration("5 days")
+      .setOffset("5 days")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    mock.validate(collector);
+    Assert.assertEquals(2, collector.getValidationFailures().size());
+
+  }
+
+  @Test
+  public void testValidateFiltersWithNonEmptyInvalidValues() {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+      .setQuery("")
+      .setSObjectName("Account")
+      .setDatetimeBefore("test")
+      .setDatetimeAfter("test")
+      .setDuration("-1 days")
+      .setOffset("-1 days")
+      .build();
+
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    mock.validate(collector);
+    Assert.assertEquals(4, collector.getValidationFailures().size());
+
   }
 }

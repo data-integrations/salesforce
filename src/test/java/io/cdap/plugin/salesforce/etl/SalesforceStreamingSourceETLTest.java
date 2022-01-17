@@ -94,8 +94,8 @@ public class SalesforceStreamingSourceETLTest extends BaseSalesforceStreamingSou
   public void testValuesReturned() throws Exception {
     String query = "SELECT Id, StageName, IsDeleted, Type, TotalOpportunityQuantity, CloseDate FROM Opportunity";
     ProgramManager programManager = startPipeline(ImmutableMap.<String, String>builder()
-      .put("pushTopicQuery", query)
-      .build());
+                                                    .put("pushTopicQuery", query)
+                                                    .build());
 
     Instant now = OffsetDateTime.now(ZoneOffset.UTC).toInstant();
 
@@ -119,8 +119,8 @@ public class SalesforceStreamingSourceETLTest extends BaseSalesforceStreamingSou
     StructuredRecord record = records.get(0);
 
     Assert.assertEquals("Proposal", record.get("StageName"));
-    Assert.assertFalse((boolean) record.get("IsDeleted"));
-    Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
+    Assert.assertFalse(record.get("IsDeleted"));
+    Assert.assertEquals(25.0, record.get("TotalOpportunityQuantity"), 0.01);
     Assert.assertEquals(LocalDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate(), record.getDate("CloseDate"));
   }
 
@@ -192,8 +192,8 @@ public class SalesforceStreamingSourceETLTest extends BaseSalesforceStreamingSou
     StructuredRecord record = records.get(0);
 
     Assert.assertEquals("Proposal", record.get("StageName"));
-    Assert.assertFalse((boolean) record.get("IsDeleted"));
-    Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
+    Assert.assertFalse(record.get("IsDeleted"));
+    Assert.assertEquals(25.0, record.get("TotalOpportunityQuantity"), 0.01);
     Assert.assertEquals(LocalDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate(), record.getDate("CloseDate"));
   }
 

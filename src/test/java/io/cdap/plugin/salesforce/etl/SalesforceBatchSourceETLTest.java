@@ -158,8 +158,8 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     StructuredRecord record = records.get(0);
 
     Assert.assertEquals("Proposal", record.get("StageName"));
-    Assert.assertFalse((boolean) record.get("IsDeleted"));
-    Assert.assertEquals(25.0, (double) record.get("TotalOpportunityQuantity"), 0.01);
+    Assert.assertFalse(record.get("IsDeleted"));
+    Assert.assertEquals(25.0, record.get("TotalOpportunityQuantity"), 0.01);
     Assert.assertEquals(LocalDateTime.ofInstant(now, ZoneOffset.UTC).toLocalDate(), record.getDate("CloseDate"));
   }
 
@@ -283,7 +283,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     addSObjects(Collections.singletonList(sObject), false);
 
     Schema providedSchema = Schema.recordOf("output",
-      Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
+                                            Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))));
 
     List<StructuredRecord> results = getResultsBySObjectQuery(sObjectName, null, null, providedSchema.toString());
 
@@ -321,9 +321,9 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     String sObjectName = createCustomObject("IT_IncFilter", null);
 
     SObject sObject1 = new SObjectBuilder()
-        .setType(sObjectName)
-        .put("Name", "Fred")
-        .build();
+      .setType(sObjectName)
+      .put("Name", "Fred")
+      .build();
 
     addSObjects(Collections.singletonList(sObject1), false);
 
@@ -429,8 +429,8 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     // field order should match
     Assert.assertEquals(expectedFieldNames, actualFieldNames);
     Assert.assertEquals("Bamm-Bamm", results.get(0).get("Name"));
-    Assert.assertEquals(3.33, (double) results.get(0).get("CustomField__Latitude__s"), 0.0);
-    Assert.assertEquals(55.779, (double) results.get(0).get("CustomField__Longitude__s"), 0.0);
+    Assert.assertEquals(3.33, results.get(0).get("CustomField__Latitude__s"), 0.0);
+    Assert.assertEquals(55.779, results.get(0).get("CustomField__Longitude__s"), 0.0);
   }
 
   @Test
@@ -481,8 +481,8 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertEquals(1, results.size());
     Assert.assertEquals("Dino", results.get(0).get("Name"));
     Assert.assertEquals("2", results.get(0).get("maxDesc"));
-    Assert.assertEquals(1.0, (double) results.get(0).get("avgLat"), 0.0);
-    Assert.assertEquals(3.0, (double) results.get(0).get("sumLon"), 0.0);
+    Assert.assertEquals(1.0, results.get(0).get("avgLat"), 0.0);
+    Assert.assertEquals(3.0, results.get(0).get("sumLon"), 0.0);
     Assert.assertEquals(numberOfRecords, (long) results.get(0).get("cnt"));
   }
 
