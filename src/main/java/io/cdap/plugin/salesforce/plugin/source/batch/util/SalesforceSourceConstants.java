@@ -31,6 +31,7 @@ public class SalesforceSourceConstants {
 
   public static final String PROPERTY_QUERY = "query";
   public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
+  public static final String PROPERTY_OPERATION = "operation";
 
   public static final String PROPERTY_PK_CHUNK_ENABLE_NAME = "enablePKChunk";
   public static final String PROPERTY_CHUNK_SIZE_NAME = "chunkSize";
