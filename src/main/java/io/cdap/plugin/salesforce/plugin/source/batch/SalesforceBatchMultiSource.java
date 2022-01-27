@@ -39,9 +39,11 @@ import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -60,7 +62,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
 
   private final SalesforceMultiSourceConfig config;
   private MapToRecordTransformer transformer;
-  private List<String> jobIds = new ArrayList<>();
+  private Set<String> jobIds = new HashSet<>();
   private AuthenticatorCredentials authenticatorCredentials;
 
   public SalesforceBatchMultiSource(SalesforceMultiSourceConfig config) {
@@ -71,6 +73,12 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
     config.validate(stageConfigurer.getFailureCollector()); // validate before macros are substituted
+
+    // if connection params are macro or null
+    if (!config.canAttemptToEstablishConnection()) {
+      return;
+    }
+    config.validateSObjects(stageConfigurer.getFailureCollector());
     stageConfigurer.setOutputSchema(null);
   }
 
@@ -78,6 +86,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     FailureCollector collector = context.getFailureCollector();
     config.validate(collector);
+    config.validateSObjects(collector);
     collector.getOrThrowException();
 
     List<String> queries = config.getQueries(context.getLogicalStartTime());

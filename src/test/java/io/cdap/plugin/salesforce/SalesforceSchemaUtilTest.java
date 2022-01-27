@@ -150,7 +150,8 @@ public class SalesforceSchemaUtilTest {
       Schema.Field.of("DateField", Schema.of(Schema.LogicalType.DATE)),
       Schema.Field.of("TimestampField", Schema.nullableOf(Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))),
       Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)));
+      Schema.Field.of("StringField", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("ArrayField", Schema.arrayOf(Schema.of(Schema.Type.STRING))));
 
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSchemaUtil.validateFieldSchemas(schema, collector);

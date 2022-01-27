@@ -53,6 +53,7 @@ public class SalesforceSchemaUtil {
     .put(FieldType.datetime, Schema.of(Schema.LogicalType.TIMESTAMP_MICROS))
     .put(FieldType.time, Schema.of(Schema.LogicalType.TIME_MICROS))
     .put(FieldType.string, Schema.of(Schema.Type.STRING))
+    .put(FieldType.complexvalue, Schema.arrayOf(Schema.of(Schema.Type.STRING)))
     .build();
 
   private static final Set<Schema.Type> SUPPORTED_TYPES =

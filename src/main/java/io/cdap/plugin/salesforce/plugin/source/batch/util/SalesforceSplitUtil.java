@@ -37,6 +37,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -195,7 +196,7 @@ public final class SalesforceSplitUtil {
     throw new BulkAPIBatchException("Timeout waiting for batch results", initialBatchInfo);
   }
 
-  public static void closeJobs(List<String> jobIds, AuthenticatorCredentials authenticatorCredentials) {
+  public static void closeJobs(Set<String> jobIds, AuthenticatorCredentials authenticatorCredentials) {
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     RuntimeException runtimeException = null;
     for (String jobId : jobIds) {
