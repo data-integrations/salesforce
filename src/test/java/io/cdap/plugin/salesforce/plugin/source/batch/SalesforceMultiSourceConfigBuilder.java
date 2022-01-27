@@ -34,6 +34,7 @@ public class SalesforceMultiSourceConfigBuilder {
   private String sObjectNameField;
   private String securityToken;
   private OAuthInfo oAuthInfo;
+  private String operation;
 
   public SalesforceMultiSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -110,11 +111,14 @@ public class SalesforceMultiSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceMultiSourceConfigBuilder setOperation(String operation) {
+    this.operation = operation;
+    return this;
+  }
 
   public SalesforceMultiSourceConfig build() {
     return new SalesforceMultiSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                            datetimeAfter, datetimeBefore, duration, offset, whiteList,
-                                           blackList, sObjectNameField, securityToken, oAuthInfo
-    );
+                                           blackList, sObjectNameField, securityToken, oAuthInfo, operation);
   }
 }

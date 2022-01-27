@@ -75,6 +75,10 @@ from 3am (inclusive) to 9am (exclusive). The duration is specified using numbers
 Several units can be specified, but each unit can only be used once. For example, `2 days, 1 hours, 30 minutes`.
 The duration is ignored if a value is already specified for `Last Modified After` or `Last Modified Before`.
 
+**Query Operation:**
+Specify the query operation to run on the table. If query is selected, only current records will be returned.
+If queryAll is selected, all current and deleted records will be returned. Default operation is query.
+
 **Offset:** Filter data to only read records where the system field `LastModifiedDate` is less than the logical start time 
 of the pipeline minus the given offset. For example, if duration is '6 hours' and the offset is '1 hours', and the pipeline 
 runs at 9am, data last modified between 2am (inclusive) and 8am (exclusive) will be read. 
