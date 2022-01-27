@@ -171,6 +171,25 @@
           "widget-attributes" : {
             "placeholder": "Salesforce object parent name"
           }
+        },
+        {
+          "widget-type": "radio-group",
+          "label": "SOQL Operation Type",
+          "name": "operation",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "query",
+            "options": [
+              {
+                "id": "query",
+                "label": "query"
+              },
+              {
+                "id": "queryAll",
+                "label": "queryAll"
+              }
+            ]
+          }
         }
       ]
     }
