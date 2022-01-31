@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.sforce.async.OperationEnum;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -75,6 +76,14 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   @Macro
   private String offset;
 
+  @Name(SalesforceSourceConstants.PROPERTY_OPERATION)
+  @Description("If set to query, the query result will only return current rows. If set to queryAll, " +
+          "all records, including deletes will be sourced")
+  @Nullable
+  private String operation;
+
+  private static final String DEFAULT_OPERATION = "query";
+
   protected SalesforceBaseSourceConfig(String referenceName,
                                        String consumerKey,
                                        String consumerSecret,
@@ -85,12 +94,14 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
                                        @Nullable String offset,
-                                       @Nullable String securityToken) {
+                                       @Nullable String securityToken,
+                                       @Nullable String operation) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
+    this.operation = operation;
   }
 
   public Map<ChronoUnit, Integer> getDuration() {
@@ -129,6 +140,11 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     }
     try {
       validateRangeFilterProperty(SalesforceSourceConstants.PROPERTY_OFFSET, getOffset());
+    } catch (InvalidConfigException e) {
+      collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
+    try {
+      validateOperationProperty(SalesforceSourceConstants.PROPERTY_OPERATION, getOperation());
     } catch (InvalidConfigException e) {
       collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
     }
@@ -189,7 +205,6 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     return filterDescriptor;
   }
 
-  @Nullable
   private void validateIntervalFilterProperty(String propertyName, String datetime) {
     if (containsMacro(propertyName)) {
       return;
@@ -200,6 +215,16 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
       throw new InvalidConfigException(
         String.format("Invalid SObject '%s' value: '%s'. Value must be in Salesforce Date Formats. For example, "
                         + "2019-01-01T23:01:01Z", propertyName, datetime), propertyName);
+    }
+  }
+
+  private void validateOperationProperty(String propertyName, String operation) {
+    try {
+      OperationEnum.valueOf(operation);
+    } catch (InvalidConfigException e) {
+      throw new InvalidConfigException(
+              String.format("Invalid Query Operation: '%s' value: '%s'. Valid values are query and queryAll.",
+                      propertyName, operation), propertyName);
     }
   }
 
@@ -268,5 +293,9 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   @Nullable
   private ZonedDateTime parseDatetime(String datetime) throws DateTimeParseException {
     return StringUtils.isBlank(datetime) ? null : ZonedDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME);
+  }
+
+  public String getOperation() {
+    return operation == null ? DEFAULT_OPERATION : operation;
   }
 }

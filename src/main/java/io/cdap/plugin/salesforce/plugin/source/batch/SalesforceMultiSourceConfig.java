@@ -81,9 +81,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                               @Nullable String whiteList,
                               @Nullable String blackList,
                               @Nullable String sObjectNameField,
-                              @Nullable String securityToken) {
+                              @Nullable String securityToken,
+                              @Nullable String operation) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, operation);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;

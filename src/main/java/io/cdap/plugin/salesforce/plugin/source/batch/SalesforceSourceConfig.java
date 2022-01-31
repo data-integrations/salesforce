@@ -102,11 +102,12 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String offset,
                          @Nullable String schema,
                          @Nullable String securityToken,
+                         @Nullable String operation,
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
                          @Nullable String parent) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, operation);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;
