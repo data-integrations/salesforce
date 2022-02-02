@@ -266,4 +266,10 @@ public class SalesforceQueryParserTest {
       Collections.singletonList(new SObjectDescriptor("Contacts", fields)),
       result.getChildSObjects());
   }
+
+  @Test
+  public void testParseFailure() {
+    String query = "SELECT Data FROM BackgroundOperationResult";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
 }

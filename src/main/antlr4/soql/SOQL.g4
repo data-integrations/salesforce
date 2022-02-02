@@ -59,6 +59,7 @@ WHITESPACE	        : (' ' | '\t' | '\r' | '\n' )+ -> skip ;
 keyword             : GROUP
                     | ORDER
                     | CATEGORY
+                    | DATA
                     ;
 
 SELECT              : S E L E C T ;
