@@ -60,6 +60,7 @@ keyword             : GROUP
                     | ORDER
                     | CATEGORY
                     | DATA
+                    | SCOPE
                     ;
 
 SELECT              : S E L E C T ;
