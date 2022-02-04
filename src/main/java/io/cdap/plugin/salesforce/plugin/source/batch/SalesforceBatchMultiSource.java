@@ -32,7 +32,6 @@ import io.cdap.cdap.etl.api.action.SettableArguments;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -97,11 +96,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
 
     String sObjectNameField = config.getSObjectNameField();
-    authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
-                                                                                    config.getPassword(),
-                                                                                    config.getConsumerKey(),
-                                                                                    config.getConsumerSecret(),
-                                                                                    config.getLoginUrl());
+    authenticatorCredentials = config.getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     List<SalesforceSplit> querySplits = queries.parallelStream()
       .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
