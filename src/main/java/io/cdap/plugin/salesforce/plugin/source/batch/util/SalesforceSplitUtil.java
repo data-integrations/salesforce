@@ -26,7 +26,6 @@ import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -123,22 +122,6 @@ public final class SalesforceSplitUtil {
     return batchInfos;
   }
 
-
-  /**
-   * Initializes bulk connection based on given Hadoop credentials configuration.
-   *
-   * @return bulk connection instance
-   */
-  public static BulkConnection getBulkConnection(String username, String password,
-                                                 String consumerKey, String consumerSecret, String loginUrl) {
-    AuthenticatorCredentials authenticatorCredentials = SalesforceConnectionUtil
-      .getAuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
-    try {
-      return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
-    } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
-    }
-  }
 
   /**
    * Initializes bulk connection based on given Hadoop credentials configuration.
