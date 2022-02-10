@@ -21,7 +21,6 @@ import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -71,10 +70,7 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());
     }
 
-    AuthenticatorCredentials credentials =
-      SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(), config.getPassword(),
-                                                           config.getConsumerKey(), config.getConsumerSecret(),
-                                                           config.getLoginUrl());
+    AuthenticatorCredentials credentials = config.getAuthenticatorCredentials();
 
     try {
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));

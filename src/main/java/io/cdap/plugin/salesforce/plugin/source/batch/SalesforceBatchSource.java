@@ -35,7 +35,6 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -112,11 +111,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
     String query = config.getQuery(context.getLogicalStartTime());
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-    authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
-                                                                                    config.getPassword(),
-                                                                                    config.getConsumerKey(),
-                                                                                    config.getConsumerSecret(),
-                                                                                    config.getLoginUrl());
+    authenticatorCredentials = config.getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     boolean enablePKChunk = config.getEnablePKChunk();
     if (enablePKChunk) {

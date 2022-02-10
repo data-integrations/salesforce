@@ -61,19 +61,4 @@ public class SalesforceConnectionUtil {
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
                                         conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
   }
-  /**
-   * Creates {@link AuthenticatorCredentials} instance based on given parameters.
-   *
-   * @param username Salesforce username
-   * @param password Salesforce password
-   * @param consumerKey Salesforce consumer key
-   * @param consumerSecret Salesforce consumer secret
-   * @param loginUrl Salesforce authentication url
-   * @return authenticator credentials
-   */
-  public static AuthenticatorCredentials getAuthenticatorCredentials(String username, String password,
-                                                                     String consumerKey, String consumerSecret,
-                                                                     String loginUrl) {
-    return new AuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
-  }
 }
