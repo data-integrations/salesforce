@@ -59,7 +59,9 @@ WHITESPACE	        : (' ' | '\t' | '\r' | '\n' )+ -> skip ;
 keyword             : GROUP
                     | ORDER
                     | CATEGORY
-                    | DATA
+                    ;
+
+selectKey           : DATA
                     | SCOPE
                     ;
 
@@ -237,6 +239,7 @@ fieldList           : '*' # starElement
                     ;
 
 fieldElement        : subquery
+                    | specialFieldName
                     | fieldName
                     | functionCall
                     | typeOfClause
@@ -250,6 +253,10 @@ subquery            : '('
                         (LIMIT numberOfRowsToReturn)?
                         (OFFSET numberOfRowsToSkip)?
                       ')' ;
+
+selectKeyField      : selectKey ('.' selectKey)* ;
+
+specialFieldName    : selectKeyField alias?;
 
 fieldName           : field alias?; // only for aggregate queries
 
