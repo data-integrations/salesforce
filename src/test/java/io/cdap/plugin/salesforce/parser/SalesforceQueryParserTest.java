@@ -268,7 +268,7 @@ public class SalesforceQueryParserTest {
   }
 
   @Test
-  public void testParseFailure() {
+  public void testKeywordInQuery() {
     String query = "SELECT Data FROM BackgroundOperationResult";
     SalesforceQueryParser.getObjectDescriptorFromQuery(query);
   }
