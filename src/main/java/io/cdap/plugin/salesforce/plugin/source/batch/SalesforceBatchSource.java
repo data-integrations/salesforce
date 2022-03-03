@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -172,7 +173,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    *
    * @return provided schema if present, otherwise actual schema
    */
-  private Schema retrieveSchema() {
+  @VisibleForTesting
+  public Schema retrieveSchema() {
     Schema providedSchema = config.getSchema();
     Schema actualSchema = getSchema(config);
     if (providedSchema != null) {
