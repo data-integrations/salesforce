@@ -17,10 +17,14 @@
 package io.cdap.plugin.salesforcebatchsource.actions;
 
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.e2e.pages.actions.CdfBigQueryPropertiesActions;
+import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
+import io.cdap.e2e.pages.actions.CdfStudioActions;
+import io.cdap.e2e.pages.locators.CdfStudioLocators;
 import io.cdap.e2e.utils.AssertionHelper;
+import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.e2e.utils.SeleniumHelper;
-import io.cdap.e2e.utils.WaitHelper;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfig;
@@ -31,37 +35,32 @@ import io.cdap.plugin.utils.SchemaFieldTypeMapping;
 import io.cdap.plugin.utils.SchemaTable;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cdap.plugin.utils.enums.SObjects;
-import io.cdap.plugin.utils.enums.SalesforceBatchSourceProperty;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.openqa.selenium.WebElement;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.IOException;
 import java.util.List;
 
 /**
  * Salesforce source plugins - Actions.
  */
 public class SalesforcePropertiesPageActions {
-  private static final Logger logger = LoggerFactory.getLogger(SalesforcePropertiesPageActions.class);
 
   static {
     SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
   }
 
   public static void fillReferenceName(String referenceName) {
-    logger.info("Fill Reference name: " + referenceName);
-    SalesforcePropertiesPage.referenceInput.sendKeys(referenceName);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.referenceNameInput, referenceName);
   }
 
   public static void fillAuthenticationProperties(String username, String password, String securityToken,
                                                   String consumerKey, String consumerSecret) {
-    logger.info("Fill Authentication properties for user: " + username);
-    SalesforcePropertiesPage.usernameInput.sendKeys(username);
-    SalesforcePropertiesPage.passwordInput.sendKeys(password);
-    SalesforcePropertiesPage.securityTokenInput.sendKeys(securityToken);
-    SalesforcePropertiesPage.consumerKeyInput.sendKeys(consumerKey);
-    SalesforcePropertiesPage.consumerSecretInput.sendKeys(consumerSecret);
+
+    ElementHelper.sendKeys(SalesforcePropertiesPage.usernameInput, username);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.passwordInput, password);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.securityTokenInput, securityToken);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.consumerKeyInput, consumerKey);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.consumerSecretInput, consumerSecret);
   }
 
   public static void fillAuthenticationPropertiesForSalesforceAdminUser() {
@@ -83,8 +82,7 @@ public class SalesforcePropertiesPageActions {
   }
 
   public static void fillSOQLPropertyField(SOQLQueryType queryType) {
-    logger.info("Fill SOQL Query field for Type: " + queryType + " using the Query: " + queryType.query);
-    SalesforcePropertiesPage.soqlTextarea.sendKeys(queryType.query);
+      SalesforcePropertiesPage.soqlTextarea.sendKeys(queryType.query);
   }
 
   public static void configureSalesforcePluginForSoqlQuery(SOQLQueryType queryType) {
@@ -94,33 +92,13 @@ public class SalesforcePropertiesPageActions {
   }
 
   public static void fillSObjectName(String sObjectName) {
-    SalesforcePropertiesPage.sObjectNameInput.sendKeys(sObjectName);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.sObjectNameInput, sObjectName);
   }
 
   public static void configureSalesforcePluginForSObjectQuery(SObjects sObjectName) {
     String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
     fillReferenceName(referenceName);
     fillSObjectName(sObjectName.value);
-  }
-
-  public static void clickOnGetSchemaButton() {
-    logger.info("Click on the Get Schema button");
-    SalesforcePropertiesPage.getSchemaButton.click();
-    WaitHelper.waitForElementToBeDisplayed(SalesforcePropertiesPage.loadingSpinnerOnGetSchemaButton);
-    WaitHelper.waitForElementToBeHidden(SalesforcePropertiesPage.loadingSpinnerOnGetSchemaButton);
-    WaitHelper.waitForElementToBeDisplayed(SalesforcePropertiesPage.getSchemaButton);
-  }
-
-  public static void clickOnValidateButton() {
-    logger.info("Click on the Validate button");
-    SalesforcePropertiesPage.validateButton.click();
-    WaitHelper.waitForElementToBeDisplayed(SalesforcePropertiesPage.loadingSpinnerOnValidateButton);
-    WaitHelper.waitForElementToBeHidden(SalesforcePropertiesPage.loadingSpinnerOnValidateButton);
-    WaitHelper.waitForElementToBeDisplayed(SalesforcePropertiesPage.validateButton);
-  }
-
-  public static void verifyNoErrorsFoundSuccessMessage() {
-    AssertionHelper.verifyElementDisplayed(SalesforcePropertiesPage.noErrorsFoundSuccessMessage);
   }
 
   private static AuthenticatorCredentials setAuthenticationCredentialsOfAdminUser() {
@@ -214,51 +192,21 @@ public class SalesforcePropertiesPageActions {
   }
 
   public static void clickOnClosePropertiesPageButton() {
-    logger.info("Close the Salesforce (batch) source properties page");
     SalesforcePropertiesPage.closePropertiesPageButton.click();
   }
-
-  public static void verifyRequiredFieldsMissingValidationMessage(SalesforceBatchSourceProperty propertyName) {
-    WebElement element = SalesforcePropertiesPage.getPropertyInlineErrorMessage(propertyName);
-
-    AssertionHelper.verifyElementDisplayed(element);
-    AssertionHelper.verifyElementContainsText(element, propertyName.propertyMissingValidationMessage);
+  public static void fillLastModifyAfter(String lastModifyafterLocation) {
+    ElementHelper.clearElementValue(SalesforcePropertiesPage.lastModifiedAfterInput);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedAfterInput,
+            PluginPropertyUtils.pluginProp(lastModifyafterLocation));
   }
 
-  public static void verifyPropertyInlineErrorMessage(SalesforceBatchSourceProperty property,
-                                                      String expectedErrorMessage) {
-    WebElement element = SalesforcePropertiesPage.getPropertyInlineErrorMessage(property);
-
-    AssertionHelper.verifyElementDisplayed(element);
-    AssertionHelper.verifyElementContainsText(element, expectedErrorMessage);
+  public static void closePluginPropertiesPage() {
+    CdfPluginPropertiesActions.clickCloseButton();
   }
 
-  public static void verifyInvalidSoqlQueryErrorMessageForStarQueries() {
-    verifyPropertyInlineErrorMessage(SalesforceBatchSourceProperty.SOQL_QUERY,
-      PluginPropertyUtils.errorProp("invalid.soql.starquery"));
-  }
 
-  public static void verifyErrorMessageOnHeader(String expectedErrorMessage) {
-    AssertionHelper.verifyElementContainsText(SalesforcePropertiesPage.errorMessageOnHeader,
-      expectedErrorMessage);
-  }
-
-  public static void verifyValidationMessageForBlankAuthenticationProperty() {
-    verifyErrorMessageOnHeader(PluginPropertyUtils.errorProp("empty.authentication.property"));
-  }
-
-  public static void verifyValidationMessageForInvalidAuthenticationProperty() {
-    verifyErrorMessageOnHeader(PluginPropertyUtils.errorProp("invalid.authentication.property"));
-  }
-
-  public static void verifyValidationMessageForMissingSoqlOrSobjectNameProperty() {
-    verifyErrorMessageOnHeader(PluginPropertyUtils.errorProp("required.property.soqlorsobjectname.error"));
-    verifyRequiredFieldsMissingValidationMessage(SalesforceBatchSourceProperty.SOQL_QUERY);
-  }
-
-  public static void verifyValidationMessageForInvalidSObjectName(String invalidSObjectName) {
-    String expectedValidationMessage = PluginPropertyUtils.errorProp(
-      "invalid.sobjectname.error") + " '" + invalidSObjectName + "''";
-    verifyErrorMessageOnHeader(expectedValidationMessage);
+  public static void clickPreviewAndConfigure() {
+    CdfStudioActions.openPreviewMenu();
+    SalesforcePropertiesPage.previewConfigRunButton.click();
   }
 }

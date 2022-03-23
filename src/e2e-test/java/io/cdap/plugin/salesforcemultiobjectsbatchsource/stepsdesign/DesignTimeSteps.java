@@ -19,6 +19,7 @@ package io.cdap.plugin.salesforcemultiobjectsbatchsource.stepsdesign;
 import io.cdap.plugin.salesforcemultiobjectsbatchsource.actions.SalesforceMultiObjectsPropertiesPageActions;
 import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
