@@ -17,7 +17,6 @@
 package io.cdap.plugin.salesforcebatchsource.stepsdesign;
 
 import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
-import io.cdap.e2e.utils.CdfHelper;
 import io.cdap.plugin.salesforcebatchsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.utils.SchemaTable;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
@@ -27,13 +26,10 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.IOException;
-
 /**
  * Design-time steps of Salesforce plugins.
  */
-public class DesignTimeSteps implements CdfHelper {
-  String invalidSobjectName = "blahblah";
+public class DesignTimeSteps {
 
   @When("fill Reference Name property")
   public void fillReferenceNameProperty() {
@@ -49,6 +45,12 @@ public class DesignTimeSteps implements CdfHelper {
   @When("fill Authentication properties for Salesforce Admin user")
   public void fillAuthenticationPropertiesForSalesforceAdminUser() {
     SalesforcePropertiesPageActions.fillAuthenticationPropertiesForSalesforceAdminUser();
+  }
+
+  @When("Click on the Macro button of SOQL Property: {string} and set the value to: {string}")
+  public void fillValueInMacroEnabledSoqlProperty(String property, String value) {
+    CdfPluginPropertiesActions.clickMacroButtonOfProperty(property);
+    SalesforcePropertiesPageActions.fillSOQLPropertyField(value);
   }
 
   @When("configure Salesforce source for an SOQL Query of type: {string}")
@@ -75,33 +77,23 @@ public class DesignTimeSteps implements CdfHelper {
     SalesforcePropertiesPageActions.verifyOutputSchemaTable(schemaTable);
   }
 
-  @When("close plugin properties page")
-  public void closePluginPropertiesPage() {
-    SalesforcePropertiesPageActions.clickOnClosePropertiesPageButton();
+  @When("fill SOQL Query field with a Query: {string}")
+  public void fillSoqlQueryFieldWithStarQuery(String query) {
+    SalesforcePropertiesPageActions.fillSOQLPropertyField(SOQLQueryType.valueOf(query));
   }
 
-  @When("fill SOQL Query field with a Star Query")
-  public void fillSoqlQueryFieldWithStarQuery() {
-    SalesforcePropertiesPageActions.fillSOQLPropertyField(SOQLQueryType.STAR);
+  @When("fill SObject Name property with an SObject Name: {string}")
+  public void fillSObjectNameFieldWithInvalidValue(String sObjectName) {
+    SalesforcePropertiesPageActions.fillSObjectName(sObjectName);
   }
 
-  @When("fill SObject Name property with an invalid value")
-  public void fillSObjectNameFieldWithInvalidValue() {
-    SalesforcePropertiesPageActions.fillSObjectName(invalidSobjectName);
+  @And("fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: {string}")
+  public void fillLastModifiedAfter(String value) {
+    SalesforcePropertiesPageActions.fillLastModifiedAfter(value);
   }
 
-  @And("Close the Plugin Properties Page")
-  public void closeThePluginPropertiesPage() {
-    SalesforcePropertiesPageActions.closePluginPropertiesPage();
-  }
-
-
-  @And("fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: {string}")
-  public void fillLastModifiedAfterInFormatYyyyMMDdThhMmSsZ(String lastModifiedAfterLocation) {
-    SalesforcePropertiesPageActions.fillLastModifyAfter(lastModifiedAfterLocation);
-  }
-  @And("then click on preview and configure")
-  public void thenClickOnPreviewAndConfigure() {
-    SalesforcePropertiesPageActions.clickPreviewAndConfigure();
+  @And("fill 'Last Modified Before' property in format yyyy-MM-ddThh:mm:ssZ: {string}")
+  public void fillLastModifiedBefore(String value) {
+    SalesforcePropertiesPageActions.fillLastModifiedBefore(value);
   }
 }

@@ -28,60 +28,56 @@ import org.openqa.selenium.support.How;
 
 public class SalesforcePropertiesPage {
 
-    // Salesforce sink - Properties page
-    @FindBy(how = How.XPATH, using = "//div[contains(@class, 'label-input-container')]//input")
-    public static WebElement labelInput;
+  // Salesforce sink - Properties page
+  @FindBy(how = How.XPATH, using = "//div[contains(@class, 'label-input-container')]//input")
+  public static WebElement labelInput;
 
-    // Salesforce Sink - Properties page - Reference section
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='referenceName']")
-    public static WebElement referenceInput;
+  // Salesforce Sink - Properties page - Reference section
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='referenceName']")
+  public static WebElement referenceInput;
 
-    // Salesforce Sink - Properties page - Authentication section
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='username']")
-    public static WebElement usernameInput;
+  // Salesforce Sink - Properties page - Authentication section
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='username']")
+  public static WebElement usernameInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='password']")
-    public static WebElement passwordInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='password']")
+  public static WebElement passwordInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='securityToken']")
-    public static WebElement securityTokenInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='securityToken']")
+  public static WebElement securityTokenInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerKey']")
-    public static WebElement consumerKeyInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerKey']")
+  public static WebElement consumerKeyInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerSecret']")
-    public static WebElement consumerSecretInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerSecret']")
+  public static WebElement consumerSecretInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='loginUrl']")
-    public static WebElement loginUrlInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='loginUrl']")
+  public static WebElement loginUrlInput;
 
-    //Salesforce Sink - Properties page - Advanced section
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='sObject']")
-    public static WebElement sObjectNameInput;
+  //Salesforce Sink - Properties page - Advanced section
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='sObject']")
+  public static WebElement sObjectNameInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='externalIdField']")
-    public static WebElement upsertExternalIdFieldInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='externalIdField']")
+  public static WebElement upsertExternalIdFieldInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='maxRecordsPerBatch']")
-    public static WebElement maxRecordsPerbatchInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='maxRecordsPerBatch']")
+  public static WebElement maxRecordsPerbatchInput;
 
-    @FindBy(how = How.XPATH, using = "//input[@data-cy='maxBytesPerBatch']")
-    public static WebElement maxBytesPerBatchInput;
+  @FindBy(how = How.XPATH, using = "//input[@data-cy='maxBytesPerBatch']")
+  public static WebElement maxBytesPerBatchInput;
 
-    @FindBy(how = How.XPATH, using = "//div[@data-cy='select-errorHandling']")
-    public static WebElement errordropdown;
+  @FindBy(how = How.XPATH, using = "//div[@data-cy='select-errorHandling']")
+  public static WebElement errordropdown;
 
+  public static WebElement locateOperationTypeRadioButtons(String operationOption) {
+    String xpath = "//input[@name='operation' and @value='" + operationOption + "']";
+    return SeleniumDriver.getDriver().findElement(By.xpath(xpath));
+  }
 
-    public static WebElement getOperationType(String operationOption) {
-        String xpath = "//input[@name='operation' and @value='" + operationOption + "']";
-        return SeleniumDriver.getDriver().findElement(By.xpath(xpath));
-        }
-
-    public static WebElement getErrorHandlingOptions(String option) {
-        String xpath = "//li[@data-value='" + option + "']";
-        return SeleniumDriver.getDriver().findElement(By.xpath(xpath));
-
-    }
-
-
+  public static WebElement getErrorHandlingOptions(String option) {
+    String xpath = "//li[@data-value='" + option + "']";
+    return SeleniumDriver.getDriver().findElement(By.xpath(xpath));
+  }
 }

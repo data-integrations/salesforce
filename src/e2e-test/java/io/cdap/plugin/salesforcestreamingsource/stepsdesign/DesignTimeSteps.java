@@ -15,55 +15,46 @@
  */
 
 package io.cdap.plugin.salesforcestreamingsource.stepsdesign;
+
 import io.cdap.plugin.salesforcestreamingsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.utils.enums.NotifyOptions;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 
-
 /**
  * Design-time steps of Salesforce Streaming plugins.
  */
 public class DesignTimeSteps {
 
+  @And("fill Topic Name as: {string}")
+  public void fillTopicName(String topicName) {
+    SalesforcePropertiesPageActions.configureSalesforcePluginForTopicName(topicName);
+  }
 
-    @And("fill Topic Name as: {string}")
-    public void fillTopicName(String topicName) {
-        SalesforcePropertiesPageActions.configureSalesforcePluginForTopicName(topicName);
+  @And("select option for notifyOnCreate as {}")
+  public void selectOptionForNotifyOnCreate(NotifyOptions onCreateOption) {
+    SalesforcePropertiesPageActions.selectNotifyOnCreateOption(onCreateOption.value);
+  }
 
-    }
+  @And("select option for notifyOnUpdate as {}")
+  public void selectOptionForNotifyOnUpdate(NotifyOptions onUpdateOption) {
+    SalesforcePropertiesPageActions.selectNotifyOnUpdateOption(onUpdateOption.value);
+  }
 
-    @And("select option for notifyOnCreate as {}")
-    public void selectOptionForNotifyOnCreate(NotifyOptions onCreateOption) {
-        SalesforcePropertiesPageActions.selectNotifyOnCreateOption(onCreateOption.value);
-    }
+  @And("select option for notifyOn Delete as {}")
+  public void selectOptionForNotifyOnDelete(NotifyOptions onDeleteOption) {
+    SalesforcePropertiesPageActions.selectNotifyOnDeleteOption(onDeleteOption.value);
+  }
 
-    @And("select option for notifyOnUpdate as {}")
-    public void selectOptionForNotifyOnUpdate(NotifyOptions onUpdateOption) {
-        SalesforcePropertiesPageActions.selectNotifyOnUpdateOption(onUpdateOption.value);
-    }
+  @Then("select option for notifyForFields as {}")
+  public void selectOptionForNotifyForFields(NotifyOptions forFieldsOption) {
+    SalesforcePropertiesPageActions.selectNotifyForFieldOption(forFieldsOption.value);
+  }
 
-    @And("select option for notifyOn Delete as {}")
-    public void selectOptionForNotifyOnDelete(NotifyOptions onDeleteOption) {
-        SalesforcePropertiesPageActions.selectNotifyOnDeleteOption(onDeleteOption.value);
-    }
-
-    @Then("select option for notifyForFields as {}")
-    public void selectOptionForNotifyForFields(NotifyOptions forFieldsOption) {
-        SalesforcePropertiesPageActions.selectNotifyForFieldOption(forFieldsOption.value);
-    }
-
-
-    @And("configure Salesforce source for an Push Topic Query of type: {string}")
-    public void configureSalesforceSourceForPushTopicQuery(String pushTopicQueryType) {
-       SalesforcePropertiesPageActions.configureSalesforcePluginForPushTopicQuery
-               (SOQLQueryType.valueOf(pushTopicQueryType));
-    }
-//change
-    @And("Click on Save and Run button")
-    public void clickOnSaveAndRunButton() {
-        SalesforcePropertiesPageActions.clickSaveAndRunButton();
-    }
-
+  @And("configure Salesforce source for an Push Topic Query of type: {string}")
+  public void configureSalesforceSourceForPushTopicQuery(String pushTopicQueryType) {
+    SalesforcePropertiesPageActions.configureSalesforcePluginForPushTopicQuery
+      (SOQLQueryType.valueOf(pushTopicQueryType));
+  }
 }

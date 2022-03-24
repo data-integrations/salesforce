@@ -24,7 +24,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
     And Connect source as "BigQuery" and sink as "Salesforce" to establish connection
     And Navigate to the properties page of plugin: "Salesforce"
@@ -36,7 +36,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
     And Click on the Macro button of Property: "operation" and set the value to: "Operation Type"
-    And fill max Records Per Batch as: "TenthousandRecords"
-    And fill max Bytes Per Batch as: "OneCroreRecords"
-    And then Select option type for error handling as SKIP_ON_ERROR
+    And Click on the Macro button of Property: "maxRecordsPerBatch" and set the value to: "maxRecordsPerBatch"
+    And Click on the Macro button of Property: "maxBytesPerBatch" and set the value to: "maxBytesPerBatch"
+    And Click on the Macro button of Property: "errorHandling" and set the value to: "errorHandling"
     Then Validate "Salesforce" plugin properties

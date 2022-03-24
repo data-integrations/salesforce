@@ -14,27 +14,23 @@
  * the License.
  */
 
-
 package io.cdap.plugin.utils.enums;
 
 /**
- * OperationTypes enum.
+ * NotifyOptions enum.
  */
 
-
 public enum NotifyOptions {
-    ENABLED("Enabled"),
-    DISABLED("Disabled"),
-    WHERE("Where"),
-    ALL("All"),
-    REFERENCED("Referenced"),
-    SELECT("Select");
+  ENABLED("Enabled"),
+  DISABLED("Disabled"),
+  WHERE("Where"),
+  ALL("All"),
+  REFERENCED("Referenced"),
+  SELECT("Select");
 
-    public final String value;
+  public final String value;
 
-    NotifyOptions(String value) {
-        this.value = value;
-    }
+  NotifyOptions(String value) {
+    this.value = value;
+  }
 }
-
-

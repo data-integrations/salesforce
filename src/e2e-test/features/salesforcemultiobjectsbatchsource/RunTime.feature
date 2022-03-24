@@ -28,21 +28,20 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Reference Name property
     And fill White List with below listed SObjects:
       | LEAD | CONTACT |
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "SalesforceMultiObjects" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
     And Verify the preview of pipeline is "successfully"
     And Verify sink plugin's Preview Data for Input Records table and the Input Schema matches the Output Schema of Source plugin
-
 
   @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_TEST
   Scenario: Verify user should be able to run and deploy pipeline for valid SObject in White List
@@ -54,21 +53,20 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Reference Name property
     And fill White List with below listed SObjects:
       | LEAD | CONTACT |
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "SalesforceMultiObjects" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
     And Wait till pipeline is in running state
     Then Verify the pipeline status is "Succeeded"
-
 
   @MULTIBATCH-TS-SF-RNTM-03 @BQ_SINK_TEST
   Scenario: Verify user should be able to preview and run pipeline for valid Black List
@@ -80,21 +78,20 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Reference Name property
     And fill Black List with below listed SObjects:
       | ACCOUNT | CONTACT |
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "SalesforceMultiObjects" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
     And Verify the preview of pipeline is "successfully"
     And Verify sink plugin's Preview Data for Input Records table and the Input Schema matches the Output Schema of Source plugin
-
 
   @MULTIBATCH-TS-SF-RNTM-04 @BQ_SINK_TEST
   Scenario: Verify user should be able to run and deploy pipeline for valid SObject in Black List
@@ -106,15 +103,15 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Reference Name property
     And fill Black List with below listed SObjects:
       | ACCOUNT | CONTACT |
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "SalesforceMultiObjects" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime

@@ -18,7 +18,7 @@
 @Regression
 Feature: Salesforce Multi Objects Batch Source - Design time - validation scenarios
 
-  @MULTIBATCH-TS-SF-DSGN-ERROR-07
+  @MULTIBATCH-TS-SF-DSGN-ERROR-01
   Scenario: Verify validation message for incorrect SObject names in the White List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -31,7 +31,7 @@ Feature: Salesforce Multi Objects Batch Source - Design time - validation scenar
     And Click on the Validate button
     Then verify invalid SObject name validation message for White List
 
-  @MULTIBATCH-TS-SF-DSGN-ERROR-08
+  @MULTIBATCH-TS-SF-DSGN-ERROR-02
   Scenario: Verify validation message for incorrect SObject names in the Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -43,3 +43,19 @@ Feature: Salesforce Multi Objects Batch Source - Design time - validation scenar
       | ACCOUNTZZ | LEADSS |
     And Click on the Validate button
     Then verify invalid SObject name validation message for Black List
+
+  @MULTIBATCH-TS-SF-DSGN-ERROR-03
+  Scenario: Verify validation message for invalid date formats used in Last Modified After and Before properties
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
+    And fill Reference Name property
+    And fill Authentication properties for Salesforce Admin user
+    And fill White List with below listed SObjects:
+      | ACCOUNT | CONTACT |
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "abc"
+    And fill 'Last Modified Before' property in format yyyy-MM-ddThh:mm:ssZ: "abc"
+    And Click on the Validate button
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format"

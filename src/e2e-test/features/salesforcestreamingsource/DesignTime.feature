@@ -18,8 +18,8 @@
 @Regression
 Feature: Salesforce Streaming Source - Design time scenarios
 
-  @STREAMING-TS-SF-DSGN-06
-  Scenario: Verify user should be able to successfully validate the source for valid Topic name
+  @STREAMING-TS-SF-DSGN-01
+  Scenario: Verify user should be able to successfully validate the source for an existing Topic name
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -32,10 +32,8 @@ Feature: Salesforce Streaming Source - Design time scenarios
     Then select option for notifyForFields as SELECT
     Then Validate "Salesforce" plugin properties
 
-
-
-  @STREAMING-TS-SF-DSGN-07
-  Scenario Outline: Verify user should be able to get output schema for a valid SObject Name
+  @STREAMING-TS-SF-DSGN-02
+  Scenario Outline: Verify user should be able to get output schema for a new Topic name created for an SObject Name
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -54,8 +52,8 @@ Feature: Salesforce Streaming Source - Design time scenarios
       | ACCOUNT     |
       | OPPORTUNITY |
 
-  @STREAMING-TS-SF-DSGN-08
-  Scenario Outline: Verify user should be able to get output schema for a valid Topic Query
+  @STREAMING-TS-SF-DSGN-03
+  Scenario Outline: Verify user should be able to get output schema for a new Topic name created for a SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -71,6 +69,3 @@ Feature: Salesforce Streaming Source - Design time scenarios
     Examples:
       | QueryType |
       | SIMPLE    |
-
-
-

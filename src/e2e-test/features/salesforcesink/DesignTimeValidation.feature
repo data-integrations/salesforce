@@ -18,7 +18,7 @@
 @Regression
 Feature: Salesforce Sink - Design time - validation scenarios
 
-  @SINK-TS-SF-DSGN-ERROR-09
+  @SINK-TS-SF-DSGN-ERROR-01
   Scenario: Verify validation message for providing an invalid SObject Name
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -26,37 +26,34 @@ Feature: Salesforce Sink - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill SObject Name property in Sink with an invalid value
+    And Fill SObject Name as: "abc"
     And Click on the Validate button
     Then Verify that the Plugin is displaying an error message: "invalidsink.sobjectname.error" on the header
 
-
-
-  @SINK-TS-SF-DSGN-ERROR-10
+  @SINK-TS-SF-DSGN-ERROR-02
   Scenario Outline: Verify validation message for invalid Max Records Per Batch
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select Sink plugin: "Salesforce" from the plugins list
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
-    And configure Salesforce sink for an SobjectName: "<SObjectName>"
-    And fill max Records Per Batch as: "OnelackRecords"
+    And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
+    And Fill Max Records Per Batch as: "OnelackRecords"
     And Click on the Validate button
     And Verify that the Plugin Property: "maxRecordsPerBatch" is displaying an in-line error message: "invalid.maxrecords"
     Examples:
       | SObjectName |
       | LEAD        |
 
-
-  @Sink-TS-SF-DSGN-ERROR-11
+  @Sink-TS-SF-DSGN-ERROR-03
   Scenario Outline: Verify validation message for invalid Max Bytes Per Batch
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select Sink plugin: "Salesforce" from the plugins list
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
-    And configure Salesforce sink for an SobjectName: "<SObjectName>"
-    And fill max Bytes Per Batch as: "TenCroreRecords"
+    And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
+    And Fill Max Bytes Per Batch as: "TenCroreRecords"
     And Click on the Validate button
     And Verify that the Plugin Property: "maxBytesPerBatch" is displaying an in-line error message: "invalid.maxbytes"
     Examples:

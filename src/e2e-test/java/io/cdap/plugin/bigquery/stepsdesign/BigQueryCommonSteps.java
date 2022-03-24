@@ -24,6 +24,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
+
 import java.io.IOException;
 
 /**
@@ -31,29 +32,29 @@ import java.io.IOException;
  */
 
 public class BigQueryCommonSteps {
-    @When("Configure BigQuery sink plugin for Dataset and Table")
-    public void configureBqSinkPlugin() {
-        String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
-        CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
-        CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
-        CdfBigQueryPropertiesActions.enterBigQueryTable(TestSetupHooks.bqTargetTable);
-    }
+  @When("Configure BigQuery sink plugin for Dataset and Table")
+  public void configureBqSinkPlugin() {
+    String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
+    CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
+    CdfBigQueryPropertiesActions.enterBigQueryTable(TestSetupHooks.bqTargetTable);
+  }
 
-    @When("Configure BigQuery Multi Table sink plugin for Dataset")
-    public void configureBqMultiTableSinkPlugin() {
-        String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
-        CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
-        CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
-    }
+  @When("Configure BigQuery Multi Table sink plugin for Dataset")
+  public void configureBqMultiTableSinkPlugin() {
+    String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
+    CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
+  }
 
-    @Then("Verify count of no of records transferred to the target BigQuery Table")
-    public void getCountOfNoOfRecordsTransferredToTargetBigQueryTable() throws IOException, InterruptedException {
-        int countRecords = BigQueryClient.countBqQuery(TestSetupHooks.bqTargetDataset, TestSetupHooks.bqTargetTable);
-        Assert.assertEquals("Number of records transferred to BigQuery should be equal to " +
-                        "records out count displayed on the Source plugin: ",
-                countRecords, CdfPipelineRunAction.getCountDisplayedOnSourcePluginAsRecordsOut());
-        Assert.assertEquals("Number of records transferred to BigQuery should be equal to " +
-                        "records in count displayed on the Sink plugin: ",
-                countRecords, CdfPipelineRunAction.getCountDisplayedOnSinkPluginAsRecordsIn());
-    }
+  @Then("Verify count of no of records transferred to the target BigQuery Table")
+  public void getCountOfNoOfRecordsTransferredToTargetBigQueryTable() throws IOException, InterruptedException {
+    int countRecords = BigQueryClient.countBqQuery(TestSetupHooks.bqTargetDataset, TestSetupHooks.bqTargetTable);
+    Assert.assertEquals("Number of records transferred to BigQuery should be equal to " +
+        "records out count displayed on the Source plugin: ",
+      countRecords, CdfPipelineRunAction.getCountDisplayedOnSourcePluginAsRecordsOut());
+    Assert.assertEquals("Number of records transferred to BigQuery should be equal to " +
+        "records in count displayed on the Sink plugin: ",
+      countRecords, CdfPipelineRunAction.getCountDisplayedOnSinkPluginAsRecordsIn());
+  }
 }

@@ -20,7 +20,7 @@
 Feature: Salesforce Streaming Source - Run time Scenarios (macros)
 
   @STREAMING-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run pipeline with macro for streaming Source using SobjectName
+  Scenario:Verify user should be able to deploy and run pipeline with macro for Streaming Source using SObjectName
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -35,12 +35,12 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Click on the Macro button of Property: "pushTopicName" and set the value to: "TopicName"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
@@ -59,7 +59,7 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
 
 
   @STREAMING-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run pipeline with macro for streaming Source using Query
+  Scenario:Verify user should be able to deploy and run pipeline with macro for Streaming Source using SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -74,12 +74,12 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Click on the Macro button of Property: "pushTopicName" and set the value to: "TopicName"
     And Click on the Macro button of Property: "pushTopicQuery" and set the value to: "Query"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime

@@ -17,10 +17,6 @@
 package io.cdap.plugin.salesforcebatchsource.actions;
 
 import io.cdap.cdap.api.data.schema.Schema;
-import io.cdap.e2e.pages.actions.CdfBigQueryPropertiesActions;
-import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
-import io.cdap.e2e.pages.actions.CdfStudioActions;
-import io.cdap.e2e.pages.locators.CdfStudioLocators;
 import io.cdap.e2e.utils.AssertionHelper;
 import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
@@ -37,7 +33,7 @@ import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cdap.plugin.utils.enums.SObjects;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.openqa.selenium.WebElement;
-import java.io.IOException;
+
 import java.util.List;
 
 /**
@@ -82,7 +78,11 @@ public class SalesforcePropertiesPageActions {
   }
 
   public static void fillSOQLPropertyField(SOQLQueryType queryType) {
-      SalesforcePropertiesPage.soqlTextarea.sendKeys(queryType.query);
+    ElementHelper.sendKeysToTextarea(SalesforcePropertiesPage.soqlTextarea, queryType.query);
+  }
+
+  public static void fillSOQLPropertyField(String query) {
+    ElementHelper.sendKeysToTextarea(SalesforcePropertiesPage.soqlTextarea, query);
   }
 
   public static void configureSalesforcePluginForSoqlQuery(SOQLQueryType queryType) {
@@ -191,22 +191,29 @@ public class SalesforcePropertiesPageActions {
     }
   }
 
-  public static void clickOnClosePropertiesPageButton() {
-    SalesforcePropertiesPage.closePropertiesPageButton.click();
-  }
-  public static void fillLastModifyAfter(String lastModifyafterLocation) {
+  public static void fillLastModifiedAfter(String lastModifiedAfter) {
     ElementHelper.clearElementValue(SalesforcePropertiesPage.lastModifiedAfterInput);
-    ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedAfterInput,
-            PluginPropertyUtils.pluginProp(lastModifyafterLocation));
+
+    try {
+      if (!PluginPropertyUtils.pluginProp(lastModifiedAfter).isEmpty()) {
+        ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedAfterInput,
+          PluginPropertyUtils.pluginProp(lastModifiedAfter));
+      }
+    } catch (NullPointerException e) {
+      ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedAfterInput, lastModifiedAfter);
+    }
   }
 
-  public static void closePluginPropertiesPage() {
-    CdfPluginPropertiesActions.clickCloseButton();
-  }
+  public static void fillLastModifiedBefore(String lastModifiedBefore) {
+    ElementHelper.clearElementValue(SalesforcePropertiesPage.lastModifiedBeforeInput);
 
-
-  public static void clickPreviewAndConfigure() {
-    CdfStudioActions.openPreviewMenu();
-    SalesforcePropertiesPage.previewConfigRunButton.click();
+    try {
+      if (!PluginPropertyUtils.pluginProp(lastModifiedBefore).isEmpty()) {
+        ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedBeforeInput,
+          PluginPropertyUtils.pluginProp(lastModifiedBefore));
+      }
+    } catch (NullPointerException e) {
+      ElementHelper.sendKeys(SalesforcePropertiesPage.lastModifiedBeforeInput, lastModifiedBefore);
+    }
   }
 }

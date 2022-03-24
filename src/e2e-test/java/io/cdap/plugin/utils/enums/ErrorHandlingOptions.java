@@ -14,21 +14,18 @@
  * the License.
  */
 
-
 package io.cdap.plugin.utils.enums;
 
-
 /**
- * OperationTypes enum.
+ * ErrorHandlingOptions enum.
  */
 public enum ErrorHandlingOptions {
-    SKIP_ON_ERROR("Skip on error"),
-    STOP_ON_ERROR("Stop on error");
+  SKIP_ON_ERROR("Skip on error"),
+  STOP_ON_ERROR("Stop on error");
 
+  public final String value;
 
-    public final String value;
-
-    ErrorHandlingOptions(String value) {
-        this.value = value;
-    }
+  ErrorHandlingOptions(String value) {
+    this.value = value;
+  }
 }

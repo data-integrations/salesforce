@@ -19,34 +19,45 @@
 Feature: Salesforce Batch Source - Design time Scenarios (macro)
 
   @BATCH-TS-SF-DSGN-MACRO-01
-  Scenario:Verify user should be able to validate the Salesforce plugin with macros on SobjectName
+  Scenario:Verify user should be able to validate the plugin when Authentication properties are configured with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Reference Name property
-    And Click on the Macro button of Property: "username" and set the value to: "Username"
-    And Click on the Macro button of Property: "password" and set the value to: "Password"
-    And Click on the Macro button of Property: "securityToken" and set the value to: "SecurityToken"
-    And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
-    And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
-    And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
-    And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
+    And Click on the Macro button of Property: "username" and set the value to: "username"
+    And Click on the Macro button of Property: "password" and set the value to: "password"
+    And Click on the Macro button of Property: "securityToken" and set the value to: "securityToken"
+    And Click on the Macro button of Property: "consumerKey" and set the value to: "consumerKey"
+    And Click on the Macro button of Property: "consumerSecret" and set the value to: "consumerSecret"
+    And Click on the Macro button of Property: "loginUrl" and set the value to: "loginUrl"
+    And Click on the Macro button of Property: "sObjectName" and set the value to: "sObjectName"
     Then Validate "Salesforce" plugin properties
 
   @BATCH-TS-SF-DSGN-MACRO-02
-  Scenario:Verify user should be able to validate the plugin with macros on SOQL Query
+  Scenario:Verify user should be able to validate the plugin when SObject Query properties are configured with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Reference Name property
-    And Click on the Macro button of Property: "username" and set the value to: "Username"
-    And Click on the Macro button of Property: "password" and set the value to: "Password"
-    And Click on the Macro button of Property: "securityToken" and set the value to: "SecurityToken"
-    And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
-    And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
-    And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
-    And Click on the Macro button of Property: "query" and set the value to: "Query"
+    And fill Authentication properties for Salesforce Admin user
+    And Click on the Macro button of Property: "sObjectName" and set the value to: "sObjectName"
+    And Click on the Macro button of Property: "datetimeAfter" and set the value to: "lastModifiedAfter"
+    And Click on the Macro button of Property: "datetimeBefore" and set the value to: "lastModifiedBefore"
+    And Click on the Macro button of Property: "duration" and set the value to: "duration"
+    And Click on the Macro button of Property: "offset" and set the value to: "offset"
     Then Validate "Salesforce" plugin properties
-
+    
+  @BATCH-TS-SF-DSGN-MACRO-03
+  Scenario:Verify user should be able to validate the plugin when Advanced section properties are configured with macros
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And fill Reference Name property
+    And fill Authentication properties for Salesforce Admin user
+    And Click on the Macro button of Property: "sObjectName" and set the value to: "sObjectName"
+    And Click on the Macro button of Property: "enablePKChunk" and set the value to: "enablePKChunk"
+    And Click on the Macro button of Property: "chunkSize" and set the value to: "chunkSize"
+    Then Validate "Salesforce" plugin properties

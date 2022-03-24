@@ -51,6 +51,14 @@ Feature: Salesforce Batch Source - Design time Scenarios
       | OPPORTUNITY |
       | LEAD        |
 
-
-
-
+  @BATCH-TS-SF-DSGN-03
+  Scenario: Verify user should be able to get output schema when plugin is configured with Last Modified After property
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And fill Authentication properties for Salesforce Admin user
+    And configure Salesforce source for an SObject Query of SObject: "OPPORTUNITY"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
+    Then Validate "Salesforce" plugin properties
+    And verify the Output Schema table for an SObject Query of SObject: "OPPORTUNITY"

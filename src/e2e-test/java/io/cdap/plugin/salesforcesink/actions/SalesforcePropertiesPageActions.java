@@ -16,15 +16,14 @@
 
 package io.cdap.plugin.salesforcesink.actions;
 
+import io.cdap.e2e.pages.locators.CdfPluginPropertiesLocators;
 import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.e2e.utils.SeleniumHelper;
 import io.cdap.plugin.salesforcesink.locators.SalesforcePropertiesPage;
-import io.cdap.plugin.utils.enums.ErrorHandlingOptions;
 import io.cdap.plugin.utils.enums.OperationTypes;
 import io.cdap.plugin.utils.enums.SObjects;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.openqa.selenium.By;
 
 /**
  * Salesforce sink plugins - Actions.
@@ -32,56 +31,52 @@ import org.openqa.selenium.By;
 
 public class SalesforcePropertiesPageActions {
 
-    static {
-        SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
+  static {
+    SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
+  }
+
+  public static void fillReferenceName(String referenceName) {
+    ElementHelper.sendKeys(SalesforcePropertiesPage.referenceInput, referenceName);
+  }
+
+  public static void fillsObjectName(String sObjectName) {
+    ElementHelper.sendKeys(SalesforcePropertiesPage.sObjectNameInput, sObjectName);
+  }
+
+  public static void configureSalesforcePluginForSobjectName(SObjects sObjectName) {
+    String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
+    fillReferenceName(referenceName);
+    fillsObjectName(sObjectName.value);
+  }
+
+  public static void selectOperationType(OperationTypes operationType) {
+    SalesforcePropertiesPage.locateOperationTypeRadioButtons(operationType.value).click();
+    fillUpsertExternalIDIfOperationTypeISUpsert(operationType.value);
+  }
+
+  public static void fillUpsertExternalIDIfOperationTypeISUpsert(String operationType) {
+    if (operationType.equals(OperationTypes.UPSERT.value)) {
+      fillUpsertExternalIdField();
     }
+  }
 
+  public static void fillUpsertExternalIdField() {
+    String externalId = PluginPropertyUtils.pluginProp("upsert.externalId");
+    ElementHelper.sendKeys(SalesforcePropertiesPage.upsertExternalIdFieldInput, externalId);
+  }
 
-    public static void fillReferenceName(String referenceName) {
-        ElementHelper.sendKeys(SalesforcePropertiesPage.referenceInput, referenceName);
-    }
+  public static void selectErrorHandlingOptionType(String errorOption) {
+    ElementHelper.selectDropdownOption(SalesforcePropertiesPage.errordropdown,
+      CdfPluginPropertiesLocators.locateDropdownListItem(errorOption));
+  }
 
+  public static void fillMaxRecords(String maxRecords) {
+    ElementHelper.clearElementValue(SalesforcePropertiesPage.maxRecordsPerbatchInput);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.maxRecordsPerbatchInput, maxRecords);
+  }
 
-    public static void fillsObjectName(String sObjectName) {
-        ElementHelper.sendKeys(SalesforcePropertiesPage.sObjectNameInput, sObjectName);
-    }
-
-    public static void configureSalesforcePluginForSobjectName(SObjects sObjectName) {
-        String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
-        fillReferenceName(referenceName);
-        fillsObjectName(sObjectName.value);
-
-    }
-
-    public static void selectOperationType(OperationTypes operationType) {
-        SalesforcePropertiesPage.getOperationType(operationType.value).click();
-        fillUpsertExternalIDIfOperationTypeISUpsert(operationType.value);
-    }
-
-    public static void fillUpsertExternalIDIfOperationTypeISUpsert(String operationType) {
-
-        if (operationType.equals(OperationTypes.UPSERT.value)) {
-            fillUpsertExternalIdField();
-        }
-    }
-    public static void fillUpsertExternalIdField() {
-        String externalId = PluginPropertyUtils.pluginProp("upsert.externalId");
-        ElementHelper.sendKeys(SalesforcePropertiesPage.upsertExternalIdFieldInput, externalId);
-    }
-//This function was working before it was talking an enum and passing it but now its expecting a web element
-    public static void selectErrorHandlingOptionType(String errorOption) {
-        ElementHelper.selectDropdownOption(SalesforcePropertiesPage.errordropdown, errorOption);
-    }
-
-
-    public static void fillMaxRecords(String maxRecords) {
-        ElementHelper.replaceElementValue(SalesforcePropertiesPage.maxRecordsPerbatchInput, "");
-            ElementHelper.sendKeys(SalesforcePropertiesPage.maxRecordsPerbatchInput, maxRecords);
-    }
-
-    public static void fillMaxBytes(String maxBytesPerBatch) {
-        ElementHelper.replaceElementValue(SalesforcePropertiesPage.maxBytesPerBatchInput , "");
-           ElementHelper.sendKeys(SalesforcePropertiesPage.maxBytesPerBatchInput, maxBytesPerBatch);
-    }
-
+  public static void fillMaxBytes(String maxBytesPerBatch) {
+    ElementHelper.clearElementValue(SalesforcePropertiesPage.maxBytesPerBatchInput);
+    ElementHelper.sendKeys(SalesforcePropertiesPage.maxBytesPerBatchInput, maxBytesPerBatch);
+  }
 }

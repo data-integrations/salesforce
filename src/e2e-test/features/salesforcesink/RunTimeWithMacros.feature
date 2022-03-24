@@ -26,7 +26,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
     And Connect source as "BigQuery" and sink as "Salesforce" to establish connection
     And Navigate to the properties page of plugin: "Salesforce"
@@ -37,14 +37,14 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
-    And then select operation type as "<OperationType>"
-    And fill max Records Per Batch as: "TenthousandRecords"
-    And fill max Bytes Per Batch as: "OneCroreRecords"
-    And then Select option type for error handling as SKIP_ON_ERROR
+    And Select Operation type as: "<OperationType>"
+    And Fill Max Records Per Batch as: "TenthousandRecords"
+    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Save the pipeline
-    And then click on preview and configure
+    And Preview and run the pipeline
     And Enter runtime argument value "admin.username" for key "Username"
     And Enter runtime argument value "admin.password" for key "Password"
     And Enter runtime argument value "admin.security.token" for key "SecurityToken"
@@ -67,7 +67,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
     And Connect source as "BigQuery" and sink as "Salesforce" to establish connection
     And Navigate to the properties page of plugin: "Salesforce"
@@ -78,12 +78,12 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
-    And then select operation type as "<OperationType>"
-    And fill max Records Per Batch as: "TenthousandRecords"
-    And fill max Bytes Per Batch as: "OneCroreRecords"
-    And then Select option type for error handling as SKIP_ON_ERROR
+    And Select Operation type as: "<OperationType>"
+    And Fill Max Records Per Batch as: "TenthousandRecords"
+    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Save the pipeline
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime

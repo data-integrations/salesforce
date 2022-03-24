@@ -15,12 +15,10 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
-
 Feature: Salesforce Batch Source - Run time Scenarios (macro)
 
-    #working
   @BATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario:Verify user should be able to preview a pipeline when Salesforce plugin is configured with macros
+  Scenario:Verify user should be able to preview the pipeline when plugin is configured for SObject Name with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -33,17 +31,17 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
-    And then click on preview and configure
+    And Preview and run the pipeline
     And Enter runtime argument value "admin.username" for key "Username"
     And Enter runtime argument value "admin.password" for key "Password"
     And Enter runtime argument value "admin.security.token" for key "SecurityToken"
@@ -54,12 +52,8 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Run the preview of pipeline with runtime arguments
     And Verify the preview of pipeline is "successfully"
 
-    #should i macro "query" too here ?
-    #And Click on the Macro button of Property: "query"
-    #And Fill the macro enabled Property: "query" with value: "Query"
-
   @BATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario:Verify user should be able to run a pipeline when Salesforce plugin is configured with macros
+  Scenario:Verify user should be able to deploy and run the pipeline when plugin is configured for SObject Name with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -72,14 +66,14 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
-    And fill Last modified After in format: yyyy-MM-ddThh:mm:ssZ: "lastmodified.after"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
@@ -95,9 +89,8 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
 
-
   @BATCH-TS-SF-RNTM-MACRO-03 @BQ_SINK_TEST
-  Scenario:Verify user should be able to preview a pipeline when Salesforce plugin is configured with macros
+  Scenario: Verify user should be able to preview the pipeline when plugin is configured for SOQL Query with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -111,15 +104,15 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "query" and set the value to: "Query"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
-    And then click on preview and configure
+    And Preview and run the pipeline
     And Enter runtime argument value "admin.username" for key "Username"
     And Enter runtime argument value "admin.password" for key "Password"
     And Enter runtime argument value "admin.security.token" for key "SecurityToken"
@@ -131,7 +124,7 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Verify the preview of pipeline is "successfully"
 
   @BATCH-TS-SF-RNTM-MACRO-04 @BQ_SINK_TEST
-  Scenario:Verify user should be able to run a pipeline when Salesforce plugin is configured with macros
+  Scenario: Verify user should be able to deploy and run the pipeline when plugin is configured for SOQL Query with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -145,12 +138,12 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "query" and set the value to: "Query"
     And Validate "Salesforce" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
     And Navigate to the properties page of plugin: "BigQuery"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime

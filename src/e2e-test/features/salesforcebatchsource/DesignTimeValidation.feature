@@ -25,11 +25,10 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And Click on the Validate button
     Then Verify mandatory property error for below listed properties:
-      | referenceName   |
-
+      | referenceName |
 
   @BATCH-TS-SF-DSGN-ERROR-02
-  Scenario: Verify validation message when user leaves Authentication Properties fields blank
+  Scenario: Verify validation message when user leaves Authentication Properties blank
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -49,7 +48,6 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Click on the Validate button
     Then Verify that the Plugin is displaying an error message: "invalid.authentication.property" on the header
 
-
   @BATCH-TS-SF-DSGN-ERROR-04
   Scenario: Verify required fields missing validation for SOQL Query or SObject Name properties
     When Open Datafusion Project to configure pipeline
@@ -61,8 +59,7 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Click on the Validate button
     Then Verify that the Plugin is displaying an error message: "required.property.soqlorsobjectname.error" on the header
     And Verify that the Plugin Property: "query" is displaying an in-line error message: "required.property.soqlorsobjectname"
-
-
+    
   @BATCH-TS-SF-DSGN-ERROR-05
   Scenario: Verify validation message for invalid SOQL Query property value
     When Open Datafusion Project to configure pipeline
@@ -71,10 +68,9 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill SOQL Query field with a Star Query
+    And fill SOQL Query field with a Query: "STAR"
     And Click on the Get Schema button
     And Verify that the Plugin Property: "query" is displaying an in-line error message: "invalid.soql.starquery"
-
 
   @BATCH-TS-SF-DSGN-ERROR-06
   Scenario: Verify validation message for providing an invalid SObject Name in the SObject Query section
@@ -84,9 +80,20 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill SObject Name property with an invalid value
+    And fill SObject Name property with an SObject Name: "blahblah"
     And Click on the Validate button
     Then Verify that the Plugin is displaying an error message: "invalid.sobjectname.error" on the header
 
-
-
+  @BATCH-TS-SF-DSGN-ERROR-07
+  Scenario: Verify validation message for invalid date formats used in Last Modified After and Before properties
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And fill Authentication properties for Salesforce Admin user
+    And configure Salesforce source for an SObject Query of SObject: "ACCOUNT"
+    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "abc"
+    And fill 'Last Modified Before' property in format yyyy-MM-ddThh:mm:ssZ: "abc"
+    And Click on the Validate button
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format"

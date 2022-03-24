@@ -18,29 +18,26 @@
 @Regression
 Feature: Salesforce Sink  - Design time scenarios
 
-  @SINK-TS-SF-DSGN-05
+  @SINK-TS-SF-DSGN-01
   Scenario Outline: Verify user should be able to successfully validate the sink for valid SObjectName
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "BigQuery"
     And fill Reference Name property
     Then Validate "BigQuery" plugin properties
-    And Close the Plugin Properties Page
+    And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
     And Connect source as "BigQuery" and sink as "Salesforce" to establish connection
     And Navigate to the properties page of plugin: "Salesforce"
-    And then select operation type as "<OperationType>"
+    And Select Operation type as: "<OperationType>"
     And fill Authentication properties for Salesforce Admin user
-    And fill max Records Per Batch as: "TenthousandRecords"
-    And fill max Bytes Per Batch as: "OneCroreRecords"
-    And configure Salesforce sink for an SobjectName: "<SObjectName>"
-    And then Select option type for error handling as SKIP_ON_ERROR
+    And Fill Max Records Per Batch as: "TenthousandRecords"
+    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
+    And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
     Examples:
       | SObjectName |  OperationType  |
       | ACCOUNT     |  INSERT         |
       | ACCOUNT     |  UPDATE         |
       | ACCOUNT     |  UPSERT         |
-
-
-

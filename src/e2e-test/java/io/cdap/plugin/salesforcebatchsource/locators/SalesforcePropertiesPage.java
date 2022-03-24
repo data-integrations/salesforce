@@ -97,21 +97,10 @@ public class SalesforcePropertiesPage {
   @FindBy(how = How.XPATH, using = "//input[@data-cy='parent']")
   public static WebElement sObjectParentNameInput;
 
-
-  @FindBy(how = How.XPATH, using = "//a[./span[contains(@class, 'fa-remove')]]")
-  public static WebElement closePropertiesPageButton;
-
-
   public static WebElement getSchemaFieldTypeMappingElement(SchemaFieldTypeMapping schemaFieldTypeMapping) {
     String xpath = "//div[contains(@data-cy,'schema-row')]" +
       "//input[@value='" + schemaFieldTypeMapping.getField() + "']" +
       "/following-sibling::div//select[@title='" + schemaFieldTypeMapping.getType() + "']";
     return SeleniumDriver.getDriver().findElement(By.xpath(xpath));
   }
-
-  ///
-  @FindBy(how = How.XPATH, using = "//div[@data-cy='preview-config-btn']")
-  public static WebElement previewConfigRunButton;
-
-
 }

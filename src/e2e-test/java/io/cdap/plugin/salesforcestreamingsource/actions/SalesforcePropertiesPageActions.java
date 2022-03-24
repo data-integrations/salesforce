@@ -16,72 +16,61 @@
 
 package io.cdap.plugin.salesforcestreamingsource.actions;
 
+import io.cdap.e2e.pages.locators.CdfPluginPropertiesLocators;
 import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.SeleniumHelper;
 import io.cdap.plugin.salesforcestreamingsource.locators.SalesforcePropertiesPage;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import org.apache.commons.lang3.RandomStringUtils;
 
-
 /**
  * Salesforce Streaming source plugins - Actions.
  */
 public class SalesforcePropertiesPageActions {
 
-    static {
-        SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
-    }
+  static {
+    SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
+  }
 
+  public static void fillReferenceName(String referenceName) {
+    ElementHelper.sendKeys(SalesforcePropertiesPage.referenceInput, referenceName);
+  }
 
-    public static void fillReferenceName(String referenceName) {
-        ElementHelper.sendKeys(SalesforcePropertiesPage.referenceInput, referenceName);
-    }
+  private static void fillTopicName(String topicName) {
+    ElementHelper.sendKeys(SalesforcePropertiesPage.topicnameInput, topicName);
+  }
+  
+  public static void configureSalesforcePluginForTopicName(String topicName) {
+    String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
+    fillReferenceName(referenceName);
+    fillTopicName(topicName);
+  }
 
+  public static void fillSOQLPropertyField(SOQLQueryType queryType) {
+    SalesforcePropertiesPage.topicqueryInput.sendKeys(queryType.query);
+  }
 
-    private static void fillTopicName(String topicName) {
-        ElementHelper.sendKeys(SalesforcePropertiesPage.topicnameInput, topicName);
-    }
+  public static void configureSalesforcePluginForPushTopicQuery(SOQLQueryType queryType) {
+    fillSOQLPropertyField(queryType);
+  }
 
+  public static void selectNotifyOnCreateOption(String onCreateOption) {
+    ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyoncreateDropdown,
+      CdfPluginPropertiesLocators.locateDropdownListItem(onCreateOption));
+  }
 
-    public static void configureSalesforcePluginForTopicName(String topicName) {
-        String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
-        fillReferenceName(referenceName);
-        fillTopicName(topicName);
+  public static void selectNotifyOnUpdateOption(String onUpdateOption) {
+    ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyonupdateDropdown,
+      CdfPluginPropertiesLocators.locateDropdownListItem(onUpdateOption));
+  }
 
-    }
+  public static void selectNotifyOnDeleteOption(String onDeleteOption) {
+    ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyonDeleteDropdown,
+      CdfPluginPropertiesLocators.locateDropdownListItem(onDeleteOption));
+  }
 
-    public static void fillSOQLPropertyField(SOQLQueryType queryType) {
-        SalesforcePropertiesPage.topicqueryInput.sendKeys(queryType.query);
-    }
-
-    public static void configureSalesforcePluginForPushTopicQuery(SOQLQueryType queryType) {
-        fillSOQLPropertyField(queryType);
-    }
-
-    public static void selectNotifyOnCreateOption(String onCreateOption) {
-        ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyoncreateDropdown, onCreateOption);
-    }
-
-    public static void selectNotifyOnUpdateOption(String onUpdateOption) {
-        ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyonupdateDropdown, onUpdateOption);
-    }
-
-    public static void selectNotifyOnDeleteOption(String onDeleteOption) {
-        ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyonDeleteDropdown, onDeleteOption);
-    }
-
-    public static void selectNotifyForFieldOption(String forFieldOption) {
-        ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyForFieldsDropdown, forFieldOption);
-    }
-
-    public static void clickSaveAndRunButton() {
-        SalesforcePropertiesPage.saveAndRunButton.click();
-    }
+  public static void selectNotifyForFieldOption(String forFieldOption) {
+    ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyForFieldsDropdown,
+      CdfPluginPropertiesLocators.locateDropdownListItem(forFieldOption));
+  }
 }
-
-
-
-
-
-
-

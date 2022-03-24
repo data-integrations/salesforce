@@ -16,19 +16,17 @@
 
 package io.cdap.plugin.utils.enums;
 
-
 /**
  * OperationTypes enum.
  */
 public enum OperationTypes {
-    INSERT("insert"),
-    UPSERT("upsert"),
-    UPDATE("update");
+  INSERT("insert"),
+  UPSERT("upsert"),
+  UPDATE("update");
 
-    public final String value;
+  public final String value;
 
-    OperationTypes(String value) {
-        this.value = value;
-    }
+  OperationTypes(String value) {
+    this.value = value;
+  }
 }
-
