@@ -45,7 +45,7 @@
     <mockito.version>2.23.0</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
-    <jackson2.version>2.9.9</jackson2.version>
+    <jackson2.version>2.12.6.1</jackson2.version>
     <json.version>20180813</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
