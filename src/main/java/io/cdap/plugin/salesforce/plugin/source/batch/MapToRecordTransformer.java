@@ -42,11 +42,11 @@ public class MapToRecordTransformer {
   private void transformRecord(Schema schema, Map<String, ?> record, StructuredRecord.Builder builder) {
     for (Map.Entry<String, ?> entry : record.entrySet()) {
       String fieldName = SalesforceSchemaUtil.normalizeAvroName(entry.getKey());
-      Schema.Field field = schema.getField(fieldName);
+      Schema.Field field = schema.getField(fieldName, true);
       if (field == null) {
         continue;
       }
-      builder.set(fieldName, convertValue(field.getName(), entry.getValue(), field.getSchema()));
+      builder.set(field.getName(), convertValue(field.getName(), entry.getValue(), field.getSchema()));
     }
   }
 
