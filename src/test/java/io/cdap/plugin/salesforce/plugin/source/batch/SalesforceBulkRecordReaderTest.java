@@ -312,4 +312,55 @@ public class SalesforceBulkRecordReaderTest {
       Assert.assertTrue(expectedRecords.contains(fields));
     }
   }
+
+  @Test
+  public void testCaseSenstiveMultipleResults() throws Exception {
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("isDeleted", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("lastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+                                    Schema.Field.of("time", Schema.of(Schema.LogicalType.TIME_MICROS))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcBAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 1500.0)
+             .put("lastModifiedDate", 1550819001000000L)
+             .put("CloseDate", 17897)
+             .put("time", 43230000000L)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcCAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 112500.0)
+             .put("lastModifiedDate", 1550819001000000L)
+             .put("CloseDate", 17885)
+             .put("time", 43240000000L)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcDAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 220000.0)
+             .put("lastModifiedDate", 1550819001000000L)
+             .put("time", 43250000000L)
+             .put("CloseDate", 17850)
+             .build()
+      )
+      .build();
+
+    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2}, schema, expectedRecords);
+  }
+
 }
