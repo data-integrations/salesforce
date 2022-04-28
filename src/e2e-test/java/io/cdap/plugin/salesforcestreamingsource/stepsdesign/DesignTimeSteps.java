@@ -17,10 +17,16 @@
 package io.cdap.plugin.salesforcestreamingsource.stepsdesign;
 
 import io.cdap.plugin.salesforcestreamingsource.actions.SalesforcePropertiesPageActions;
+import io.cdap.plugin.utils.SalesforceClient;
 import io.cdap.plugin.utils.enums.NotifyOptions;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * Design-time steps of Salesforce Streaming plugins.
@@ -30,6 +36,11 @@ public class DesignTimeSteps {
   @And("fill Topic Name as: {string}")
   public void fillTopicName(String topicName) {
     SalesforcePropertiesPageActions.configureSalesforcePluginForTopicName(topicName);
+  }
+
+  @And("fill Topic Name field with a unique value")
+  public void fillTopicNameWithUniqueValue() {
+    SalesforcePropertiesPageActions.configureBasicSection();
   }
 
   @And("select option for notifyOnCreate as {}")
@@ -56,5 +67,21 @@ public class DesignTimeSteps {
   public void configureSalesforceSourceForPushTopicQuery(String pushTopicQueryType) {
     SalesforcePropertiesPageActions.configureSalesforcePluginForPushTopicQuery
       (SOQLQueryType.valueOf(pushTopicQueryType));
+  }
+
+  @When("Create a new Lead in Salesforce using REST API")
+  public void createNewLeadInSalesforce() throws UnsupportedEncodingException {
+    JSONObject lead = new JSONObject();
+    String uniqueId = RandomStringUtils.randomAlphanumeric(10);
+    lead.put("FirstName", "LFname_" + uniqueId);
+    lead.put("LastName", "LLname_" + uniqueId);
+    lead.put("Company", uniqueId + ".com");
+
+    SalesforceClient.createLead(lead);
+  }
+
+  @Then("Enter unique Topic name as a Runtime argument value for key: {string}")
+  public void fillUniqueTopicNameInRuntimeArguments(String runtimeArgumentKey) {
+    SalesforcePropertiesPageActions.fillUniqueTopicNameInRuntimeArguments(runtimeArgumentKey);
   }
 }

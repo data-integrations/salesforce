@@ -38,7 +38,7 @@ Feature: Salesforce Sink - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
     And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
-    And Fill Max Records Per Batch as: "OnelackRecords"
+    And Fill Max Records Per Batch as: "hundred.thousand.records"
     And Click on the Validate button
     And Verify that the Plugin Property: "maxRecordsPerBatch" is displaying an in-line error message: "invalid.maxrecords"
     Examples:
@@ -53,7 +53,7 @@ Feature: Salesforce Sink - Design time - validation scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
     And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
-    And Fill Max Bytes Per Batch as: "TenCroreRecords"
+    And Fill Max Bytes Per Batch as: "hundred.million.records"
     And Click on the Validate button
     And Verify that the Plugin Property: "maxBytesPerBatch" is displaying an in-line error message: "invalid.maxbytes"
     Examples:

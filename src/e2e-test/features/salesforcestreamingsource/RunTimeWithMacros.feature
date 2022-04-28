@@ -16,11 +16,10 @@
 @SFStreamingSource
 @Smoke
 @Regression
-
 Feature: Salesforce Streaming Source - Run time Scenarios (macros)
 
   @STREAMING-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run pipeline with macro for Streaming Source using SObjectName
+  Scenario: Verify user should be able to deploy and run pipeline with macro for Streaming Source using SObjectName
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -50,16 +49,18 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "salesforce.streaming.TopicName" for key "TopicName"
-    And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
+    And Enter unique Topic name as a Runtime argument value for key: "TopicName"
+    And Enter runtime argument value "sobject.leads" for key "SObjectName"
     And Run the Pipeline in Runtime with runtime arguments
-    And Wait till pipeline is in running state
+    And Wait for pipeline to be in Running status
+    And Create a new Lead in Salesforce using REST API
+    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Stop the pipeline
     And Open and capture logs
-    And Verify the pipeline status is "Succeeded"
-
+    And Verify the pipeline status is "Stopped"
 
   @STREAMING-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run pipeline with macro for Streaming Source using SOQL Query
+  Scenario: Verify user should be able to deploy and run pipeline with macro for Streaming Source using SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -89,9 +90,12 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "salesforce.streaming.TopicName" for key "TopicName"
-    And Enter runtime argument value "simple.query" for key "Query"
+    And Enter unique Topic name as a Runtime argument value for key: "TopicName"
+    And Enter runtime argument value "simple.query.for.leads" for key "Query"
     And Run the Pipeline in Runtime with runtime arguments
-    And Wait till pipeline is in running state
+    And Wait for pipeline to be in Running status
+    And Create a new Lead in Salesforce using REST API
+    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Stop the pipeline
     And Open and capture logs
-    And Verify the pipeline status is "Succeeded"
+    And Verify the pipeline status is "Stopped"

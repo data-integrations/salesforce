@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforcestreamingsource.actions;
 
+import io.cdap.e2e.pages.actions.CdfStudioActions;
 import io.cdap.e2e.pages.locators.CdfPluginPropertiesLocators;
 import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.SeleniumHelper;
@@ -39,7 +40,14 @@ public class SalesforcePropertiesPageActions {
   private static void fillTopicName(String topicName) {
     ElementHelper.sendKeys(SalesforcePropertiesPage.topicnameInput, topicName);
   }
-  
+
+  public static void configureBasicSection() {
+    String referenceName = "TestSF_" + RandomStringUtils.randomAlphanumeric(7);
+    String topicName = "TestTopic_" + RandomStringUtils.randomAlphanumeric(5);
+    fillReferenceName(referenceName);
+    fillTopicName(topicName);
+  }
+
   public static void configureSalesforcePluginForTopicName(String topicName) {
     String referenceName = "TestSF" + RandomStringUtils.randomAlphanumeric(7);
     fillReferenceName(referenceName);
@@ -72,5 +80,10 @@ public class SalesforcePropertiesPageActions {
   public static void selectNotifyForFieldOption(String forFieldOption) {
     ElementHelper.selectDropdownOption(SalesforcePropertiesPage.notifyForFieldsDropdown,
       CdfPluginPropertiesLocators.locateDropdownListItem(forFieldOption));
+  }
+
+  public static void fillUniqueTopicNameInRuntimeArguments(String runtimeArgumentKey) {
+    String topicName = "TestTopic" + RandomStringUtils.randomAlphanumeric(7);
+    CdfStudioActions.enterRuntimeArgumentValue(runtimeArgumentKey, topicName);
   }
 }

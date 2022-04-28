@@ -16,15 +16,14 @@
 @SFSink
 @Smoke
 @Regression
-
 Feature: Salesforce Sink - Run time Scenarios with Macro
 
-  @SINK-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario Outline:Verify user should be able to preview and run pipeline using macro for Sink
+  @SINK-TS-SF-RNTM-MACRO-01 @BQ_SOURCE_TEST
+  Scenario Outline: Verify user should be able to preview and run pipeline using macro for Sink
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "BigQuery"
-    And Configure BigQuery sink plugin for Dataset and Table
+    And Configure BigQuery source plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
@@ -38,8 +37,8 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
     And Select Operation type as: "<OperationType>"
-    And Fill Max Records Per Batch as: "TenthousandRecords"
-    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Fill Max Records Per Batch as: "ten.thousand.records"
+    And Fill Max Bytes Per Batch as: "ten.million.records"
     And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -51,7 +50,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
+    And Enter runtime argument value "sobject.lead" for key "SObjectName"
     And Run the preview of pipeline with runtime arguments
     And Verify the preview of pipeline is "successfully"
     Examples:
@@ -60,12 +59,12 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
       | UPDATE        |
       | UPSERT        |
 
-  @SINK-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario Outline:Verify user should be able to deploy and run pipeline using macro for Sink
+  @SINK-TS-SF-RNTM-MACRO-02 @BQ_SOURCE_TEST
+  Scenario Outline: Verify user should be able to deploy and run pipeline using macro for Sink
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "BigQuery"
-    And Configure BigQuery sink plugin for Dataset and Table
+    And Configure BigQuery source plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "Salesforce" from the plugins list
@@ -79,8 +78,8 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "sObjectName" and set the value to: "SObjectName"
     And Select Operation type as: "<OperationType>"
-    And Fill Max Records Per Batch as: "TenthousandRecords"
-    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Fill Max Records Per Batch as: "ten.thousand.records"
+    And Fill Max Bytes Per Batch as: "ten.million.records"
     And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -93,7 +92,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
+    And Enter runtime argument value "sobject.lead" for key "SObjectName"
     And Run the Pipeline in Runtime with runtime arguments
     And Wait till pipeline is in running state
     And Open and capture logs

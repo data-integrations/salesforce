@@ -47,6 +47,14 @@ public class BigQueryCommonSteps {
     CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
   }
 
+  @When("Configure BigQuery source plugin for Dataset and Table")
+  public void configureBqSourcePlugin() {
+    String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
+    CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqSourceDataset);
+    CdfBigQueryPropertiesActions.enterBigQueryTable(TestSetupHooks.bqSourceTable);
+  }
+
   @Then("Verify count of no of records transferred to the target BigQuery Table")
   public void getCountOfNoOfRecordsTransferredToTargetBigQueryTable() throws IOException, InterruptedException {
     int countRecords = BigQueryClient.countBqQuery(TestSetupHooks.bqTargetDataset, TestSetupHooks.bqTargetTable);

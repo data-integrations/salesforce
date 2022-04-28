@@ -15,7 +15,6 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
-
 Feature: Salesforce Batch Source - Design time Scenarios (macro)
 
   @BATCH-TS-SF-DSGN-MACRO-01
@@ -35,7 +34,7 @@ Feature: Salesforce Batch Source - Design time Scenarios (macro)
     Then Validate "Salesforce" plugin properties
 
   @BATCH-TS-SF-DSGN-MACRO-02
-  Scenario:Verify user should be able to validate the plugin when SObject Query properties are configured with macros
+  Scenario: Verify user should be able to validate the plugin when SObject Query properties are configured with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -50,7 +49,7 @@ Feature: Salesforce Batch Source - Design time Scenarios (macro)
     Then Validate "Salesforce" plugin properties
     
   @BATCH-TS-SF-DSGN-MACRO-03
-  Scenario:Verify user should be able to validate the plugin when Advanced section properties are configured with macros
+  Scenario: Verify user should be able to validate the plugin when Advanced section properties are configured with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -60,4 +59,15 @@ Feature: Salesforce Batch Source - Design time Scenarios (macro)
     And Click on the Macro button of Property: "sObjectName" and set the value to: "sObjectName"
     And Click on the Macro button of Property: "enablePKChunk" and set the value to: "enablePKChunk"
     And Click on the Macro button of Property: "chunkSize" and set the value to: "chunkSize"
+    Then Validate "Salesforce" plugin properties
+
+  @BATCH-TS-SF-DSGN-MACRO-04
+  Scenario: Verify user should be able to validate the plugin when SOQL Query properties are configured with macros
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And fill Reference Name property
+    And fill Authentication properties for Salesforce Admin user
+    And Click on the Macro button of Property: "query" and set the value in textarea: "query"
     Then Validate "Salesforce" plugin properties

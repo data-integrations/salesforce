@@ -19,7 +19,7 @@
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
 
   @MULTIBATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario:Verify user should be able to preview a pipeline when plugin is configured with macros for WhiteList
+  Scenario: Verify user should be able to preview a pipeline when plugin is configured with macros for WhiteList
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
@@ -31,7 +31,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
-    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList1"
+    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
     And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -49,12 +49,12 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList1"
+    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList"
     And Run the preview of pipeline with runtime arguments
     And Verify the preview of pipeline is "successfully"
 
   @MULTIBATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run a pipeline when plugin is configured with macros for White List
+  Scenario: Verify user should be able to deploy and run a pipeline when plugin is configured with macros for White List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
@@ -66,7 +66,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
-    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList1"
+    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
     And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -84,14 +84,14 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList1"
+    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList"
     And Run the Pipeline in Runtime with runtime arguments
     And Wait till pipeline is in running state
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
 
   @MULTIBATCH-TS-SF-RNTM-MACRO-03 @BQ_SINK_TEST
-  Scenario:Verify user should be able to preview a pipeline when plugin is configured with macros for Black List
+  Scenario: Verify user should be able to preview a pipeline when plugin is configured with macros for Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
@@ -126,7 +126,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Verify the preview of pipeline is "successfully"
 
   @MULTIBATCH-TS-SF-RNTM-MACRO-04 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run a pipeline when plugin is configured with macros for Black List
+  Scenario: Verify user should be able to deploy and run a pipeline when plugin is configured with macros for Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
@@ -138,7 +138,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
-    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList1"
+    And Click on the Macro button of Property: "blackList" and set the value to: "BlackList"
     And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -156,7 +156,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.listofsobjectsforblacklist" for key "WhiteList1"
+    And Enter runtime argument value "sfmultisource.listofsobjectsforblacklist" for key "BlackList"
     And Run the Pipeline in Runtime with runtime arguments
     And Wait till pipeline is in running state
     And Open and capture logs

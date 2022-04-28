@@ -18,7 +18,7 @@
 Feature: Salesforce Batch Source - Run time Scenarios (macro)
 
   @BATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
-  Scenario:Verify user should be able to preview the pipeline when plugin is configured for SObject Name with macros
+  Scenario: Verify user should be able to preview the pipeline when plugin is configured for SObject Name with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -53,7 +53,7 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Verify the preview of pipeline is "successfully"
 
   @BATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
-  Scenario:Verify user should be able to deploy and run the pipeline when plugin is configured for SObject Name with macros
+  Scenario: Verify user should be able to deploy and run the pipeline when plugin is configured for SObject Name with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"

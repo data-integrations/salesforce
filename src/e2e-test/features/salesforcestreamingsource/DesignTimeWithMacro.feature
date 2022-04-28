@@ -16,11 +16,10 @@
 @SFStreamingSource
 @Smoke
 @Regression
-
 Feature: Salesforce Streaming Source - Design time Scenarios (macros)
 
   @STREAMING-TS-SF-DSGN-MACRO-01
-  Scenario:Verify user should be able to validate Streaming Source plugin with macros for SOQL Query
+  Scenario: Verify user should be able to validate Streaming Source plugin with macros for SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list
@@ -37,7 +36,7 @@ Feature: Salesforce Streaming Source - Design time Scenarios (macros)
     And Validate "Salesforce" plugin properties
 
   @STREAMING-TS-SF-DSGN-MACRO-02
-  Scenario:Verify user should be able to validate Streaming Source plugin with macros for SObjectName
+  Scenario: Verify user should be able to validate Streaming Source plugin with macros for SObjectName
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
     And Select Realtime Source plugin: "Salesforce" from the plugins list

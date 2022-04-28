@@ -39,7 +39,7 @@ Feature: Salesforce Streaming Source - Design time scenarios
     And Select Realtime Source plugin: "Salesforce" from the plugins list
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
-    And fill Topic Name as: "TopicName2"
+    And fill Topic Name field with a unique value
     And configure Salesforce source for an SObject Query of SObject: "<SObjectName>"
     And select option for notifyOnCreate as ENABLED
     And select option for notifyOnUpdate as DISABLED
@@ -59,7 +59,7 @@ Feature: Salesforce Streaming Source - Design time scenarios
     And Select Realtime Source plugin: "Salesforce" from the plugins list
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
-    And fill Topic Name as: "TopicName3"
+    And fill Topic Name field with a unique value
     And configure Salesforce source for an Push Topic Query of type: "<QueryType>"
     And select option for notifyOnCreate as ENABLED
     And select option for notifyOnUpdate as DISABLED

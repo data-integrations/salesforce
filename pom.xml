@@ -36,6 +36,7 @@
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
+    <httpclient.version>4.3.4</httpclient.version>
     <spark2.version>2.1.3</spark2.version>
     <hydrator.version>2.4.0</hydrator.version>
     <commons.version>3.8.1</commons.version>
@@ -211,6 +212,11 @@
           <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>${httpclient.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>

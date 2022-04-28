@@ -31,8 +31,8 @@ Feature: Salesforce Sink  - Design time scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And Select Operation type as: "<OperationType>"
     And fill Authentication properties for Salesforce Admin user
-    And Fill Max Records Per Batch as: "TenthousandRecords"
-    And Fill Max Bytes Per Batch as: "OneCroreRecords"
+    And Fill Max Records Per Batch as: "ten.thousand.records"
+    And Fill Max Bytes Per Batch as: "ten.million.records"
     And Configure Salesforce Sink for an SObjectName: "<SObjectName>"
     And Select Error handling as: SKIP_ON_ERROR
     Then Validate "Salesforce" plugin properties
