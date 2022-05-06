@@ -24,6 +24,33 @@
   <artifactId>salesforce-plugins</artifactId>
   <version>1.4.0</version>
   <packaging>jar</packaging>
+  <description>Salesforce Plugins</description>
+  <url>https://github.com/data-integrations/salesforce</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>CDAP</name>
+      <email>cdap-dev@googlegroups.com</email>
+      <organization>CDAP</organization>
+      <organizationUrl>http://cdap.io</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/data-integrations/salesforce.git</connection>
+    <developerConnection>scm:git:git@github.com:data-integrations/salesforce.git</developerConnection>
+    <url>https://github.com/data-integrations/salesforce.git</url>
+    <tag>HEAD</tag>
+  </scm>
 
 
   <properties>
