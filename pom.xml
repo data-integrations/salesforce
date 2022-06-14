@@ -682,6 +682,24 @@
               <includes>
                 <include>TestRunner.java</include>
               </includes>
+              <environmentVariables>
+                <SALESFORCE_USERNAME>
+                  ${SALESFORCE_USERNAME}
+                </SALESFORCE_USERNAME>
+                <SALESFORCE_PASSWORD>
+                  ${SALESFORCE_PASSWORD}
+                </SALESFORCE_PASSWORD>
+                <SALESFORCE_SECURITY_TOKEN>
+                  ${SALESFORCE_SECURITY_TOKEN}
+                </SALESFORCE_SECURITY_TOKEN>
+                <SALESFORCE_COSUMER_KEY>
+                  ${SALESFORCE_CONSUMER_KEY}
+                </SALESFORCE_COSUMER_KEY>
+                <SALESFORCE_CONSUMER_SECRET>
+                  ${SALESFORCE_CONSUMER_SECRET}
+                </SALESFORCE_CONSUMER_SECRET>
+              </environmentVariables>
+
             </configuration>
             <executions>
               <execution>
