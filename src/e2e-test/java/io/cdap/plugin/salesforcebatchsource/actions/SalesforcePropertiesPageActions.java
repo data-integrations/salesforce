@@ -61,11 +61,11 @@ public class SalesforcePropertiesPageActions {
 
   public static void fillAuthenticationPropertiesForSalesforceAdminUser() {
     SalesforcePropertiesPageActions.fillAuthenticationProperties(
-      PluginPropertyUtils.pluginProp("admin.username"),
-      PluginPropertyUtils.pluginProp("admin.password"),
-      PluginPropertyUtils.pluginProp("admin.security.token"),
-      PluginPropertyUtils.pluginProp("admin.consumer.key"),
-      PluginPropertyUtils.pluginProp("admin.consumer.secret"));
+      System.getenv("SALESFORCE_USERNAME"),
+      System.getenv("SALESFORCE_PASSWORD"),
+      System.getenv("SALESFORCE_SECURITY_TOKEN"),
+      System.getenv("SALESFORCE_CONSUMER_KEY"),
+      System.getenv("SALESFORCE_CONSUMER_SECRET"));
   }
 
   public static void fillAuthenticationPropertiesWithInvalidValues() {
@@ -103,12 +103,11 @@ public class SalesforcePropertiesPageActions {
 
   private static AuthenticatorCredentials setAuthenticationCredentialsOfAdminUser() {
     return new AuthenticatorCredentials(
-      PluginPropertyUtils.pluginProp("admin.username"),
-      PluginPropertyUtils.pluginProp("admin.password"),
-      PluginPropertyUtils.pluginProp("admin.consumer.key"),
-      PluginPropertyUtils.pluginProp("admin.consumer.secret"),
-      PluginPropertyUtils.pluginProp("login.url")
-    );
+      System.getenv("SALESFORCE_USERNAME"),
+      System.getenv("SALESFORCE_PASSWORD"),
+      System.getenv("SALESFORCE_SECURITY_TOKEN"),
+      System.getenv("SALESFORCE_CONSUMER_KEY"),
+      System.getenv("SALESFORCE_CONSUMER_SECRET"));
   }
 
   private static SalesforceSourceConfig getSourceConfigWithSOQLQuery(SOQLQueryType queryType) {

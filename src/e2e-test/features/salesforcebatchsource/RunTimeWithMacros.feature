@@ -42,11 +42,11 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
     And Run the preview of pipeline with runtime arguments
@@ -77,11 +77,11 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
     And Run the Pipeline in Runtime with runtime arguments
@@ -113,11 +113,11 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter runtime argument value "where.query" for key "Query"
     And Run the preview of pipeline with runtime arguments
@@ -147,11 +147,11 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter runtime argument value "where.query" for key "Query"
     And Run the Pipeline in Runtime with runtime arguments

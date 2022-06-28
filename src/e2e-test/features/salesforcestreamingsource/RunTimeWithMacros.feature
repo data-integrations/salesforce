@@ -43,18 +43,18 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter unique Topic name as a Runtime argument value for key: "TopicName"
     And Enter runtime argument value "sobject.leads" for key "SObjectName"
     And Run the Pipeline in Runtime with runtime arguments
-    And Wait for pipeline to be in Running status
+    And Wait till pipeline is in running state
     And Create a new Lead in Salesforce using REST API
-    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Wait till pipeline is in running status with a timeout of 120 seconds
     And Stop the pipeline
     And Open and capture logs
     And Verify the pipeline status is "Stopped"
@@ -84,18 +84,18 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Enter runtime argument value "admin.username" for key "Username"
-    And Enter runtime argument value "admin.password" for key "Password"
-    And Enter runtime argument value "admin.security.token" for key "SecurityToken"
-    And Enter runtime argument value "admin.consumer.key" for key "ConsumerKey"
-    And Enter runtime argument value "admin.consumer.secret" for key "ConsumerSecret"
+    And Enter runtime argument value from environment variable "admin.username" for key "Username"
+    And Enter runtime argument value from environment variable "admin.password" for key "Password"
+    And Enter runtime argument value from environment variable "admin.security.token" for key "SecurityToken"
+    And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
+    And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter unique Topic name as a Runtime argument value for key: "TopicName"
     And Enter runtime argument value "simple.query.for.leads" for key "Query"
     And Run the Pipeline in Runtime with runtime arguments
-    And Wait for pipeline to be in Running status
+    And Wait till pipeline is in running state
     And Create a new Lead in Salesforce using REST API
-    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Wait till pipeline is in running status with a timeout of 120 seconds
     And Stop the pipeline
     And Open and capture logs
     And Verify the pipeline status is "Stopped"

@@ -36,9 +36,9 @@ Feature: Salesforce Streaming Source - Run time Scenarios
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Wait for pipeline to be in Running status
+    And Wait till pipeline is in running state
     And Create a new Lead in Salesforce using REST API
-    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Wait till pipeline is in running status with a timeout of 120 seconds
     And Stop the pipeline
     And Open and capture logs
     And Verify the pipeline status is "Stopped"
@@ -61,9 +61,9 @@ Feature: Salesforce Streaming Source - Run time Scenarios
     And Connect source as "Salesforce" and sink as "BigQueryTable" to establish connection
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
-    And Wait for pipeline to be in Running status
+    And Wait till pipeline is in running state
     And Create a new Lead in Salesforce using REST API
-    And Wait till data transfer begins in pipeline with a timeout of 120 seconds
+    And Wait till pipeline is in running status with a timeout of 120 seconds
     And Stop the pipeline
     And Open and capture logs
     And Verify the pipeline status is "Stopped"
