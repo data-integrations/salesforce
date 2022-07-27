@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "spec-version": "1.0"
+  },
+  "display-name": "Salesforce",
+  "configuration-groups": [
+    {
+      "label": "Credentials",
+      "properties": [
+        {
+          "widget-type" : "hidden",
+          "label": "OAuth Information",
+          "name": "oAuthInfo"
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Consumer Key",
+          "name": "consumerKey",
+          "widget-attributes" : {
+            "placeholder": "Salesforce Consumer Key"
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "Consumer Secret",
+          "name": "consumerSecret",
+          "widget-attributes" : {
+            "placeholder": "Salesforce Consumer Secret "
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "Security Token",
+          "name": "securityToken",
+          "widget-attributes" : {
+            "placeholder": "Salesforce Security token"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "User Name",
+          "name": "username",
+          "widget-attributes" : {
+            "placeholder": "Salesforce User Name"
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "Password",
+          "name": "password",
+          "widget-attributes" : {
+            "placeholder": "Salesforce User Password"
+          }
+        },
+        {
+          "widget-type": "textbox",
+          "label": "Login Url",
+          "name": "loginUrl",
+          "widget-attributes" : {
+            "default": "https://login.salesforce.com/services/oauth2/token"
+          }
+        }
+      ]
+    }
+  ],
+  "outputs": []
+}

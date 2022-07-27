@@ -73,8 +73,10 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     config.validate(stageConfigurer.getFailureCollector()); // validate before macros are substituted
 
     // if connection params are macro or null
-    if (!config.canAttemptToEstablishConnection()) {
-      return;
+    if (config.getConnection() != null) {
+      if (!config.getConnection().canAttemptToEstablishConnection()) {
+        return;
+      }
     }
     config.validateSObjects(stageConfigurer.getFailureCollector());
     stageConfigurer.setOutputSchema(null);
@@ -94,17 +96,17 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     SettableArguments arguments = context.getArguments();
     schemas.forEach(
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
-
-    String sObjectNameField = config.getSObjectNameField();
-    authenticatorCredentials = config.getAuthenticatorCredentials();
-    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-    List<SalesforceSplit> querySplits = queries.parallelStream()
-      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
-      .flatMap(Collection::stream).collect(Collectors.toList());
-    // store the jobIds so be used in onRunFinish() to close the connections
-    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-      config, getSchemaWithNameField(sObjectNameField, schemas), querySplits, sObjectNameField)));
+    if (config.getConnection() != null) {
+      String sObjectNameField = config.getSObjectNameField();
+      authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
+      BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+      List<SalesforceSplit> querySplits = queries.parallelStream()
+        .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
+        .flatMap(Collection::stream).collect(Collectors.toList());
+      // store the jobIds so be used in onRunFinish() to close the connections
+      querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
+      context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
+        config, getSchemaWithNameField(sObjectNameField, schemas), querySplits, sObjectNameField)));
     /* TODO PLUGIN-510
      *  As part of [CDAP-16290], recordLineage function was introduced with out implementation.
      *  To avoid compilation errors the code block is commented for future fix.
@@ -114,8 +116,8 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
                     "Read", "Read from Salesforce MultiObjects.");
     }
      */
+    }
   }
-
   @Override
   public void onRunFinish(boolean succeeded, BatchSourceContext context) {
     super.onRunFinish(succeeded, context);

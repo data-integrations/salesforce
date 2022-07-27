@@ -44,20 +44,22 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
     configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
-    OAuthInfo oAuthInfo = config.getOAuthInfo();
-    if (oAuthInfo != null) {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
-        .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
-    } else {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getUsername()))
-        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getPassword()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConsumerKey()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConsumerSecret()))
-        .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getLoginUrl()));
+    if (config.getConnection() != null) {
+      OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
+      if (oAuthInfo != null) {
+        configBuilder
+          .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
+          .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
+      } else {
+        configBuilder
+          .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
+          .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()))
+          .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConnection().getConsumerKey()))
+          .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConnection().
+                                                                                    getConsumerSecret()))
+          .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      }
     }
-
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }
