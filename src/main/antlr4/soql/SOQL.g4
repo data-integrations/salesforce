@@ -61,6 +61,12 @@ keyword             : GROUP
                     | CATEGORY
                     ;
 
+selectKey           : DATA
+                    | SCOPE
+                    | END
+                    | OFFSET
+                    ;
+
 SELECT              : S E L E C T ;
 TYPEOF              : T Y P E O F ;
 FROM                : F R O M ;
@@ -235,6 +241,7 @@ fieldList           : '*' # starElement
                     ;
 
 fieldElement        : subquery
+                    | specialFieldName
                     | fieldName
                     | functionCall
                     | typeOfClause
@@ -248,6 +255,10 @@ subquery            : '('
                         (LIMIT numberOfRowsToReturn)?
                         (OFFSET numberOfRowsToSkip)?
                       ')' ;
+
+selectKeyField      : selectKey ('.' selectKey)* ;
+
+specialFieldName    : selectKeyField alias?;
 
 fieldName           : field alias?; // only for aggregate queries
 

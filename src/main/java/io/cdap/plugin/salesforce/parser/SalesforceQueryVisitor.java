@@ -148,7 +148,7 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
         // select Opportunity.Name from Opportunity -> Name
         // select o.Name from Opportunity o -> Name
         String topParent = nameParts.get(0);
-        if (topParent.equalsIgnoreCase(objectName) || topParent.equals(objectAlias)) {
+        if (topParent.equals(objectName) || topParent.equals(objectAlias)) {
           // remove alias
           nameParts = nameParts.subList(1, nameParts.size());
         }
@@ -156,6 +156,30 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
 
       String alias = ctx.alias() == null ? null : ctx.alias().getText();
       return new SObjectDescriptor.FieldDescriptor(nameParts, alias, SalesforceFunctionType.NONE);
+    }
+
+    @Override
+    public SObjectDescriptor.FieldDescriptor visitSelectKeyField(SOQLParser.SelectKeyFieldContext ctx) {
+      List<String> nameParts = ctx.selectKey().stream()
+        .map(RuleContext::getText)
+        .collect(Collectors.toList());
+
+      if (nameParts.isEmpty()) {
+        throw new SOQLParsingException("Invalid column name: " + ctx.getText());
+      }
+
+      if (nameParts.size() > 1) {
+        // if field contains alias, remove it to get actual field name
+        // Example:
+        // select Opportunity.Name from Opportunity -> Name
+        // select o.Name from Opportunity o -> Name
+        String topParent = nameParts.get(0);
+        if (topParent.equals(objectName) || topParent.equals(objectAlias)) {
+          // remove alias
+          nameParts = nameParts.subList(1, nameParts.size());
+        }
+      }
+      return new SObjectDescriptor.FieldDescriptor(nameParts, null, SalesforceFunctionType.NONE);
     }
 
     @Override
