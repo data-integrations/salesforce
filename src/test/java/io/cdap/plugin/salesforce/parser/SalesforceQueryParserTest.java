@@ -266,4 +266,34 @@ public class SalesforceQueryParserTest {
       Collections.singletonList(new SObjectDescriptor("Contacts", fields)),
       result.getChildSObjects());
   }
+
+  @Test
+  public void testDataKeywordInQuery() {
+    String query = "SELECT Data FROM BackgroundOperationResult";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
+
+  @Test
+  public void testEndKeywordInQuery() {
+    String query = "SELECT END FROM BackgroundOperationResult";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
+
+  @Test
+  public void testScopeKeywordInQuery() {
+    String query = "SELECT SCOPE FROM BackgroundOperationResult";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
+
+  @Test
+  public void testCaseInsensitiveQuery() {
+    String query = "select o.name from opportunity o";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
+  
+  @Test
+  public void testOffsetKeywordInQuery() {
+    String query = "SELECT OFFSET FROM CommSubscriptionTiming";
+    SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+  }
 }
