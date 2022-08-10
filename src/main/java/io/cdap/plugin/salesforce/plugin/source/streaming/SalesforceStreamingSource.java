@@ -21,6 +21,8 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Metadata;
+import io.cdap.cdap.api.annotation.MetadataProperty;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.format.StructuredRecord;
@@ -29,6 +31,7 @@ import io.cdap.cdap.api.dataset.DatasetManagementException;
 import io.cdap.cdap.api.dataset.DatasetProperties;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.PipelineConfigurer;
+import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.cdap.etl.api.streaming.StreamingSource;
 import io.cdap.cdap.etl.api.streaming.StreamingSourceContext;
@@ -36,6 +39,7 @@ import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.common.IdUtils;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -55,6 +59,7 @@ import javax.ws.rs.Path;
 @Plugin(type = StreamingSource.PLUGIN_TYPE)
 @Name(SalesforceStreamingSource.NAME)
 @Description(SalesforceStreamingSource.DESCRIPTION)
+@Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceStreamingSource extends StreamingSource<StructuredRecord> {
   static final String NAME = "Salesforce";
   static final String DESCRIPTION = "Streams data updates from Salesforce using Salesforce Streaming API";
@@ -74,19 +79,21 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
 
     try {
-      config.validate(collector); // validate when macros are not substituted
-      config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
+      if (config.getConnection() != null) {
+        config.getConnection().validate(collector); // validate when macros are not substituted
+        config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
 
-      String query = config.getQuery();
+        String query = config.getQuery();
 
-      if (!Strings.isNullOrEmpty(query)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
-        && config.canAttemptToEstablishConnection()) {
+        if (!Strings.isNullOrEmpty(query)
+          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
+          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
+          && config.getConnection().canAttemptToEstablishConnection()) {
 
-        Schema schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
-                                                       SObjectDescriptor.fromQuery(query));
-        pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
+          Schema schema = SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(),
+                                                         SObjectDescriptor.fromQuery(query));
+          pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
+        }
       }
     } catch (ConnectionException e) {
       collector.addFailure("There was issue communicating with Salesforce: " + e.getMessage(), null)
@@ -107,7 +114,9 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   @Override
   public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws ConnectionException {
     FailureCollector collector = streamingContext.getFailureCollector();
-    config.validate(collector); // validate when macros are substituted
+    if (config.getConnection() != null) {
+      config.getConnection().validate(collector); // validate when macros are substituted
+    }
     collector.getOrThrowException();
 
     return SalesforceStreamingSourceUtil.getStructuredRecordJavaDStream(streamingContext, config);
@@ -115,7 +124,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
   @Path("outputSchema")
   public Schema outputSchema(SalesforceStreamingSourceConfig config) throws Exception {
-    AuthenticatorCredentials authenticatorCredentials = config.getAuthenticatorCredentials();
+    AuthenticatorCredentials authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     PartnerConnection partnerConnection = new PartnerConnection(
       Authenticator.createConnectorConfig(authenticatorCredentials));
     SObject pushTopic =

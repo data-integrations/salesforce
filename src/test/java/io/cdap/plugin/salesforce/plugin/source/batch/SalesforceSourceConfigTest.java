@@ -21,12 +21,17 @@ import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -36,6 +41,8 @@ import java.util.stream.Stream;
 /**
  * Tests for {@link SalesforceSourceConfig}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(SalesforceConnectorConfig.class)
 public class SalesforceSourceConfigTest {
 
   @Rule
@@ -198,7 +205,7 @@ public class SalesforceSourceConfigTest {
       .setQuery("Select Name from Table")
       .setEnablePKChunk(true)
       .setReferenceName("Source").build();
-    testValidPKChunkConfiguration(config);
+    testValidPKChunkConfiguration(config.getConnection());
   }
 
   @Test
@@ -208,7 +215,7 @@ public class SalesforceSourceConfigTest {
       .setEnablePKChunk(true)
       .setChunkSize(SalesforceSourceConstants.MAX_PK_CHUNK_SIZE)
       .setReferenceName("Source").build();
-    testValidPKChunkConfiguration(config);
+    testValidPKChunkConfiguration(config.getConnection());
   }
 
   @Test
@@ -218,19 +225,19 @@ public class SalesforceSourceConfigTest {
       .setEnablePKChunk(true)
       .setChunkSize(SalesforceSourceConstants.MIN_PK_CHUNK_SIZE)
       .setReferenceName("Source").build();
-    testValidPKChunkConfiguration(config);
+    testValidPKChunkConfiguration(config.getConnection());
   }
 
-  private void testValidPKChunkConfiguration(SalesforceSourceConfig config) {
+  private void testValidPKChunkConfiguration(SalesforceConnectorConfig config) {
     MockFailureCollector collector = new MockFailureCollector();
-    SalesforceSourceConfig mock = Mockito.spy(config);
+    SalesforceConnectorConfig mock = Mockito.spy(config);
     Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
     mock.validate(collector);
     Assert.assertEquals(0, collector.getValidationFailures().size());
   }
 
   @Test
-  public void testPKChunkWithRestrictedQuery() {
+  public void testPKChunkWithRestrictedQuery() throws Exception {
     SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
       .setReferenceName("Source")
       .setQuery("Select Max(Id) MX from Table")
@@ -240,7 +247,7 @@ public class SalesforceSourceConfigTest {
   }
 
   @Test
-  public void testPKChunkWithChunkSizeAboveMax() {
+  public void testPKChunkWithChunkSizeAboveMax() throws Exception {
     SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
       .setQuery("Select Name from Table")
       .setEnablePKChunk(true)
@@ -250,7 +257,7 @@ public class SalesforceSourceConfigTest {
   }
 
   @Test
-  public void testPKChunkWithChunkSizeBelowMin() {
+  public void testPKChunkWithChunkSizeBelowMin() throws Exception {
     SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
       .setQuery("Select Name from Table")
       .setEnablePKChunk(true)
@@ -259,10 +266,16 @@ public class SalesforceSourceConfigTest {
     testPKChunkInvalidConfig(config, SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
   }
 
-  private void testPKChunkInvalidConfig(SalesforceSourceConfig config, String stageConfigName) {
+  private void testPKChunkInvalidConfig(SalesforceSourceConfig config, String stageConfigName) throws Exception {
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSourceConfig mock = Mockito.spy(config);
-    Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
+    SalesforceConnectorConfig connectorConfig = Mockito.mock(SalesforceConnectorConfig.class);
+    PowerMockito.whenNew(SalesforceConnectorConfig.class).withArguments(Mockito.anyString(), Mockito.anyString(),
+                                                                        Mockito.anyString(), Mockito.anyString(),
+                                                                        Mockito.anyString(), Mockito.anyString(),
+                                                                        Mockito.any()).thenReturn(connectorConfig);
+    Mockito.when(mock.getConnection()).thenReturn(connectorConfig);
+    PowerMockito.when(connectorConfig.canAttemptToEstablishConnection()).thenReturn(false);
     ValidationFailure failure;
     try {
       mock.validate(collector);
