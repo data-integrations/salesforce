@@ -118,6 +118,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     this.parent = parent;
   }
 
+
   /**
    * Returns SOQL to retrieve data from Salesforce. If user has provided SOQL, returns given SOQL. If user has provided
    * sObject name, generates SOQL based on sObject metadata and provided filters.
@@ -161,9 +162,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                      SalesforceSourceConstants.PROPERTY_QUERY);
   }
 
-  @Override
   public void validate(FailureCollector collector) {
-    super.validate(collector);
+    this.getConnection().validate(collector);
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
         collector.addFailure(
@@ -183,8 +183,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
         throw collector.getOrThrowException();
       }
-      if (canAttemptToEstablishConnection()) {
-        validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector);
+      if (getConnection().canAttemptToEstablishConnection()) {
+          validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector);
       }
     }
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
@@ -201,7 +201,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     validateSchema(collector);
     validatePKChunk(collector);
   }
-
   private void validateSchema(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
       return;
@@ -218,30 +217,32 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector) {
-    try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                       getAuthenticatorCredentials());
-      List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
-        .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
-        .filter(fieldDescriptor -> SalesforceSchemaUtil.COMPOUND_FIELDS.contains(fieldDescriptor.getFieldType()))
-        .map(SObjectDescriptor.FieldDescriptor::getName)
-        .collect(Collectors.toList());
-      if (!compoundFieldNames.isEmpty()) {
+    if (getConnection() != null) {
+      try {
+        SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                         getConnection().getAuthenticatorCredentials());
+        List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
+          .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
+          .filter(fieldDescriptor -> SalesforceSchemaUtil.COMPOUND_FIELDS.contains(fieldDescriptor.getFieldType()))
+          .map(SObjectDescriptor.FieldDescriptor::getName)
+          .collect(Collectors.toList());
+        if (!compoundFieldNames.isEmpty()) {
+          collector.addFailure(
+              String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
+                              + "Please specify the individual attributes instead of compound field name in SOQL " +
+                              "query. "
+                              + "For example, instead of 'Select BillingAddress ...', use "
+                              + "'Select BillingCountry, BillingCity, BillingStreet ...'",
+                            compoundFieldNames), null)
+            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        }
+      } catch (ConnectionException e) {
         collector.addFailure(
-          String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
-                          + "Please specify the individual attributes instead of compound field name in SOQL query. "
-                          + "For example, instead of 'Select BillingAddress ...', use "
-                          + "'Select BillingCountry, BillingCity, BillingStreet ...'",
-                        compoundFieldNames), null)
-          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+            String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
+          .withStacktrace(e.getStackTrace());
       }
-    } catch (ConnectionException e) {
-      collector.addFailure(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
-        .withStacktrace(e.getStackTrace());
     }
   }
-
   private void validatePKChunk(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
@@ -298,12 +299,16 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private void checkForPKSupportedObject(String sObject, FailureCollector collector) {
-    if (canAttemptToEstablishConnection()) {
-      if (!isCustomObject(sObject, collector)) {
-        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
-          collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
-                               "Please check documentation for supported Objects. If this is a history " +
-                                 "or shared table, you may need to specify a SObject Parent in the Advanced section.");
+    if (getConnection() != null) {
+      if (getConnection().canAttemptToEstablishConnection()) {
+        if (!isCustomObject(sObject, collector)) {
+          if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
+            collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
+                                 "Please check documentation for supported Objects. " +
+                                   "If this is a history " +
+                                   "or shared table, you may need to specify a SObject Parent in the" +
+                                   " Advanced section.");
+          }
         }
       }
     }
@@ -318,7 +323,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private boolean isCustomObject(String sObjectName, FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+    AuthenticatorCredentials credentials = this.getConnection().getAuthenticatorCredentials();
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
