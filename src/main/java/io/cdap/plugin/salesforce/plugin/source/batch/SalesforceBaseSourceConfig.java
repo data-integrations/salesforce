@@ -22,14 +22,16 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.common.ConfigUtil;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
-import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -49,7 +51,7 @@ import javax.annotation.Nullable;
 /**
  * Base Salesforce Batch Source config. Contains common configuration properties and methods.
  */
-public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
+public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBaseSourceConfig.class);
 
@@ -85,6 +87,17 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
 
   private static final String DEFAULT_OPERATION = "query";
 
+  @Name(ConfigUtil.NAME_USE_CONNECTION)
+  @Nullable
+  @Description("Whether to use an existing connection.")
+  private Boolean useConnection;
+
+  @Name(ConfigUtil.NAME_CONNECTION)
+  @Macro
+  @Nullable
+  @Description("The existing connection to use.")
+  private SalesforceConnectorConfig connection;
+
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
                                        @Nullable String consumerSecret,
@@ -98,7 +111,9 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
                                        @Nullable String operation) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName);
+    this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
+                                                    securityToken, oAuthInfo);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
@@ -112,6 +127,11 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
 
   public Map<ChronoUnit, Integer> getOffset() {
     return extractRangeValue(SalesforceSourceConstants.PROPERTY_OFFSET, offset);
+  }
+
+  @Nullable
+  public SalesforceConnectorConfig getConnection() {
+    return connection;
   }
 
   @Nullable
@@ -166,7 +186,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                       connection.getAuthenticatorCredentials(),
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();

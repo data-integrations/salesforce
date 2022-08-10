@@ -51,37 +51,38 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString());
+    if (config.getConnection() != null) {
+      OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
+      if (oAuthInfo != null) {
+        configBuilder
+          .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
+          .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
+      } else {
+        configBuilder
+          .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
+          .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()))
+          .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConnection().getConsumerKey()))
+          .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConnection().
+                                                                                    getConsumerSecret()))
+          .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      }
 
-    OAuthInfo oAuthInfo = config.getOAuthInfo();
-    if (oAuthInfo != null) {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
-        .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
-    } else {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getUsername()))
-        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getPassword()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConsumerKey()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConsumerSecret()))
-        .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getLoginUrl()));
+      if (config.getExternalIdField() != null) {
+        configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());
+      }
+
+      AuthenticatorCredentials credentials = config.getConnection().getAuthenticatorCredentials();
+
+      try {
+        BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+        JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
+                                                   config.getExternalIdField());
+        configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
+        LOG.info("Started Salesforce job with jobId='{}'", job.getId());
+      } catch (AsyncApiException e) {
+        throw new RuntimeException("There was issue communicating with Salesforce", e);
+      }
     }
-
-    if (config.getExternalIdField() != null) {
-      configBuilder.put(SalesforceSinkConstants.CONFIG_EXTERNAL_ID_FIELD, config.getExternalIdField());
-    }
-
-    AuthenticatorCredentials credentials = config.getAuthenticatorCredentials();
-
-    try {
-      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
-                                                 config.getExternalIdField());
-      configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
-      LOG.info("Started Salesforce job with jobId='{}'", job.getId());
-    } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
-    }
-
     this.configMap = configBuilder.build();
   }
 

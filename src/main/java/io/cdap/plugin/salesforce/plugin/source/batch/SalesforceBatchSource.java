@@ -79,16 +79,16 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
       return;
     }
-
-    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-      || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
-      || !config.canAttemptToEstablishConnection()) {
-      // some config properties required for schema generation are not available
-      // will validate schema later in `prepareRun` stage
-      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
-      return;
+    if (config.getConnection() != null) {
+      if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+        || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
+        || !config.getConnection().canAttemptToEstablishConnection()) {
+        // some config properties required for schema generation are not available
+        // will validate schema later in `prepareRun` stage
+        pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
+        return;
+      }
     }
-
     schema = retrieveSchema();
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
@@ -106,32 +106,32 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
     lineageRecorder.createExternalDataset(schema);
     lineageRecorder.recordRead("Read", "Read from Salesforce",
-      Preconditions.checkNotNull(schema.getFields()).stream()
-        .map(Schema.Field::getName)
-        .collect(Collectors.toList()));
-
-    String query = config.getQuery(context.getLogicalStartTime());
-    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-    authenticatorCredentials = config.getAuthenticatorCredentials();
-    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-    boolean enablePKChunk = config.getEnablePKChunk();
-    if (enablePKChunk) {
-      String parent = config.getParent();
-      int chunkSize = config.getChunkSize();
-      List<String> chunkHeaderValues = new ArrayList<>();
-      chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
-      if (!Strings.isNullOrEmpty(parent)) {
-        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
+                               Preconditions.checkNotNull(schema.getFields()).stream()
+                                 .map(Schema.Field::getName)
+                                 .collect(Collectors.toList()));
+    if (config.getConnection() != null) {
+      String query = config.getQuery(context.getLogicalStartTime());
+      String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+      authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
+      BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+      boolean enablePKChunk = config.getEnablePKChunk();
+      if (enablePKChunk) {
+        String parent = config.getParent();
+        int chunkSize = config.getChunkSize();
+        List<String> chunkHeaderValues = new ArrayList<>();
+        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+        if (!Strings.isNullOrEmpty(parent)) {
+          chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
+        }
+        bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
       }
-      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
+      List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
+                                                                             enablePKChunk, config.getOperation());
+      querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
+      context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
+        config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
     }
-    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
-            enablePKChunk, config.getOperation());
-    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-    config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
-
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
@@ -161,7 +161,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     String query = config.getQuery(System.currentTimeMillis());
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
-      return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+      return SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(), sObjectDescriptor);
     } catch (ConnectionException e) {
       throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
     }

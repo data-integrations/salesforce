@@ -74,19 +74,21 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
 
     try {
-      config.validate(collector); // validate when macros are not substituted
-      config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
+      if (config.getConnection() != null) {
+        config.getConnection().validate(collector); // validate when macros are not substituted
+        config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
 
-      String query = config.getQuery();
+        String query = config.getQuery();
 
-      if (!Strings.isNullOrEmpty(query)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
-        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
-        && config.canAttemptToEstablishConnection()) {
+        if (!Strings.isNullOrEmpty(query)
+          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
+          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
+          && config.getConnection().canAttemptToEstablishConnection()) {
 
-        Schema schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
-                                                       SObjectDescriptor.fromQuery(query));
-        pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
+          Schema schema = SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(),
+                                                         SObjectDescriptor.fromQuery(query));
+          pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
+        }
       }
     } catch (ConnectionException e) {
       collector.addFailure("There was issue communicating with Salesforce: " + e.getMessage(), null)
@@ -107,7 +109,9 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   @Override
   public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws ConnectionException {
     FailureCollector collector = streamingContext.getFailureCollector();
-    config.validate(collector); // validate when macros are substituted
+    if (config.getConnection() != null) {
+      config.getConnection().validate(collector); // validate when macros are substituted
+    }
     collector.getOrThrowException();
 
     return SalesforceStreamingSourceUtil.getStructuredRecordJavaDStream(streamingContext, config);
@@ -115,7 +119,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
 
   @Path("outputSchema")
   public Schema outputSchema(SalesforceStreamingSourceConfig config) throws Exception {
-    AuthenticatorCredentials authenticatorCredentials = config.getAuthenticatorCredentials();
+    AuthenticatorCredentials authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     PartnerConnection partnerConnection = new PartnerConnection(
       Authenticator.createConnectorConfig(authenticatorCredentials));
     SObject pushTopic =

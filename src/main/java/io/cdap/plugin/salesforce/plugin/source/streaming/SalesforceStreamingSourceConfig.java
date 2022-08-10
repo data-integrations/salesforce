@@ -26,14 +26,16 @@ import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.common.ConfigUtil;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
-import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.soap.SObjectBuilder;
 import io.cdap.plugin.salesforce.soap.SObjectUtil;
 import org.slf4j.Logger;
@@ -49,7 +51,7 @@ import javax.annotation.Nullable;
 /**
  * Salesforce Streaming Source plugin config.
  */
-public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implements Serializable {
+public class SalesforceStreamingSourceConfig extends ReferencePluginConfig implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceConfig.class);
   private static final long serialVersionUID = 4218063781902315444L;
 
@@ -92,6 +94,17 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
   @Macro
   private String sObjectName;
 
+  @Name(ConfigUtil.NAME_USE_CONNECTION)
+  @Nullable
+  @Description("Whether to use an existing connection.")
+  private Boolean useConnection;
+
+  @Name(ConfigUtil.NAME_CONNECTION)
+  @Macro
+  @Nullable
+  @Description("The existing connection to use.")
+  private SalesforceConnectorConfig connection;
+
   @Description("Push topic property, which specifies how the record is evaluated against the PushTopic query.\n" +
     "The NotifyForFields values are:\n" +
     "All - Notifications are generated for all record field changes, provided the evaluated records match " +
@@ -115,11 +128,17 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
                                          String pushTopicName, String sObjectName,
                                          @Nullable String securityToken,
                                          @Nullable OAuthInfo oAuthInfo) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
+    this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
+                                                    securityToken, oAuthInfo);
   }
 
+  @Nullable
+  public SalesforceConnectorConfig getConnection() {
+    return connection;
+  }
   public String getPushTopicName() {
     return pushTopicName;
   }
@@ -168,14 +187,15 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
    * If pushTopic does not exist it is created.
    */
   public void ensurePushTopicExistAndWithCorrectFields() {
-    if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
-      containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !canAttemptToEstablishConnection()) {
-      return;
+    if (getConnection() != null) {
+      if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
+        containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !getConnection().canAttemptToEstablishConnection()) {
+        return;
+      }
     }
-
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(this.getAuthenticatorCredentials()));
+        Authenticator.createConnectorConfig(this.getConnection().getAuthenticatorCredentials()));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();
@@ -311,7 +331,7 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
 
   @Nullable
   private String getSObjectQuery() {
-    if (!canAttemptToEstablishConnection()) {
+    if (!getConnection().canAttemptToEstablishConnection()) {
       return null;
     }
 
@@ -320,7 +340,8 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
       // Streaming API would respond with "large text area fields are not supported"
       Set<FieldType> typesToSkip = Collections.singleton(FieldType.textarea);
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                       getAuthenticatorCredentials(), typesToSkip);
+                                                                       getConnection().getAuthenticatorCredentials(),
+                                                                       typesToSkip);
 
       String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(sObjectDescriptor.getFieldsNames(), sObjectName,
                                                                    SObjectFilterDescriptor.noOp());
