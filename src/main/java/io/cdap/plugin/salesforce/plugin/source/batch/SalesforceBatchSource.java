@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +36,6 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -112,11 +112,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
     String query = config.getQuery(context.getLogicalStartTime());
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-    authenticatorCredentials = SalesforceConnectionUtil.getAuthenticatorCredentials(config.getUsername(),
-                                                                                    config.getPassword(),
-                                                                                    config.getConsumerKey(),
-                                                                                    config.getConsumerSecret(),
-                                                                                    config.getLoginUrl());
+    authenticatorCredentials = config.getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     boolean enablePKChunk = config.getEnablePKChunk();
     if (enablePKChunk) {
@@ -129,7 +125,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       }
       bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
     }
-    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection, enablePKChunk);
+    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
+            enablePKChunk, config.getOperation());
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
     config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
@@ -176,7 +173,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    *
    * @return provided schema if present, otherwise actual schema
    */
-  private Schema retrieveSchema() {
+  @VisibleForTesting
+  public Schema retrieveSchema() {
     Schema providedSchema = config.getSchema();
     Schema actualSchema = getSchema(config);
     if (providedSchema != null) {

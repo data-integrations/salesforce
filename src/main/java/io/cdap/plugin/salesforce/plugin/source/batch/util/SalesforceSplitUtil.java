@@ -23,9 +23,9 @@ import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
+import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
-import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -56,8 +56,8 @@ public final class SalesforceSplitUtil {
    * @return list of salesforce splits
    */
   public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection,
-                                                     boolean enablePKChunk) {
-    return Stream.of(getBatches(query, bulkConnection, enablePKChunk))
+                                                     boolean enablePKChunk, String operation) {
+    return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
   }
@@ -72,13 +72,14 @@ public final class SalesforceSplitUtil {
    * @param enablePKChunk enable PK Chunking
    * @return array of batch info
    */
-  private static BatchInfo[] getBatches(String query, BulkConnection bulkConnection, boolean enablePKChunk) {
+  private static BatchInfo[] getBatches(String query, BulkConnection bulkConnection,
+                                        boolean enablePKChunk, String operation) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk);
+      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk, operation);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
@@ -96,11 +97,13 @@ public final class SalesforceSplitUtil {
    * @throws AsyncApiException  if there is an issue creating the job
    * @throws IOException failed to close the query
    */
-  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query, boolean enablePKChunk)
+  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query,
+                                          boolean enablePKChunk, String operation)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), OperationEnum.query, null);
+    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(),
+            getOperationEnum(operation), null);
     BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);
@@ -119,22 +122,6 @@ public final class SalesforceSplitUtil {
     return batchInfos;
   }
 
-
-  /**
-   * Initializes bulk connection based on given Hadoop credentials configuration.
-   *
-   * @return bulk connection instance
-   */
-  public static BulkConnection getBulkConnection(String username, String password,
-                                                 String consumerKey, String consumerSecret, String loginUrl) {
-    AuthenticatorCredentials authenticatorCredentials = SalesforceConnectionUtil
-      .getAuthenticatorCredentials(username, password, consumerKey, consumerSecret, loginUrl);
-    try {
-      return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
-    } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
-    }
-  }
 
   /**
    * Initializes bulk connection based on given Hadoop credentials configuration.
@@ -210,6 +197,15 @@ public final class SalesforceSplitUtil {
     }
     if (runtimeException != null) {
       throw runtimeException;
+    }
+  }
+
+  private static OperationEnum getOperationEnum(String operation) {
+    try {
+      return OperationEnum.valueOf(operation);
+    } catch (IllegalArgumentException ex) {
+      throw new InvalidConfigException("Unsupported value for operation: " + operation,
+              SalesforceSourceConstants.PROPERTY_OPERATION);
     }
   }
 }
