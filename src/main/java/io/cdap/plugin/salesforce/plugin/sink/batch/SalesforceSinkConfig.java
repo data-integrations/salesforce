@@ -116,7 +116,6 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Description("The existing connection to use.")
   private SalesforceConnectorConfig connection;
 
-
   public SalesforceSinkConfig(String referenceName,
                               @Nullable String clientId,
                               @Nullable String clientSecret,
@@ -191,7 +190,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   }
 
   public void validate(Schema schema, FailureCollector collector) {
-    if (getConnection() != null) {
+    if (connection != null) {
       getConnection().validate(collector);
     }
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {

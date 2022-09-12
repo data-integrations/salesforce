@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Metadata;
+import io.cdap.cdap.api.annotation.MetadataProperty;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
@@ -34,10 +36,13 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.connector.SalesforceConnector;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -55,6 +60,7 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
 @Description("Read data from Salesforce.")
+@Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceBatchSource extends BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
   public static final String NAME = "Salesforce";

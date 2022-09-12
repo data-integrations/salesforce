@@ -120,7 +120,7 @@ public class SalesforceConnector implements Connector {
       Schema schema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
       specBuilder.setSchema(schema);
     } catch (ConnectionException e) {
-      e.printStackTrace();
+      LOG.error("Unable to generate Schema", e);
     }
     return specBuilder.addRelatedPlugin(new PluginSpec(SalesforceBatchSource.NAME, BatchSource.PLUGIN_TYPE,
                                                        properties)).

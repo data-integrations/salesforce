@@ -17,6 +17,8 @@ package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Metadata;
+import io.cdap.cdap.api.annotation.MetadataProperty;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Output;
@@ -30,7 +32,9 @@ import io.cdap.cdap.etl.api.StageConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.plugin.common.LineageRecorder;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +47,7 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(SalesforceBatchSink.PLUGIN_NAME)
 @Description("Writes records to Salesforce")
+@Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritable, CSVRecord> {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSink.class);
