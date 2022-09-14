@@ -191,7 +191,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   public void validate(Schema schema, FailureCollector collector) {
     if (connection != null) {
-      getConnection().validate(collector);
+      connection.validate(collector);
     }
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
@@ -243,8 +243,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       collector.addFailure("Sink schema must contain at least one field", null);
       throw collector.getOrThrowException();
     }
-    if (getConnection() != null) {
-      if (!getConnection().canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+    if (connection != null) {
+      if (!connection.canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
         || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
         return;
       }
@@ -319,11 +319,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   }
 
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.getConnection().getAuthenticatorCredentials();
+    AuthenticatorCredentials credentials = this.connection.getAuthenticatorCredentials();
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
-                                                                       this.getConnection().
+                                                                       this.connection.
                                                                          getAuthenticatorCredentials());
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
@@ -342,8 +342,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
    * @param schema input schema to check
    */
   private void validateInputSchema(Schema schema) {
-    if (getConnection() != null) {
-      AuthenticatorCredentials authenticatorCredentials = getConnection().getAuthenticatorCredentials();
+    if (connection != null) {
+      AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
       try {
         SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
         Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);

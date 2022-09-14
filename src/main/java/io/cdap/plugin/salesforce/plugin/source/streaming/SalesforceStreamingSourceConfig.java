@@ -187,15 +187,15 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
    * If pushTopic does not exist it is created.
    */
   public void ensurePushTopicExistAndWithCorrectFields() {
-    if (getConnection() != null) {
+    if (connection != null) {
       if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
-        containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !getConnection().canAttemptToEstablishConnection()) {
+        containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !connection.canAttemptToEstablishConnection()) {
         return;
       }
     }
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(this.getConnection().getAuthenticatorCredentials()));
+        Authenticator.createConnectorConfig(this.connection.getAuthenticatorCredentials()));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();
@@ -331,7 +331,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
 
   @Nullable
   private String getSObjectQuery() {
-    if (!getConnection().canAttemptToEstablishConnection()) {
+    if (!connection.canAttemptToEstablishConnection()) {
       return null;
     }
 
@@ -340,7 +340,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
       // Streaming API would respond with "large text area fields are not supported"
       Set<FieldType> typesToSkip = Collections.singleton(FieldType.textarea);
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                       getConnection().getAuthenticatorCredentials(),
+                                                                       connection.getAuthenticatorCredentials(),
                                                                        typesToSkip);
 
       String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(sObjectDescriptor.getFieldsNames(), sObjectName,
