@@ -15,12 +15,16 @@
  */
 package io.cdap.plugin.salesforce.connector;
 
+import com.sforce.async.AsyncApiException;
 import com.sforce.soap.partner.DescribeGlobalResult;
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
+import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.batch.BatchSink;
@@ -33,7 +37,9 @@ import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.cdap.etl.api.connector.ConnectorContext;
 import io.cdap.cdap.etl.api.connector.ConnectorSpec;
 import io.cdap.cdap.etl.api.connector.ConnectorSpecRequest;
+import io.cdap.cdap.etl.api.connector.DirectConnector;
 import io.cdap.cdap.etl.api.connector.PluginSpec;
+import io.cdap.cdap.etl.api.connector.SampleRequest;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.plugin.common.ConfigUtil;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
@@ -44,13 +50,17 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceBatchSink;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.MapToRecordTransformer;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
+import io.cdap.plugin.salesforce.plugin.source.batch.SoapRecordToMapTransformer;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,11 +69,12 @@ import java.util.Map;
 @Plugin(type = Connector.PLUGIN_TYPE)
 @Name(SalesforceConstants.PLUGIN_NAME)
 @Description("Connection to access data in Salesforce SObject.")
-public class SalesforceConnector implements Connector {
+public class SalesforceConnector implements DirectConnector {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceConnector.class);
   private static final String ENTITY_TYPE_OBJECTS = "object";
   private static final String LABEL_NAME = "label";
   private final SalesforceConnectorConfig config;
+  private StructuredRecord record;
 
   SalesforceConnector(SalesforceConnectorConfig config) {
     this.config = config;
@@ -126,4 +137,51 @@ public class SalesforceConnector implements Connector {
                                                        properties)).
       addRelatedPlugin(new PluginSpec(SalesforceBatchSink.PLUGIN_NAME, BatchSink.PLUGIN_TYPE, properties)).build();
   }
+
+  @Override
+  public List<StructuredRecord> sample(ConnectorContext connectorContext, SampleRequest sampleRequest)
+    throws IOException {
+    String object = sampleRequest.getPath();
+    if (object == null) {
+      throw new IllegalArgumentException("Path should contain object");
+    }
+    try {
+      return listObjectDetails(object);
+    } catch (AsyncApiException | ConnectionException e) {
+      LOG.error("unable to fetch records", e);
+    }
+    return null;
+  }
+
+  private List<StructuredRecord> listObjectDetails(String object) throws AsyncApiException, ConnectionException {
+    List<StructuredRecord> samples = new ArrayList<>();
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
+                                                                        config.getConsumerKey(),
+                                                                        config.getConsumerSecret(),
+                                                                        config.getLoginUrl());
+    String result = getObjectFields(object);
+    String query = String.format("SELECT %s FROM %s LIMIT %d", result, object, 1000);
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    SoapRecordToMapTransformer soapRecordToMapTransformer = new SoapRecordToMapTransformer();
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+    QueryResult queryResult = partnerConnection.query(query);
+    SObject[] sObjects = queryResult.getRecords();
+    Schema schema = SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor);
+    MapToRecordTransformer transformer = new MapToRecordTransformer();
+    for (int i = 0; i < sObjects.length; i++) {
+      record = transformer.transform(schema, soapRecordToMapTransformer.transformToMap(sObjects[i], sObjectDescriptor));
+      samples.add(record);
+    }
+
+    return samples;
+  }
+
+  private String getObjectFields(String object) throws ConnectionException {
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(object, config.getAuthenticatorCredentials(),
+                                                                     SalesforceSchemaUtil.COMPOUND_FIELDS);
+    List<String> actualFields = sObjectDescriptor.getFieldsNames();
+    String result = String.join(",", actualFields);
+    return result;
+  }
+
 }
