@@ -109,13 +109,14 @@ public class SalesforceConnector implements DirectConnector {
         count++;
       }
     } catch (ConnectionException e) {
-      LOG.error("Unable to create the connection.", e);
+      throw  new IOException("Unable to create the connection.", e);
     }
     return browseDetailBuilder.setTotalCount(count).build();
   }
 
   @Override
-  public ConnectorSpec generateSpec(ConnectorContext connectorContext, ConnectorSpecRequest connectorSpecRequest) {
+  public ConnectorSpec generateSpec(ConnectorContext connectorContext, ConnectorSpecRequest connectorSpecRequest)
+    throws IOException {
     ConnectorSpec.Builder specBuilder = ConnectorSpec.builder();
     Map<String, String> properties = new HashMap<>();
     properties.put(io.cdap.plugin.common.ConfigUtil.NAME_USE_CONNECTION, "true");
@@ -131,7 +132,7 @@ public class SalesforceConnector implements DirectConnector {
       Schema schema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
       specBuilder.setSchema(schema);
     } catch (ConnectionException e) {
-      LOG.error("Unable to generate Schema", e);
+      throw new IOException("Unable to generate Schema", e);
     }
     return specBuilder.addRelatedPlugin(new PluginSpec(SalesforceBatchSource.NAME, BatchSource.PLUGIN_TYPE,
                                                        properties)).
@@ -146,21 +147,21 @@ public class SalesforceConnector implements DirectConnector {
       throw new IllegalArgumentException("Path should contain object");
     }
     try {
-      return listObjectDetails(object);
+      return listObjectDetails(object, sampleRequest.getLimit());
     } catch (AsyncApiException | ConnectionException e) {
-      LOG.error("unable to fetch records", e);
+      throw new IOException("unable to fetch records", e);
     }
-    return null;
   }
 
-  private List<StructuredRecord> listObjectDetails(String object) throws AsyncApiException, ConnectionException {
+  private List<StructuredRecord> listObjectDetails(String object, int limit) throws AsyncApiException,
+    ConnectionException {
     List<StructuredRecord> samples = new ArrayList<>();
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl());
-    String result = getObjectFields(object);
-    String query = String.format("SELECT %s FROM %s LIMIT %d", result, object, 1000);
+    String fields = getObjectFields(object);
+    String query = String.format("SELECT %s FROM %s LIMIT %d", fields, object, limit);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     SoapRecordToMapTransformer soapRecordToMapTransformer = new SoapRecordToMapTransformer();
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
