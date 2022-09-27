@@ -30,7 +30,9 @@ import io.cdap.cdap.etl.api.StageConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSink;
 import io.cdap.cdap.etl.api.batch.BatchSinkContext;
+import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
+import io.cdap.plugin.salesforce.SObjectDescriptor;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,10 +71,15 @@ public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritabl
     FailureCollector collector = context.getFailureCollector();
     config.validate(inputSchema, collector);
     collector.getOrThrowException();
-
-    context.addOutput(Output.of(config.referenceName, new SalesforceOutputFormatProvider(config)));
-
-    LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
+    String orgId = "unknown";
+    try {
+      orgId = config.getOrgId();
+    } catch (ConnectionException exception) {
+      collector.addFailure("Unable to get organization Id.", "Ensure Credentials are correct.");
+    }
+    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN(orgId, config.getSObject()))
+      .setFqn(config.getFQN(orgId, config.getSObject())).build();
+    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
     lineageRecorder.createExternalDataset(inputSchema);
     // Record the field level WriteOperation
     if (inputSchema.getFields() != null && !inputSchema.getFields().isEmpty()) {
@@ -82,6 +89,8 @@ public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritabl
                                     .map(Schema.Field::getName)
                                     .collect(Collectors.toList()));
     }
+    context.addOutput(Output.of(config.getReferenceNameOrNormalizedFQN(orgId, config.getSObject()),
+                                new SalesforceOutputFormatProvider(config)));
   }
 
   @Override

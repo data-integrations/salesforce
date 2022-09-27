@@ -34,6 +34,7 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
@@ -103,15 +104,23 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       schema = retrieveSchema();
     }
 
-    LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
+    String query = config.getQuery(context.getLogicalStartTime());
+    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+    String orgId = "unknown";
+    try {
+      orgId = config.getOrgId();
+    } catch (ConnectionException exception) {
+      collector.addFailure("Unable to get organization Id.", "Ensure Credentials are correct.");
+    }
+    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN(orgId, sObjectName))
+      .setFqn(config.getFQN(orgId, sObjectName)).build();
+    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
     lineageRecorder.createExternalDataset(schema);
     lineageRecorder.recordRead("Read", "Read from Salesforce",
       Preconditions.checkNotNull(schema.getFields()).stream()
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    String query = config.getQuery(context.getLogicalStartTime());
-    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
     authenticatorCredentials = config.getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     boolean enablePKChunk = config.getEnablePKChunk();
@@ -128,8 +137,9 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
             enablePKChunk, config.getOperation());
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-    config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
+    context.setInput(Input.of(config.getReferenceNameOrNormalizedFQN(orgId, sObjectName),
+                              new SalesforceInputFormatProvider(
+                                config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
 
   @Override
