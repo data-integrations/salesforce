@@ -104,7 +104,6 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     return Strings.isNullOrEmpty(sObjectNameField) ? SOBJECT_NAME_FIELD_DEFAULT : sObjectNameField;
   }
 
-
   public void validate(FailureCollector collector) {
     if (super.getConnection() != null) {
       super.getConnection().validate(collector);
