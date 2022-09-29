@@ -162,7 +162,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   public void validate(FailureCollector collector) {
-    if (this.getConnection() != null) {
       this.getConnection().validate(collector);
       if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
         if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
@@ -200,7 +199,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       }
       validateSchema(collector);
       validatePKChunk(collector);
-    }
   }
   private void validateSchema(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {

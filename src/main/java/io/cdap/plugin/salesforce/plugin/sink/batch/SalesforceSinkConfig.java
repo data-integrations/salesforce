@@ -278,7 +278,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(
-            String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
+          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
         collector.addFailure(
@@ -342,7 +342,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
    * @param schema input schema to check
    */
   private void validateInputSchema(Schema schema) {
-    if (connection != null) {
+      if (connection != null) {
       AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
       try {
         SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);

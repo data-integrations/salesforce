@@ -115,7 +115,6 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
                                Preconditions.checkNotNull(schema.getFields()).stream()
                                  .map(Schema.Field::getName)
                                  .collect(Collectors.toList()));
-    if (config.getConnection() != null) {
       String query = config.getQuery(context.getLogicalStartTime());
       String sObjectName = SObjectDescriptor.fromQuery(query).getName();
       authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
@@ -136,7 +135,6 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
       context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
         config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
-    }
   }
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {

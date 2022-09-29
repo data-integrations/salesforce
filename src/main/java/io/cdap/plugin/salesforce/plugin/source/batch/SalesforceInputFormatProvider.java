@@ -44,7 +44,6 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
     configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
-    if (config.getConnection() != null) {
       OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
       if (oAuthInfo != null) {
         configBuilder
@@ -59,7 +58,6 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
                                                                                     getConsumerSecret()))
           .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
       }
-    }
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }

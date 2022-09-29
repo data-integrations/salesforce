@@ -96,7 +96,6 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     SettableArguments arguments = context.getArguments();
     schemas.forEach(
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
-    if (config.getConnection() != null) {
       String sObjectNameField = config.getSObjectNameField();
       authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
       BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
@@ -116,7 +115,6 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
                     "Read", "Read from Salesforce MultiObjects.");
     }
      */
-    }
   }
   @Override
   public void onRunFinish(boolean succeeded, BatchSourceContext context) {

@@ -51,7 +51,6 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString());
-    if (config.getConnection() != null) {
       OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
       if (oAuthInfo != null) {
         configBuilder
@@ -82,7 +81,6 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       } catch (AsyncApiException e) {
         throw new RuntimeException("There was issue communicating with Salesforce", e);
       }
-    }
     this.configMap = configBuilder.build();
   }
 

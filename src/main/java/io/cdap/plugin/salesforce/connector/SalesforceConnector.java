@@ -97,7 +97,7 @@ public class SalesforceConnector implements DirectConnector {
     try {
       PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
       DescribeGlobalResult dgr = partnerConnection.describeGlobal();
-      // Loop through the array echoing the object names to the console
+      // Loop through the array to get all the objects.
       for (int i = 0; i < dgr.getSobjects().length; i++) {
         String name = dgr.getSobjects()[i].getName();
         String label = dgr.getSobjects()[i].getLabel();
