@@ -282,7 +282,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
         collector.addFailure(
-            String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
+          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
     } else if (operation == OperationEnum.insert || operation == OperationEnum.update) {
@@ -301,7 +301,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     if (!inputFields.isEmpty()) {
       for (String inputField : inputFields) {
         collector.addFailure(
-            String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
+          String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
           .withInputSchemaField(inputField);
       }
     }

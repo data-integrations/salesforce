@@ -96,16 +96,16 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     SettableArguments arguments = context.getArguments();
     schemas.forEach(
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
-      String sObjectNameField = config.getSObjectNameField();
-      authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
-      BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-      List<SalesforceSplit> querySplits = queries.parallelStream()
-        .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
-        .flatMap(Collection::stream).collect(Collectors.toList());
-      // store the jobIds so be used in onRunFinish() to close the connections
-      querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-      context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-        config, getSchemaWithNameField(sObjectNameField, schemas), querySplits, sObjectNameField)));
+    String sObjectNameField = config.getSObjectNameField();
+    authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    List<SalesforceSplit> querySplits = queries.parallelStream()
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
+      .flatMap(Collection::stream).collect(Collectors.toList());
+    // store the jobIds so be used in onRunFinish() to close the connections
+    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
+    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
+      config, getSchemaWithNameField(sObjectNameField, schemas), querySplits, sObjectNameField)));
     /* TODO PLUGIN-510
      *  As part of [CDAP-16290], recordLineage function was introduced with out implementation.
      *  To avoid compilation errors the code block is commented for future fix.

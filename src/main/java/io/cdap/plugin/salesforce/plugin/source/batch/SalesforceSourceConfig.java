@@ -162,43 +162,43 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   public void validate(FailureCollector collector) {
-      this.getConnection().validate(collector);
-      if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
-        if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
-          collector.addFailure(
-              String.format(
-                "SOQL Query with restricted field types (function calls, sub-query fields) or "
-                  + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
-                  + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query), null)
-            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-          throw collector.getOrThrowException();
-        }
-        SObjectDescriptor queryDescriptor;
-        try {
-          queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
-        } catch (SOQLParsingException e) {
-          collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
-            .withStacktrace(e.getStackTrace())
-            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-          throw collector.getOrThrowException();
-        }
-        if (getConnection().canAttemptToEstablishConnection()) {
+    this.getConnection().validate(collector);
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
+      if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
+        collector.addFailure(
+          String.format(
+            "SOQL Query with restricted field types (function calls, sub-query fields) or "
+              + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
+              + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query), null)
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
+      }
+      SObjectDescriptor queryDescriptor;
+      try {
+        queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+      } catch (SOQLParsingException e) {
+        collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
+          .withStacktrace(e.getStackTrace())
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
+      }
+      if (getConnection().canAttemptToEstablishConnection()) {
           validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector);
-        }
       }
-      if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-        && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)) {
-        try {
-          boolean isSoql = isSoqlQuery();
-          if (!isSoql) {
-            validateFilters(collector);
-          }
-        } catch (InvalidConfigException e) {
-          collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+    }
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+      && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)) {
+      try {
+        boolean isSoql = isSoqlQuery();
+        if (!isSoql) {
+          validateFilters(collector);
         }
+      } catch (InvalidConfigException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
       }
-      validateSchema(collector);
-      validatePKChunk(collector);
+    }
+    validateSchema(collector);
+    validatePKChunk(collector);
   }
   private void validateSchema(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {

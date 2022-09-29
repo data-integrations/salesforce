@@ -115,26 +115,26 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
                                Preconditions.checkNotNull(schema.getFields()).stream()
                                  .map(Schema.Field::getName)
                                  .collect(Collectors.toList()));
-      String query = config.getQuery(context.getLogicalStartTime());
-      String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-      authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
-      BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-      boolean enablePKChunk = config.getEnablePKChunk();
-      if (enablePKChunk) {
-        String parent = config.getParent();
-        int chunkSize = config.getChunkSize();
-        List<String> chunkHeaderValues = new ArrayList<>();
-        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
-        if (!Strings.isNullOrEmpty(parent)) {
-          chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
-        }
-        bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
+    String query = config.getQuery(context.getLogicalStartTime());
+    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+    authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    boolean enablePKChunk = config.getEnablePKChunk();
+    if (enablePKChunk) {
+      String parent = config.getParent();
+      int chunkSize = config.getChunkSize();
+      List<String> chunkHeaderValues = new ArrayList<>();
+      chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_VALUE_PK_CHUNK, chunkSize));
+      if (!Strings.isNullOrEmpty(parent)) {
+        chunkHeaderValues.add(String.format(SalesforceSourceConstants.HEADER_PK_CHUNK_PARENT, parent));
       }
-      List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
-                                                                             enablePKChunk, config.getOperation());
-      querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-      context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-        config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
+      bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
+    }
+    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
+                                                                           enablePKChunk, config.getOperation());
+    querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
+    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
+      config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
