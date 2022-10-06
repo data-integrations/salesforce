@@ -342,7 +342,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
    * @param schema input schema to check
    */
   private void validateInputSchema(Schema schema) {
-      if (connection != null) {
+    if (connection != null) {
       AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
       try {
         SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);

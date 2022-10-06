@@ -162,7 +162,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   public void validate(FailureCollector collector) {
-    this.getConnection().validate(collector);
+    connection.validate(collector);
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
         collector.addFailure(

@@ -96,7 +96,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   @Macro
   @Nullable
   @Description("The existing connection to use.")
-  private SalesforceConnectorConfig connection;
+  SalesforceConnectorConfig connection;
 
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
