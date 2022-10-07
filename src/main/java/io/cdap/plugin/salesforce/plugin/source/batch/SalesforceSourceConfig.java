@@ -310,7 +310,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
           }
         }
       }
-  }
+    }
   }
 
   public boolean getEnablePKChunk() {

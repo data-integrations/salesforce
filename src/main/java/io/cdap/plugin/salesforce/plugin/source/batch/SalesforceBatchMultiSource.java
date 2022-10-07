@@ -18,6 +18,8 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Metadata;
+import io.cdap.cdap.api.annotation.MetadataProperty;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
@@ -32,6 +34,8 @@ import io.cdap.cdap.etl.api.action.SettableArguments;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.cdap.etl.api.connector.Connector;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -52,6 +56,7 @@ import java.util.stream.Collectors;
 @Description("Reads multiple SObjects in Salesforce. "
   + "Outputs one record for each row in each SObject, with the SObject name as a record field. "
   + "Also sets a pipeline argument for each SObject read, which contains its schema.")
+@Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
   public static final String NAME = "SalesforceMultiObjects";
