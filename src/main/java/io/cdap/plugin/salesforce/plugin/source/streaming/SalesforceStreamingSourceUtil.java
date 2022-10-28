@@ -51,15 +51,17 @@ final class SalesforceStreamingSourceUtil {
     Schema schema = streamingContext.getOutputSchema();
 
     if (schema == null) { // if was not set in configurePipeline due to fields containing macro
-      schema = SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(),
-                                              SObjectDescriptor.fromQuery(config.getQuery()));
+      if (config.getConnection() != null) {
+        schema = SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(),
+                                                SObjectDescriptor.fromQuery(config.getQuery()));
+      }
     }
     LOG.debug("Schema is {}", schema);
 
     JavaStreamingContext jssc = streamingContext.getSparkStreamingContext();
 
     final Schema finalSchema = schema;
-    return jssc.receiverStream(new SalesforceReceiver(config.getAuthenticatorCredentials(),
+    return jssc.receiverStream(new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
                                                       config.getPushTopicName()))
       .map(jsonMessage -> getStructuredRecord(jsonMessage, finalSchema))
       .filter(Objects::nonNull);

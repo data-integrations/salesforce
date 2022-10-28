@@ -104,9 +104,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     return Strings.isNullOrEmpty(sObjectNameField) ? SOBJECT_NAME_FIELD_DEFAULT : sObjectNameField;
   }
 
-  @Override
   public void validate(FailureCollector collector) {
-    super.validate(collector);
+    if (super.getConnection() != null) {
+      super.getConnection().validate(collector);
+    }
     validateFilters(collector);
   }
 
@@ -121,7 +122,9 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
       .map(SObjectDescriptor::fromQuery)
       .collect(Collectors.toList());
 
-    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(getConnection().
+                                                                                          getAuthenticatorCredentials()
+    );
 
     Set<String> sObjectsToDescribe = sObjectDescriptors.stream()
       .map(SObjectDescriptor::getName)
@@ -164,7 +167,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     DescribeGlobalResult describeGlobalResult;
     try {
       PartnerConnection partnerConnection =
-        SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
+        SalesforceConnectionUtil.getPartnerConnection(getConnection().getAuthenticatorCredentials());
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
       throw new IllegalArgumentException("Unable to connect to Salesforce", e);
@@ -204,7 +207,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     DescribeGlobalResult describeGlobalResult;
     try {
       PartnerConnection partnerConnection =
-        SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
+        SalesforceConnectionUtil.getPartnerConnection(getConnection().getAuthenticatorCredentials());
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
       throw new IllegalArgumentException("Unable to connect to Salesforce", e);

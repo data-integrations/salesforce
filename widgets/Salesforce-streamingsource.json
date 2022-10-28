@@ -14,8 +14,32 @@
       ]
     },
     {
-      "label": "Authentication",
+      "label": "Connection",
       "properties": [
+        {
+          "widget-type": "toggle",
+          "label": "Use connection",
+          "name": "useConnection",
+          "widget-attributes": {
+            "on": {
+              "value": "true",
+              "label": "YES"
+            },
+            "off": {
+              "value": "false",
+              "label": "NO"
+            },
+            "default": "false"
+          }
+        },
+        {
+          "widget-type": "connection-select",
+          "label": "Connection",
+          "name": "connection",
+          "widget-attributes": {
+            "connectionType": "Salesforce"
+          }
+        },
         {
           "widget-type" : "hidden",
           "label": "OAuth Information",
@@ -138,6 +162,52 @@
           "widget-attributes": {
             "placeholder": "Salesforce object name"
           }
+        }
+      ]
+    }
+  ],
+  "filters": [
+    {
+      "name": "showConnectionProperties ",
+      "condition": {
+        "expression": "useConnection == false"
+      },
+      "show": [
+        {
+          "type": "property",
+          "name": "consumerKey"
+        },
+        {
+          "type": "property",
+          "name": "consumerSecret"
+        },
+        {
+          "type": "property",
+          "name": "securityToken"
+        },
+        {
+          "type": "property",
+          "name": "username"
+        },
+        {
+          "type": "property",
+          "name": "password"
+        },
+        {
+          "type": "property",
+          "name": "loginUrl"
+        }
+      ]
+    },
+    {
+      "name": "showConnectionId",
+      "condition": {
+        "expression": "useConnection == true"
+      },
+      "show": [
+        {
+          "type": "property",
+          "name": "connection"
         }
       ]
     }
