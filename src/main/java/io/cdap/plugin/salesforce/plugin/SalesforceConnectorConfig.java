@@ -15,11 +15,15 @@
  */
 package io.cdap.plugin.salesforce.plugin;
 
+import com.google.common.base.Strings;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -30,7 +34,7 @@ import javax.annotation.Nullable;
 /**
  * Base configuration for Salesforce Streaming and Batch plugins
  */
-public class BaseSalesforceConfig extends ReferencePluginConfig {
+public class SalesforceConnectorConfig extends PluginConfig {
 
   @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
   @Description("OAuth information for connecting to Salesforce. " +
@@ -77,15 +81,13 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Nullable
   private String loginUrl;
 
-  public BaseSalesforceConfig(String referenceName,
-                              @Nullable String consumerKey,
+  public SalesforceConnectorConfig(@Nullable String consumerKey,
                               @Nullable String consumerSecret,
                               @Nullable String username,
                               @Nullable String password,
                               @Nullable String loginUrl,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo) {
-    super(referenceName);
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;

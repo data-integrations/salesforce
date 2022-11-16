@@ -26,14 +26,18 @@ import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
+import io.cdap.plugin.common.ConfigUtil;
+import io.cdap.plugin.common.ReferenceNames;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 
 import java.util.List;
 import java.util.Set;
@@ -44,7 +48,7 @@ import javax.annotation.Nullable;
 /**
  * Provides the configurations for {@link SalesforceBatchSink} plugin.
  */
-public class SalesforceSinkConfig extends BaseSalesforceConfig {
+public class SalesforceSinkConfig extends ReferencePluginConfig {
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_MAX_BYTES_PER_BATCH = "maxBytesPerBatch";
   public static final String PROPERTY_MAX_RECORDS_PER_BATCH = "maxRecordsPerBatch";
@@ -103,6 +107,17 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Macro
   private String errorHandling;
 
+  @Name(ConfigUtil.NAME_USE_CONNECTION)
+  @Nullable
+  @Description("Whether to use an existing connection.")
+  private Boolean useConnection;
+
+  @Name(ConfigUtil.NAME_CONNECTION)
+  @Macro
+  @Nullable
+  @Description("The existing connection to use.")
+  private SalesforceConnectorConfig connection;
+
   public SalesforceSinkConfig(String referenceName,
                               @Nullable String clientId,
                               @Nullable String clientSecret,
@@ -115,13 +130,22 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               String errorHandling,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName);
+    connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
+                                               securityToken, oAuthInfo);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
+  }
+
+  private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
+
+  @Nullable
+  public SalesforceConnectorConfig getConnection() {
+    return connection;
   }
 
   public String getSObject() {
@@ -169,9 +193,32 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                                                     SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
   }
 
-  public void validate(Schema schema, FailureCollector collector) {
-    super.validate(collector);
+  public String getReferenceNameOrNormalizedFQN(String orgId, String sObject) {
+    return Strings.isNullOrEmpty(referenceName)
+      ? ReferenceNames.normalizeFqn(getFQN(orgId, sObject))
+      : referenceName;
+  }
 
+  /**
+   * Get fully-qualified name (FQN) for a Salesforce object (FQN format: salesforce://prod/orgId.mySobject).
+   *
+   * @return String fqn
+   */
+  public String getFQN(String orgId, String sObject) {
+    String firstFQNPart = connection.getLoginUrl().equals(DEFAULT_LOGIN_URL) ? "prod" : "sandbox";
+    return String.format("salesforce://%s/%s.%s", firstFQNPart, orgId, sObject);
+  }
+
+  public String getOrgId() throws ConnectionException {
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
+      (connection.getAuthenticatorCredentials());
+    return partnerConnection.getUserInfo().getOrganizationId();
+  }
+
+  public void validate(Schema schema, FailureCollector collector) {
+    if (connection != null) {
+      connection.validate(collector);
+    }
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
       try {
@@ -222,12 +269,12 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       collector.addFailure("Sink schema must contain at least one field", null);
       throw collector.getOrThrowException();
     }
-
-    if (!canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
-      || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
-      return;
+    if (connection != null) {
+      if (!connection.canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+        || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
+        return;
+      }
     }
-
     SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector);
     Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
@@ -298,15 +345,17 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   }
 
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+    AuthenticatorCredentials credentials = this.connection.getAuthenticatorCredentials();
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
-                                                                       this.getAuthenticatorCredentials());
+                                                                       this.connection.
+                                                                         getAuthenticatorCredentials());
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      collector.addFailure("There was issue communicating with Salesforce", null).
+        withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
   }
@@ -319,13 +368,15 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
    * @param schema input schema to check
    */
   private void validateInputSchema(Schema schema) {
-    AuthenticatorCredentials authenticatorCredentials = getAuthenticatorCredentials();
-    try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
-      Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
-      SalesforceSchemaUtil.checkCompatibility(sObjectActualSchema, schema, false);
-    } catch (ConnectionException e) {
-      throw new InvalidStageException("There was issue communicating with Salesforce", e);
+    if (connection != null) {
+      AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
+      try {
+        SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
+        Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
+        SalesforceSchemaUtil.checkCompatibility(sObjectActualSchema, schema, false);
+      } catch (ConnectionException e) {
+        throw new InvalidStageException("There was issue communicating with Salesforce", e);
+      }
     }
   }
 }

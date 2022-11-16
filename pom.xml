@@ -22,7 +22,7 @@
   <name>Salesforce plugins</name>
   <groupId>io.cdap.plugin</groupId>
   <artifactId>salesforce-plugins</artifactId>
-  <version>1.5.0-SNAPSHOT</version>
+  <version>1.5.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Salesforce Plugins</description>
   <url>https://github.com/data-integrations/salesforce</url>
@@ -58,14 +58,14 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
-    <cdap.version>6.4.0</cdap.version>
+    <cdap.version>6.8.0-SNAPSHOT</cdap.version>
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.2</powermock.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.3.0</hadoop.version>
     <spark2.version>2.1.3</spark2.version>
-    <hydrator.version>2.4.0</hydrator.version>
+    <hydrator.version>2.10.0-SNAPSHOT</hydrator.version>
     <commons.version>3.8.1</commons.version>
     <salesforce.api.version>53.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
@@ -80,6 +80,7 @@
     <testSourceLocation>${project.basedir}/src/test/java/</testSourceLocation>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <powermock.version>2.0.2</powermock.version>
   </properties>
 
   <repositories>
@@ -502,9 +503,9 @@
               <!--
                 Plugins use the new macro substitution that supports object, which is introduced in 6.4.0.
                 The cdap API version that this project depends on is still 6.2.0 since there is no new API needed.
-               -->
-              <parent>system:cdap-data-pipeline[6.4.0,7.0.0-SNAPSHOT)</parent>
-              <parent>system:cdap-data-streams[6.4.0,7.0.0-SNAPSHOT)</parent>
+              -->
+              <parent>system:cdap-data-pipeline[6.8.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-streams[6.8.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
             </cdapArtifacts>
           </configuration>
           <executions>

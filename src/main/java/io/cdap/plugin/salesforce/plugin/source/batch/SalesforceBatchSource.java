@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import com.sforce.async.BulkConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
+import io.cdap.cdap.api.annotation.Metadata;
+import io.cdap.cdap.api.annotation.MetadataProperty;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
 import io.cdap.cdap.api.data.batch.Input;
@@ -34,10 +36,14 @@ import io.cdap.cdap.etl.api.PipelineConfigurer;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.cdap.etl.api.connector.Connector;
+import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.connector.SalesforceConnector;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -55,6 +61,7 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSource.PLUGIN_TYPE)
 @Name(SalesforceBatchSource.NAME)
 @Description("Read data from Salesforce.")
+@Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceBatchSource extends BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
   public static final String NAME = "Salesforce";
@@ -79,16 +86,16 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
       return;
     }
-
-    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-      || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
-      || !config.canAttemptToEstablishConnection()) {
-      // some config properties required for schema generation are not available
-      // will validate schema later in `prepareRun` stage
-      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
-      return;
+    if (config.getConnection() != null) {
+      if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+        || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
+        || !config.getConnection().canAttemptToEstablishConnection()) {
+        // some config properties required for schema generation are not available
+        // will validate schema later in `prepareRun` stage
+        pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
+        return;
+      }
     }
-
     schema = retrieveSchema();
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
@@ -103,16 +110,24 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       schema = retrieveSchema();
     }
 
-    LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
+    String query = config.getQuery(context.getLogicalStartTime());
+    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+    String orgId = "unknown";
+    try {
+      orgId = config.getOrgId();
+    } catch (ConnectionException exception) {
+      collector.addFailure("Unable to get organization Id.", "Ensure Credentials are correct.");
+    }
+    Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN(orgId, sObjectName))
+      .setFqn(config.getFQN(orgId, sObjectName)).build();
+    LineageRecorder lineageRecorder = new LineageRecorder(context, asset);
     lineageRecorder.createExternalDataset(schema);
     lineageRecorder.recordRead("Read", "Read from Salesforce",
       Preconditions.checkNotNull(schema.getFields()).stream()
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    String query = config.getQuery(context.getLogicalStartTime());
-    String sObjectName = SObjectDescriptor.fromQuery(query).getName();
-    authenticatorCredentials = config.getAuthenticatorCredentials();
+    authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     boolean enablePKChunk = config.getEnablePKChunk();
     if (enablePKChunk) {
@@ -128,10 +143,10 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
             enablePKChunk, config.getOperation());
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
-    context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-    config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
+    context.setInput(Input.of(config.getReferenceNameOrNormalizedFQN(orgId, sObjectName),
+                              new SalesforceInputFormatProvider(
+                                config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
-
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
@@ -161,7 +176,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     String query = config.getQuery(System.currentTimeMillis());
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
-      return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+      return SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(), sObjectDescriptor);
     } catch (ConnectionException e) {
       throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
     }

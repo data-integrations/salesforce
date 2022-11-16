@@ -15,21 +15,27 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.base.Strings;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
+import io.cdap.plugin.common.ConfigUtil;
+import io.cdap.plugin.common.ReferenceNames;
+import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
-import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -49,7 +55,7 @@ import javax.annotation.Nullable;
 /**
  * Base Salesforce Batch Source config. Contains common configuration properties and methods.
  */
-public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
+public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBaseSourceConfig.class);
 
@@ -85,6 +91,19 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
 
   private static final String DEFAULT_OPERATION = "query";
 
+  @Name(ConfigUtil.NAME_USE_CONNECTION)
+  @Nullable
+  @Description("Whether to use an existing connection.")
+  private Boolean useConnection;
+
+  @Name(ConfigUtil.NAME_CONNECTION)
+  @Macro
+  @Nullable
+  @Description("The existing connection to use.")
+  private SalesforceConnectorConfig connection;
+
+  private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
+
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
                                        @Nullable String consumerSecret,
@@ -98,13 +117,16 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
                                        @Nullable String operation) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName);
+    this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
+                                                    securityToken, oAuthInfo);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
     this.operation = operation;
   }
+
 
   public Map<ChronoUnit, Integer> getDuration() {
     return extractRangeValue(SalesforceSourceConstants.PROPERTY_DURATION, duration);
@@ -115,6 +137,11 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   }
 
   @Nullable
+  public SalesforceConnectorConfig getConnection() {
+    return connection;
+  }
+
+  @Nullable
   public String getDatetimeAfter() {
     return datetimeAfter;
   }
@@ -122,6 +149,28 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   @Nullable
   public String getDatetimeBefore() {
     return datetimeBefore;
+  }
+
+  public String getReferenceNameOrNormalizedFQN(String orgId, String sObject) {
+    return Strings.isNullOrEmpty(referenceName)
+      ? ReferenceNames.normalizeFqn(getFQN(orgId, sObject))
+      : referenceName;
+  }
+
+  /**
+   * Get fully-qualified name (FQN) for a Salesforce object (FQN format: salesforce://prod/orgId.mySobject).
+   *
+   * @return String fqn
+   */
+  public String getFQN(String orgId, String sObject) {
+    String firstFQNPart = connection.getLoginUrl().equals(DEFAULT_LOGIN_URL) ? "prod" : "sandbox";
+    return String.format("salesforce://%s/%s.%s", firstFQNPart, orgId, sObject);
+  }
+
+  public String getOrgId() throws ConnectionException {
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
+      (connection.getAuthenticatorCredentials());
+    return partnerConnection.getUserInfo().getOrganizationId();
   }
 
   protected void validateFilters(FailureCollector collector) {
@@ -166,7 +215,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                       connection.getAuthenticatorCredentials(),
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();
