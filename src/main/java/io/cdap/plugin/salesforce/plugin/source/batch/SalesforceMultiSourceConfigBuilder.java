@@ -17,6 +17,9 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 
+/**
+ * Helper class to simplify {@link SalesforceMultiSourceConfig} class creation.
+ */
 public class SalesforceMultiSourceConfigBuilder {
 
   private String referenceName;
