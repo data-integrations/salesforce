@@ -43,6 +43,7 @@ CDAP Users on IRC: [#cdap-users channel](https://web.libera.chat/#cdap-users)
 # License and Trademarks
 
 Copyright © 2019 Cask Data, Inc.
+
 Copyright © 2023 Google, LLC
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
