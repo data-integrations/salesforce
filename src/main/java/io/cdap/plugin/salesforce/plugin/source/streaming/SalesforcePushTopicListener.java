@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google Inc. All Rights Reserved.
+ * Copyright 2022 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -63,13 +64,16 @@ public class SalesforcePushTopicListener {
 
   private final AuthenticatorCredentials credentials;
   private final String topic;
+  private ConcurrentMap<String, Long> dataMap;
   private BayeuxClient bayeuxClient;
 
   private JSONContext.Client jsonContext;
 
-  public SalesforcePushTopicListener(AuthenticatorCredentials credentials, String topic) {
+  public SalesforcePushTopicListener(AuthenticatorCredentials credentials, String topic,
+                                     ConcurrentMap<String, Long> dataMap) {
     this.credentials = credentials;
     this.topic = topic;
+    this.dataMap = dataMap;
   }
 
   /**
@@ -132,6 +136,10 @@ public class SalesforcePushTopicListener {
 
   public void createSalesforceListener() throws Exception {
     bayeuxClient = getClient(credentials);
+
+    // Register Replay Extension with Bayeux Client
+    bayeuxClient.addExtension(new ReplayExtension(this.dataMap));
+
     bayeuxClient.getChannel(Channel.META_HANDSHAKE).addListener
       ((ClientSessionChannel.MessageListener) (channel, message) -> {
 

@@ -16,6 +16,9 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.primitives.Longs;
+import com.google.gson.Gson;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
@@ -25,16 +28,26 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.cometd.bayeux.Message;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,10 +55,11 @@ import java.util.concurrent.TimeUnit;
  */
 final class SalesforceStreamingSourceUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceUtil.class);
+  private static final Gson gson = new Gson();
 
   static JavaDStream<StructuredRecord> getStructuredRecordJavaDStream(StreamingContext streamingContext,
                                                                       SalesforceStreamingSourceConfig config)
-    throws ConnectionException {
+    throws ConnectionException, IOException {
     config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are substituted
 
     Schema schema = streamingContext.getOutputSchema();
@@ -62,8 +76,11 @@ final class SalesforceStreamingSourceUtil {
 
     final Schema finalSchema = schema;
     return jssc.receiverStream(new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
-                                                      config.getPushTopicName()))
-      .map(jsonMessage -> getStructuredRecord(jsonMessage, finalSchema))
+                                                      config.getPushTopicName(), getState(streamingContext, config)))
+      .map(jsonMessage -> {
+        saveState(jsonMessage, streamingContext, config);
+        return getStructuredRecord(jsonMessage, finalSchema);
+      })
       .filter(Objects::nonNull);
   }
 
@@ -141,5 +158,59 @@ final class SalesforceStreamingSourceUtil {
 
   private SalesforceStreamingSourceUtil() {
     // no-op
+  }
+
+  private static ConcurrentMap<String, Long> getState(StreamingContext streamingContext,
+    SalesforceStreamingSourceConfig config) throws IOException {
+    Long replayId = -1L;
+    ConcurrentMap<String, Long> replay = new ConcurrentHashMap<>();
+
+    //State store is not enabled, do not read state
+
+    if (!streamingContext.isStateStoreEnabled()) {
+      replay.put("/topic/" + config.getPushTopicName(), replayId);
+      return replay;
+      //return (ConcurrentMap<String, Long>) Collections.<String, Long>emptyMap().;
+    }
+
+    //If state is not present, use configured repayId or defaults
+    Optional<byte[]> state = streamingContext.getState(config.getPushTopicName());
+    if (!state.isPresent()) {
+      replay.put("/topic/" + config.getPushTopicName(), replayId);
+      return replay;
+      //return (ConcurrentMap<String, Long>) Collections.<String, Long>emptyMap();
+    }
+
+    byte[] bytes = state.get();
+    try (Reader reader = new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8)) {
+      replayId = gson.fromJson(reader, Long.class);
+      if (replay.putIfAbsent("/topic/" + config.getPushTopicName(), replayId) != null) {
+        throw new IllegalStateException(String.format("Already subscribed to %s",
+                                                      config.getPushTopicName()));
+      }
+      return replay;
+    }
+  }
+
+  private static void saveState(String jsonMessage, StreamingContext streamingContext,
+                                SalesforceStreamingSourceConfig config) {
+    //long replayId = ReplayExtension.getReplayId((Message.Mutable) message);
+    long replayId;
+    try {
+      JSONObject jsonEvent;
+      try {
+        jsonEvent = new JSONObject(jsonMessage).getJSONObject("event"); // throws a JSONException if not found
+        replayId = Long.parseLong(jsonEvent.get("replayId").toString());
+      } catch (JSONException e) {
+        throw new IllegalStateException(
+          String.format("Cannot retrieve /data/sobject from json message %s", jsonMessage), e);
+      }
+      if (replayId > 0) {
+        streamingContext.saveState(config.getPushTopicName(), Longs.toByteArray(replayId));
+      }
+    } catch (IOException e) {
+      LOG.warn("Exception in saving state.", e);
+    }
+
   }
 }

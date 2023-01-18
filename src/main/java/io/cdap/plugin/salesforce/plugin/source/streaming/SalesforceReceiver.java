@@ -23,6 +23,7 @@ import org.apache.spark.streaming.receiver.Receiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -38,17 +39,20 @@ public class SalesforceReceiver extends Receiver<String> {
 
   private final AuthenticatorCredentials credentials;
   private final String topic;
+  private ConcurrentMap<String, Long> dataMap;
   private SalesforcePushTopicListener pushTopicListener;
 
-  SalesforceReceiver(AuthenticatorCredentials credentials, String topic) {
+  SalesforceReceiver(AuthenticatorCredentials credentials, String topic, ConcurrentMap<String, Long> dataMap) {
     super(StorageLevel.MEMORY_AND_DISK_2());
     this.credentials = credentials;
     this.topic = topic;
+    this.dataMap = dataMap;
   }
 
   @Override
   public void onStart() {
-    pushTopicListener = new SalesforcePushTopicListener(this.credentials, this.topic);
+    //pushTopicListener = new SalesforcePushTopicListener(this.credentials, this.topic, this.streamingContext);
+    pushTopicListener = new SalesforcePushTopicListener(this.credentials, this.topic, this.dataMap);
     pushTopicListener.start();
 
     ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
