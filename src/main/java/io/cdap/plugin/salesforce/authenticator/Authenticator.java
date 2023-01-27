@@ -18,45 +18,54 @@ package io.cdap.plugin.salesforce.authenticator;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * Authentication to Salesforce via oauth2
  */
 public class Authenticator {
   private static final Gson GSON = new Gson();
+  private static final long CONNECTION_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(120);
+  private static final Logger LOG = LoggerFactory.getLogger(Authenticator.class);
 
   /**
    * Authenticates via oauth2 to salesforce and returns a connectorConfig
    * which can be used by salesforce libraries to make a connection.
    *
    * @param credentials information to log in
-   *
+   * @throws  ConnectionException if there was an issue getting oauth info
    * @return ConnectorConfig which can be used to create BulkConnection and PartnerConnection
    */
-  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
+  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) throws ConnectionException {
+    OAuthInfo oAuthInfo;
     try {
-      OAuthInfo oAuthInfo = getOAuthInfo(credentials);
-      ConnectorConfig connectorConfig = new ConnectorConfig();
-      connectorConfig.setSessionId(oAuthInfo.getAccessToken());
-      String apiVersion = SalesforceConstants.API_VERSION;
-      String restEndpoint = String.format("%s/services/async/%s", oAuthInfo.getInstanceURL(), apiVersion);
-      String serviceEndPoint = String.format("%s/services/Soap/u/%s", oAuthInfo.getInstanceURL(), apiVersion);
-      connectorConfig.setRestEndpoint(restEndpoint);
-      connectorConfig.setServiceEndpoint(serviceEndPoint);
-      // This should only be false when doing debugging.
-      connectorConfig.setCompression(true);
-      // Set this to true to see HTTP requests and responses on stdout
-      connectorConfig.setTraceMessage(false);
-
-      return connectorConfig;
+      oAuthInfo = getOAuthInfo(credentials);
     } catch (Exception e) {
-      throw new RuntimeException("Connection to salesforce with plugin configurations failed", e);
+      LOG.error("Failed to get oauth info", e);
+      throw new ConnectionException("Failed to get oauth info", e);
     }
+    ConnectorConfig connectorConfig = new ConnectorConfig();
+    connectorConfig.setSessionId(oAuthInfo.getAccessToken());
+    String apiVersion = SalesforceConstants.API_VERSION;
+    String restEndpoint = String.format("%s/services/async/%s", oAuthInfo.getInstanceURL(), apiVersion);
+    String serviceEndPoint = String.format("%s/services/Soap/u/%s", oAuthInfo.getInstanceURL(), apiVersion);
+    connectorConfig.setRestEndpoint(restEndpoint);
+    connectorConfig.setServiceEndpoint(serviceEndPoint);
+    // This should only be false when doing debugging.
+    connectorConfig.setCompression(true);
+    // Set this to true to see HTTP requests and responses on stdout
+    connectorConfig.setTraceMessage(false);
+
+    return connectorConfig;
   }
 
   /**
@@ -81,6 +90,7 @@ public class Authenticator {
         .param("client_secret", credentials.getConsumerSecret())
         .param("username", credentials.getUsername())
         .param("password", credentials.getPassword()).send().getContentAsString();
+      httpClient.setConnectTimeout(CONNECTION_TIMEOUT_MS);
 
       AuthResponse authResponse = GSON.fromJson(response, AuthResponse.class);
 

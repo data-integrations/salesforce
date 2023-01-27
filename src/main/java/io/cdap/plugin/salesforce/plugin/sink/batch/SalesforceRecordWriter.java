@@ -19,6 +19,7 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
+import com.sforce.ws.ConnectionException;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -65,7 +66,12 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, CSVRecord
     csvBufferSizeCheck = new CSVBuffer(false);
 
     AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-    bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+    try {
+      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+    } catch (ConnectionException e) {
+      LOG.error("Failed to get oauth info", e);
+      throw new IOException(e);
+    }
     jobInfo = bulkConnection.getJobStatus(jobId);
   }
 

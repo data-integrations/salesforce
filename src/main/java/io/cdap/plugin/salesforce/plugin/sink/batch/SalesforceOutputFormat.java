@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
+import com.sforce.ws.ConnectionException;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -28,8 +29,6 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -78,7 +77,7 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
           BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
           String jobId = conf.get(SalesforceSinkConstants.CONFIG_JOB_ID);
           SalesforceBulkUtil.closeJob(bulkConnection, jobId);
-        } catch (AsyncApiException e) {
+        } catch (AsyncApiException | ConnectionException e) {
           throw new RuntimeException("There was issue communicating with Salesforce", e);
         }
       }
