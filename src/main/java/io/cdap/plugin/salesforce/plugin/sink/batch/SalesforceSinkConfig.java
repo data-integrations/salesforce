@@ -210,16 +210,23 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     return String.format("salesforce://%s/%s.%s", firstFQNPart, orgId, sObject);
   }
 
-  public String getOrgId() throws ConnectionException {
+  public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnection().getConnectTimeout());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
-      (connection.getAuthenticatorCredentials());
+      (credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
   }
 
-  public void validate(Schema schema, FailureCollector collector) {
+  public void validate(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
     if (connection != null) {
-      connection.validate(collector);
+      connection.validate(collector, oAuthInfo);
     }
+    validateSinkProperties(collector);
+    validateSchema(schema, collector, oAuthInfo);
+  }
+
+  public void validateSinkProperties(FailureCollector collector) {
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
       try {
@@ -261,10 +268,9 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       }
     }
     collector.getOrThrowException();
-    validateSchema(schema, collector);
   }
 
-  private void validateSchema(Schema schema, FailureCollector collector) {
+  private void validateSchema(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
     List<Schema.Field> fields = schema.getFields();
     if (fields == null || fields.isEmpty()) {
       collector.addFailure("Sink schema must contain at least one field", null);
@@ -276,7 +282,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
         return;
       }
     }
-    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector);
+    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector, oAuthInfo);
     Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
     Set<String> inputFields = schema.getFields()
@@ -305,11 +311,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(
-          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
+            String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
         collector.addFailure(
-          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
+            String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
     } else if (operation == OperationEnum.insert || operation == OperationEnum.update) {
@@ -328,7 +334,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     if (!inputFields.isEmpty()) {
       for (String inputField : inputFields) {
         collector.addFailure(
-          String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
+            String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
           .withInputSchemaField(inputField);
       }
     }
@@ -345,13 +351,12 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     return creatableSObjectFields;
   }
 
-  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.connection.getAuthenticatorCredentials();
+  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnection().getConnectTimeout());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
-                                                                       this.connection.
-                                                                         getAuthenticatorCredentials());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {

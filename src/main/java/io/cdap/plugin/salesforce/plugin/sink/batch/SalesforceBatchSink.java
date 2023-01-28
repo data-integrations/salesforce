@@ -35,10 +35,10 @@ import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.hadoop.io.NullWritable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.stream.Collectors;
 
@@ -51,10 +51,7 @@ import java.util.stream.Collectors;
 @Metadata(properties = {@MetadataProperty(key = Connector.PLUGIN_TYPE, value = SalesforceConstants.PLUGIN_NAME)})
 public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritable, CSVRecord> {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSink.class);
-
   public static final String PLUGIN_NAME = "Salesforce";
-
   private final SalesforceSinkConfig config;
   private StructuredRecordToCSVRecordTransformer transformer;
 
@@ -66,20 +63,29 @@ public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritabl
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     super.configurePipeline(pipelineConfigurer);
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
-    config.validate(stageConfigurer.getInputSchema(), stageConfigurer.getFailureCollector());
+    FailureCollector collector = stageConfigurer.getFailureCollector();
+    if (!config.getConnection().canAttemptToEstablishConnection()) {
+      config.validateSinkProperties(collector);
+      return;
+    }
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
+    config.validate(stageConfigurer.getInputSchema(), stageConfigurer.getFailureCollector(), oAuthInfo);
   }
 
   @Override
   public void prepareRun(BatchSinkContext context) {
     Schema inputSchema = context.getInputSchema();
     FailureCollector collector = context.getFailureCollector();
-    config.validate(inputSchema, collector);
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
+    config.validate(inputSchema, collector, oAuthInfo);
     collector.getOrThrowException();
     String orgId = "unknown";
     try {
-      orgId = config.getOrgId();
+      orgId = config.getOrgId(oAuthInfo);
     } catch (ConnectionException exception) {
-      collector.addFailure("Unable to get organization Id.", "Ensure Credentials are correct.");
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(exception);
+      collector.addFailure(String.format("Unable to get organization Id due to error: %s", message),
+                           "Ensure Credentials are correct.");
     }
     Asset asset = Asset.builder(config.getReferenceNameOrNormalizedFQN(orgId, config.getSObject()))
       .setFqn(config.getFQN(orgId, config.getSObject())).build();
