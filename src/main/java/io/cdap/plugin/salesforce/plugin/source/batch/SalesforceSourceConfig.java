@@ -27,6 +27,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
@@ -236,8 +237,10 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
       }
     } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       collector.addFailure(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s' with error %s", sObjectName,
+                errorMessage), null)
         .withStacktrace(e.getStackTrace());
     }
   }

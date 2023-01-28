@@ -19,6 +19,7 @@ package io.cdap.plugin.salesforce.authenticator;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.sforce.ws.ConnectorConfig;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
@@ -35,7 +36,6 @@ public class Authenticator {
    * which can be used by salesforce libraries to make a connection.
    *
    * @param credentials information to log in
-   *
    * @return ConnectorConfig which can be used to create BulkConnection and PartnerConnection
    */
   public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
@@ -52,10 +52,12 @@ public class Authenticator {
       connectorConfig.setCompression(true);
       // Set this to true to see HTTP requests and responses on stdout
       connectorConfig.setTraceMessage(false);
-
+      connectorConfig.setConnectionTimeout(SalesforceConstants.CONNECTION_TIMEOUT_MS);
       return connectorConfig;
     } catch (Exception e) {
-      throw new RuntimeException("Connection to salesforce with plugin configurations failed", e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+          String.format("Failed to connect and authenticate to Salesforce: %s", errorMessage), e);
     }
   }
 
@@ -63,7 +65,6 @@ public class Authenticator {
    * Authenticate via oauth2 to salesforce and return response to auth request.
    *
    * @param credentials information to log in
-   *
    * @return AuthResponse response to http request
    */
   public static OAuthInfo getOAuthInfo(AuthenticatorCredentials credentials) throws Exception {
@@ -74,6 +75,7 @@ public class Authenticator {
 
     SslContextFactory sslContextFactory = new SslContextFactory();
     HttpClient httpClient = new HttpClient(sslContextFactory);
+    httpClient.setConnectTimeout(SalesforceConstants.CONNECTION_TIMEOUT_MS);
     try {
       httpClient.start();
       String response = httpClient.POST(credentials.getLoginUrl()).param("grant_type", "password")
@@ -86,7 +88,8 @@ public class Authenticator {
 
       if (!Strings.isNullOrEmpty(authResponse.getError())) {
         throw new IllegalArgumentException(
-          String.format("Cannot authenticate to Salesforce with given credentials. ServerResponse='%s'", response));
+          String.format("Cannot authenticate to Salesforce with given credentials. ServerResponse='%s'",
+                  response));
       }
 
       return new OAuthInfo(authResponse.getAccessToken(), authResponse.getInstanceUrl());

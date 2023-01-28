@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce;
 
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.fault.IApiFault;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -60,5 +61,18 @@ public class SalesforceConnectionUtil {
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
                                         conf.get(SalesforceConstants.CONFIG_LOGIN_URL));
+  }
+
+  /**
+   *
+   * @param e Exception thrown from salesforce APIs
+   * @return  error message sent by APIs.
+   */
+  public static String getSalesforceErrorMessageFromException(Exception e) {
+    if (e instanceof IApiFault) {
+      return ((IApiFault) e).getExceptionMessage();
+    } else {
+      return e.getMessage();
+    }
   }
 }

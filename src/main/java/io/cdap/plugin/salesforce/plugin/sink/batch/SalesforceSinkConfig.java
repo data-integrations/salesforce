@@ -29,6 +29,7 @@ import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -306,7 +307,9 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce with error %s", errorMessage
+      ), null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
   }

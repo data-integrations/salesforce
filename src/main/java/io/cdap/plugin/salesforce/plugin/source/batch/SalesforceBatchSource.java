@@ -35,6 +35,7 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -162,7 +163,10 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     try {
       return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
     } catch (ConnectionException e) {
-      throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+          String.format("Failed to get schema from the query '%s': %s", query, errorMessage),
+          e);
     }
   }
 

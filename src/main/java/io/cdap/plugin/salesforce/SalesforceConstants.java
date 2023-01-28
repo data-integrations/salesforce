@@ -41,4 +41,6 @@ public class SalesforceConstants {
 
   public static final int RANGE_FILTER_MIN_VALUE = 0;
   public static final int SOQL_MAX_LENGTH = 20000;
+
+  public static final int CONNECTION_TIMEOUT_MS = 60000;
 }

@@ -23,6 +23,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import javax.annotation.Nullable;
@@ -141,9 +142,16 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     if (oAuthInfo != null) {
       return new AuthenticatorCredentials(oAuthInfo);
     }
-
-    return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl());
+    try {
+      this.oAuthInfo = Authenticator.getOAuthInfo(new AuthenticatorCredentials(getUsername(), getPassword(),
+              getConsumerKey(),
+              getConsumerSecret(), getLoginUrl()));
+    } catch (Exception e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(String.format("Failed to connect and authenticate to Salesforce: %s",
+              errorMessage), e);
+    }
+    return new AuthenticatorCredentials(this.oAuthInfo);
   }
 
   /**
@@ -179,7 +187,10 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     try {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to establish and validate connection to salesforce : %s",
+              e.getMessage()),
+          e);
     }
   }
 
