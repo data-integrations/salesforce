@@ -22,7 +22,10 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.cdap.test.ApplicationManager;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,10 +41,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testInsertAccount() throws Exception {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
-                                    Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
@@ -70,13 +73,13 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testInsertOpportunity() throws Exception {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
@@ -108,10 +111,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testUpdateAccount() throws Exception {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
-                                    Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
@@ -136,11 +139,11 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     addToCleanUpList(createdSObjects);
 
     schema = Schema.recordOf("output",
-                             Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
-                             Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
-                             Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
+      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitude", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ShippingLongitude", Schema.of(Schema.Type.DOUBLE))
     );
 
     inputRecords = ImmutableList.of(
@@ -174,13 +177,13 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testUpsertOpportunity() throws Exception {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
 
     List<StructuredRecord> inputRecords1 = ImmutableList.of(
@@ -208,14 +211,14 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     addToCleanUpList(createdSObjects);
 
     schema = Schema.recordOf("output",
-                             Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                             Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                             Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                             Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                             Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
 
     List<StructuredRecord> inputRecords2 = ImmutableList.of(
@@ -260,10 +263,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testNonDefaultFieldsCase() throws Exception {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("NaMe", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("numberofEmployEES", Schema.of(Schema.Type.INT)),
-                                    Schema.Field.of("ShippingLatitudE", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("shippingLongitude", Schema.of(Schema.Type.DOUBLE))
+      Schema.Field.of("NaMe", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("numberofEmployEES", Schema.of(Schema.Type.INT)),
+      Schema.Field.of("ShippingLatitudE", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("shippingLongitude", Schema.of(Schema.Type.DOUBLE))
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
@@ -292,13 +295,13 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testMultipleBatches() throws Exception {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING))
     );
 
     List<StructuredRecord> inputRecords = ImmutableList.of(
@@ -358,15 +361,18 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testCompoundFieldsValidation() {
     String sObject = "Account";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
-                                    // no compund fields like 'BillingAddress' are allowed.
-                                    // Schema validation should fail
-                                    Schema.Field.of("BillingAddress", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("NumberOfEmployees", Schema.of(Schema.Type.INT)),
+      // no compund fields like 'BillingAddress' are allowed.
+      // Schema validation should fail
+      Schema.Field.of("BillingAddress", Schema.of(Schema.Type.STRING))
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection().getAuthenticatorCredentials(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
@@ -374,19 +380,22 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testNonCreatableFieldsValidation() {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING)),
-                                    // HasOverdueTask fields is present, but not-creatable in Opportunity sObject
-                                    Schema.Field.of("HasOverdueTask", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING)),
+      // HasOverdueTask fields is present, but not-creatable in Opportunity sObject
+      Schema.Field.of("HasOverdueTask", Schema.of(Schema.Type.STRING))
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection().getAuthenticatorCredentials(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
@@ -394,18 +403,21 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
   public void testNonExistingFieldsValidation() {
     String sObject = "Opportunity";
     Schema schema = Schema.recordOf("output",
-                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
-                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
-                                    Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
-                                    Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING)),
-                                    Schema.Field.of("SomethingNotExistant", Schema.of(Schema.Type.STRING))
+      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsPrivate", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("Amount", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("ForecastCategoryName", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("SomethingNotExistant", Schema.of(Schema.Type.STRING))
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection().getAuthenticatorCredentials(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 }

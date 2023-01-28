@@ -64,7 +64,7 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
 
       if (!aliasedFields.isEmpty()) {
         throw new SOQLParsingException("Field aliasing is not allowed except when using a GROUP BY clause. "
-          + "List of fields with alias: " + aliasedFields);
+                                         + "List of fields with alias: " + aliasedFields);
       }
     } else {
       List<String> unAliasedFields = fields.stream()
@@ -75,13 +75,94 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
 
       if (!unAliasedFields.isEmpty()) {
         throw new SOQLParsingException("Reference fields must have an alias when using a GROUP BY clause. "
-          + "List of reference fields without alias: " + unAliasedFields);
+                                         + "List of reference fields without alias: " + unAliasedFields);
       }
     }
 
     List<SObjectDescriptor> childSObjects = fieldListContext.accept(new SubQueryListVisitor());
 
     return new SObjectDescriptor(name, fields, childSObjects);
+  }
+
+  /**
+   * Visits query statement and extracts from statement in the original representation.
+   */
+  public static class FromStatementVisitor extends SOQLBaseVisitor<String> {
+
+    @Override
+    public String visitStatement(SOQLParser.StatementContext ctx) {
+      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
+      Interval interval = new Interval(
+        fromStatementContext.start.getStartIndex(),
+        fromStatementContext.stop.getStopIndex());
+      return fromStatementContext.start.getInputStream().getText(interval);
+    }
+  }
+
+  /**
+   * Visits query from statement and checks if it contains clauses that are restricted by Bulk API.
+   * For example: GROUP BY [ROLLUP / CUBE], OFFSET.
+   * Also checks if query contains restricted field types (function calls, sub-query fields).
+   */
+  public static class RestrictedQueryVisitor extends SOQLBaseVisitor<Boolean> {
+
+    @Override
+    public Boolean visitStatement(SOQLParser.StatementContext ctx) {
+
+      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
+      if (fromStatementContext.GROUP() != null || fromStatementContext.OFFSET() != null) {
+        return true;
+      }
+
+      return ctx.fieldList().accept(new RestrictedFieldVisitor());
+    }
+  }
+
+  /**
+   * Visits query fields that are restricted by Bulk API.
+   * Returns true if at least one restricted field type is present, false otherwise.
+   * For example: function calls, sub-queries.
+   */
+  public static class RestrictedFieldVisitor extends SOQLBaseVisitor<Boolean> {
+
+    @Override
+    public Boolean visitFunctionCall(SOQLParser.FunctionCallContext ctx) {
+      return Boolean.TRUE;
+    }
+
+    @Override
+    public Boolean visitSubquery(SOQLParser.SubqueryContext ctx) {
+      return Boolean.TRUE;
+    }
+
+    @Override
+    protected Boolean defaultResult() {
+      return Boolean.FALSE;
+    }
+  }
+
+  /**
+   * Visits query fields that are restricted by Bulk API with PKChunk Enable.
+   * Returns true if there is condition clause other than 'WHERE', false otherwise.
+   * For example: SELECT Name FROM Opportunity LIMIT 10.
+   */
+  public static class RestrictedPKQueryVisitor extends SOQLBaseVisitor<Boolean> {
+
+    @Override
+    public Boolean visitStatement(SOQLParser.StatementContext ctx) {
+      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
+      if (
+        fromStatementContext.WITH() != null ||
+          fromStatementContext.GROUP() != null ||
+          fromStatementContext.ORDER() != null ||
+          fromStatementContext.LIMIT() != null ||
+          fromStatementContext.OFFSET() != null ||
+          fromStatementContext.FOR() != null) {
+        return true;
+      }
+
+      return ctx.fieldList().accept(new RestrictedFieldVisitor());
+    }
   }
 
   /**
@@ -186,7 +267,7 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
     public SObjectDescriptor.FieldDescriptor visitSubquery(SOQLParser.SubqueryContext ctx) {
       if (subQueryScope) {
         throw new SOQLParsingException("Sub-queries are not supported inside of other sub-queries: "
-          + ctx.getText());
+                                         + ctx.getText());
       }
       return null;
     }
@@ -269,87 +350,6 @@ public class SalesforceQueryVisitor extends SOQLBaseVisitor<SObjectDescriptor> {
       List<SObjectDescriptor.FieldDescriptor> fields = fieldListContext.accept(visitor);
 
       return new SObjectDescriptor(name, fields);
-    }
-  }
-
-  /**
-   * Visits query statement and extracts from statement in the original representation.
-   */
-  public static class FromStatementVisitor extends SOQLBaseVisitor<String> {
-
-    @Override
-    public String visitStatement(SOQLParser.StatementContext ctx) {
-      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
-      Interval interval = new Interval(
-        fromStatementContext.start.getStartIndex(),
-        fromStatementContext.stop.getStopIndex());
-      return fromStatementContext.start.getInputStream().getText(interval);
-    }
-  }
-
-  /**
-   * Visits query from statement and checks if it contains clauses that are restricted by Bulk API.
-   * For example: GROUP BY [ROLLUP / CUBE], OFFSET.
-   * Also checks if query contains restricted field types (function calls, sub-query fields).
-   */
-  public static class RestrictedQueryVisitor extends SOQLBaseVisitor<Boolean> {
-
-    @Override
-    public Boolean visitStatement(SOQLParser.StatementContext ctx) {
-
-      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
-      if (fromStatementContext.GROUP() != null || fromStatementContext.OFFSET() != null) {
-        return true;
-      }
-
-      return ctx.fieldList().accept(new RestrictedFieldVisitor());
-    }
-  }
-
-  /**
-   * Visits query fields that are restricted by Bulk API.
-   * Returns true if at least one restricted field type is present, false otherwise.
-   * For example: function calls, sub-queries.
-   */
-  public static class RestrictedFieldVisitor extends SOQLBaseVisitor<Boolean> {
-
-    @Override
-    public Boolean visitFunctionCall(SOQLParser.FunctionCallContext ctx) {
-      return Boolean.TRUE;
-    }
-
-    @Override
-    public Boolean visitSubquery(SOQLParser.SubqueryContext ctx) {
-      return Boolean.TRUE;
-    }
-
-    @Override
-    protected Boolean defaultResult() {
-      return Boolean.FALSE;
-    }
-  }
-
-  /**
-   * Visits query fields that are restricted by Bulk API with PKChunk Enable.
-   * Returns true if there is condition clause other than 'WHERE', false otherwise.
-   * For example: SELECT Name FROM Opportunity LIMIT 10.
-   */
-  public static class RestrictedPKQueryVisitor extends SOQLBaseVisitor<Boolean> {
-
-    @Override
-    public Boolean visitStatement(SOQLParser.StatementContext ctx) {
-      SOQLParser.FromStatementContext fromStatementContext = ctx.fromStatement();
-      if (
-        fromStatementContext.WITH() != null ||
-          fromStatementContext.GROUP() != null ||
-          fromStatementContext.ORDER() != null ||
-          fromStatementContext.LIMIT() != null ||
-          fromStatementContext.OFFSET() != null ||
-          fromStatementContext.FOR() != null) {
-        return true;
-      }
-
-      return ctx.fieldList().accept(new RestrictedFieldVisitor());
     }
   }
 }

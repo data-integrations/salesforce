@@ -39,10 +39,12 @@ import io.cdap.plugin.common.Constants;
 import io.cdap.plugin.common.IdUtils;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.tephra.TransactionFailureException;
 import org.slf4j.Logger;
@@ -79,9 +81,11 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
 
     try {
-      if (config.getConnection() != null) {
-        config.getConnection().validate(collector); // validate when macros are not substituted
-        config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are not substituted
+      OAuthInfo oAuthInfo =
+        SalesforceConnectionUtil.getOAuthInfo(config.getConnection().getAuthenticatorCredentials(), collector);
+      if (config.getConnection() != null && config.getConnection().canAttemptToEstablishConnection()) {
+        config.getConnection().validate(collector, oAuthInfo); // validate when macros are not substituted
+        config.ensurePushTopicExistAndWithCorrectFields(oAuthInfo); // run when macros are not substituted
 
         String query = config.getQuery();
 
@@ -90,13 +94,16 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
           && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
           && config.getConnection().canAttemptToEstablishConnection()) {
 
-          Schema schema = SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(),
+          Schema schema = SalesforceSchemaUtil.getSchema(new AuthenticatorCredentials(oAuthInfo,
+                                                                                      config.getConnection()
+                                                                                        .getConnectTimeout()),
                                                          SObjectDescriptor.fromQuery(query));
           pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
         }
       }
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce: " + e.getMessage(), null)
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce: %s", message), null)
         .withStacktrace(e.getStackTrace());
     }
   }
@@ -107,19 +114,21 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     if (schema != null && schema.getFields() != null) {
       recordLineage(context, config.referenceName, schema,
                     "Read", String.format("Read from Salesforce Stream with push topic of %s.",
-                                                         config.getPushTopicName()));
+                                          config.getPushTopicName()));
     }
   }
 
   @Override
   public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws ConnectionException {
     FailureCollector collector = streamingContext.getFailureCollector();
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection().getAuthenticatorCredentials(),
+                                                                collector);
     if (config.getConnection() != null) {
-      config.getConnection().validate(collector); // validate when macros are substituted
+      config.getConnection().validate(collector, oAuthInfo); // validate when macros are substituted
     }
     collector.getOrThrowException();
 
-    return SalesforceStreamingSourceUtil.getStructuredRecordJavaDStream(streamingContext, config);
+    return SalesforceStreamingSourceUtil.getStructuredRecordJavaDStream(streamingContext, config, oAuthInfo);
   }
 
   @Path("outputSchema")

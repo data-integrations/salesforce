@@ -61,7 +61,7 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
   /**
    * Get XML objects from Salesforce query
    *
-   * @param inputSplit specifies batch details
+   * @param inputSplit         specifies batch details
    * @param taskAttemptContext task context
    */
   @Override
@@ -77,10 +77,10 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format("Failed to create a Salesforce SOAP connection to execute query %s: %s",
-              query,
-              errorMessage),
-          e);
+        String.format("Failed to create a Salesforce SOAP connection to execute query %s: %s",
+                      query,
+                      errorMessage),
+        e);
     }
   }
 
@@ -144,7 +144,7 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new IOException(String.format("Cannot create Salesforce SOAP connection for query locator: '%s' :%s",
-                                               queryResult.getQueryLocator(), errorMessage), e);
+                                          queryResult.getQueryLocator(), errorMessage), e);
     }
   }
 }
