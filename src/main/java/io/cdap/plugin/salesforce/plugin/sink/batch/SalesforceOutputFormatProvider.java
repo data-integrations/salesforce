@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- *  Provides SalesforceOutputFormat's class name and configuration.
+ * Provides SalesforceOutputFormat's class name and configuration.
  */
 public class SalesforceOutputFormatProvider implements OutputFormatProvider {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceOutputFormatProvider.class);
@@ -48,10 +48,11 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSinkConstants.CONFIG_SOBJECT, config.getSObject())
       .put(SalesforceSinkConstants.CONFIG_OPERATION, config.getOperation())
+      .put(SalesforceSinkConstants.CONFIG_CONCURRENCY_MODE, config.getConcurrencyMode())
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
-      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());      ;
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
     OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder
@@ -76,17 +77,17 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
     try {
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
-                                                 config.getExternalIdField());
+                                                 config.getExternalIdField(), config.getConcurrencyModeEnum());
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
       LOG.info("Started Salesforce job with jobId='{}'", job.getId());
     } catch (AsyncApiException e) {
       throw new RuntimeException(
-          String.format(
-              "Failed to create a Salesforce bulk job for operation (%s) on SObject (%s): %s",
-              config.getOperationEnum().toString(),
-              config.getSObject(),
-              e.getMessage()),
-          e);
+        String.format(
+          "Failed to create a Salesforce bulk job for operation (%s) on SObject (%s): %s",
+          config.getOperationEnum().toString(),
+          config.getSObject(),
+          e.getMessage()),
+        e);
     }
     this.configMap = configBuilder.build();
   }

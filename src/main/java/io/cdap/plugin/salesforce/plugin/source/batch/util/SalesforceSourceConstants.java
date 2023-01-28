@@ -133,6 +133,12 @@ public class SalesforceSourceConstants {
    * Sleep time between polling the batch status
    */
   public static final long GET_BATCH_RESULTS_SLEEP_MS = 500;
+
+  /**
+   * Sleep time between polling the batch status for Salesforce Sink
+   */
+  public static final long GET_SINK_BATCH_RESULTS_SLEEP_MS = 5000;
+  
   /**
    * Number of tries while polling the batch status
    */

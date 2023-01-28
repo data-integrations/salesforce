@@ -78,9 +78,9 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   /**
    * Get csv from a single Salesforce batch
    *
-   * @param inputSplit specifies batch details
+   * @param inputSplit         specifies batch details
    * @param taskAttemptContext task context
-   * @throws IOException can be due error during reading query
+   * @throws IOException          can be due error during reading query
    * @throws InterruptedException interrupted sleep while waiting for batch results
    */
   @Override
@@ -101,8 +101,8 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       setupParser();
     } catch (AsyncApiException e) {
       throw new RuntimeException(
-          String.format("Failed to wait for the result of a batch: %s", e.getMessage()),
-          e);
+        String.format("Failed to wait for the result of a batch: %s", e.getMessage()),
+        e);
     }
   }
 
@@ -188,7 +188,7 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
    *
    * @param bulkConnection bulk connection instance
    * @return array of batch result ids
-   * @throws AsyncApiException  if there is an issue creating the job
+   * @throws AsyncApiException    if there is an issue creating the job
    * @throws InterruptedException sleep interrupted
    */
   private String[] waitForBatchResults(BulkConnection bulkConnection)

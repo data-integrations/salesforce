@@ -19,9 +19,11 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.fault.IApiFault;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -69,9 +71,8 @@ public class SalesforceConnectionUtil {
   }
 
   /**
-   *
    * @param e Exception thrown from salesforce APIs
-   * @return  error message sent by APIs.
+   * @return error message sent by APIs.
    */
   public static String getSalesforceErrorMessageFromException(Exception e) {
     if (e instanceof IApiFault) {
@@ -79,5 +80,25 @@ public class SalesforceConnectionUtil {
     } else {
       return e.getMessage();
     }
+  }
+
+  /**
+   *
+   * @param config     SalesforceConnectorConfig file from where credentials can be taken
+   * @param collector  FailureCollector
+   * @return           OAuthInfo which contains Access Token and login URL.
+   */
+  public static OAuthInfo getOAuthInfo(SalesforceConnectorConfig config, FailureCollector collector) {
+    OAuthInfo oAuthInfo = null;
+    try {
+      oAuthInfo = Authenticator.getOAuthInfo(config.getAuthenticatorCredentials());
+    } catch (Exception e) {
+      String message = getSalesforceErrorMessageFromException(e);
+      collector.addFailure("Error encountered while establishing connection: " + message,
+                           "Please verify authentication properties are provided correctly")
+        .withStacktrace(e.getStackTrace());
+      throw collector.getOrThrowException();
+    }
+    return oAuthInfo;
   }
 }
