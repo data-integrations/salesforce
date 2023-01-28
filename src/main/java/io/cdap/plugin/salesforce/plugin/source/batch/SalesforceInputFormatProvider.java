@@ -43,7 +43,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
                                        @Nullable String sObjectNameField) {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
-    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
+    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits))
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
     OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder

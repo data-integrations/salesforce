@@ -50,7 +50,8 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_OPERATION, config.getOperation())
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
-      .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString());
+      .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());      ;
     OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder
@@ -79,7 +80,13 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
       LOG.info("Started Salesforce job with jobId='{}'", job.getId());
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+          String.format(
+              "Failed to create a Salesforce bulk job for operation (%s) on SObject (%s): %s",
+              config.getOperationEnum().toString(),
+              config.getSObject(),
+              e.getMessage()),
+          e);
     }
     this.configMap = configBuilder.build();
   }
