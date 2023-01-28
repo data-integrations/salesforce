@@ -31,9 +31,11 @@ import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.soap.SObjectBuilder;
@@ -52,16 +54,13 @@ import javax.annotation.Nullable;
  * Salesforce Streaming Source plugin config.
  */
 public class SalesforceStreamingSourceConfig extends ReferencePluginConfig implements Serializable {
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceConfig.class);
-  private static final long serialVersionUID = 4218063781902315444L;
-
-  private static final Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
-
   protected static final String ENABLED_KEYWORD = "Enabled";
   protected static final String PROPERTY_PUSH_TOPIC_NAME = "pushTopicName";
   protected static final String PROPERTY_PUSH_TOPIC_QUERY = "pushTopicQuery";
   protected static final String PROPERTY_SOBJECT_NAME = "sObjectName";
-
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceConfig.class);
+  private static final long serialVersionUID = 4218063781902315444L;
+  private static final Pattern isValidFieldNamePattern = Pattern.compile("[a-zA-Z0-9.-_]+");
   @Description("Salesforce push topic name. Plugin will track updates from this topic. If topic does not exist, " +
     "it will be automatically created. " +
     "To manually create pushTopic use Salesforce workbench or Apex code or API.")
@@ -140,6 +139,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
   public SalesforceConnectorConfig getConnection() {
     return connection;
   }
+
   public String getPushTopicName() {
     return pushTopicName;
   }
@@ -184,10 +184,10 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
   /**
    * Asserts that pushTopic on Salesforce server has the same parameters as specified in config.
    * If they are different {@link java.lang.IllegalArgumentException} is thrown.
-   *
+   * <p>
    * If pushTopic does not exist it is created.
    */
-  public void ensurePushTopicExistAndWithCorrectFields() {
+  public void ensurePushTopicExistAndWithCorrectFields(OAuthInfo oAuthInfo) {
     if (connection != null) {
       if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
         containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !connection.canAttemptToEstablishConnection()) {
@@ -196,7 +196,8 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
     }
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(this.connection.getAuthenticatorCredentials()));
+        Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,
+                                                                         this.getConnection().getConnectTimeout())));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();
@@ -206,7 +207,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
 
         if (Strings.isNullOrEmpty(query)) {
           throw new InvalidConfigException("SOQL query or SObject name must be provided, unless " +
-                                                     "existing pushTopic is used",
+                                             "existing pushTopic is used",
                                            SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY);
         }
 
@@ -237,7 +238,9 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
         assertFieldValue(pushTopic, "NotifyForFields", getPushTopicNotifyForFields());
       }
     } catch (ConnectionException e) {
-      throw new InvalidStageException("Cannot connect to Salesforce API with credentials specified.", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new InvalidStageException(
+        String.format("Cannot connect to Salesforce API with credentials specified due to error: %s", message), e);
     }
   }
 
@@ -350,8 +353,10 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
       return sObjectQuery;
     } catch (ConnectionException e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new IllegalStateException(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s' with error: %s",
+                      sObjectName, message), e);
     }
   }
 }

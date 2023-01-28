@@ -36,7 +36,7 @@ public class SoapRecordToMapTransformer {
   /**
    * Transforms SOAP API SObject to map for provided field names.
    *
-   * @param sObject     SObject to be transformed
+   * @param sObject           SObject to be transformed
    * @param sObjectDescriptor SObject metadata to be used for fields extraction
    * @return map of fields names and values extracted from SObject
    */

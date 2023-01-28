@@ -45,8 +45,8 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
       return new SalesforceRecordWriter(taskAttemptContext);
     } catch (AsyncApiException e) {
       throw new RuntimeException(
-          String.format("Failed to initialize a writer to write to Salesforce: ", e.getMessage()),
-          e);
+        String.format("Failed to initialize a writer to write to Salesforce: ", e.getMessage()),
+        e);
     }
   }
 
@@ -80,8 +80,8 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
           SalesforceBulkUtil.closeJob(bulkConnection, jobId);
         } catch (AsyncApiException e) {
           throw new RuntimeException(
-              String.format("Failed to commit a Salesforce bulk job: %s", e.getMessage()),
-              e);
+            String.format("Failed to commit a Salesforce bulk job: %s", e.getMessage()),
+            e);
         }
       }
 

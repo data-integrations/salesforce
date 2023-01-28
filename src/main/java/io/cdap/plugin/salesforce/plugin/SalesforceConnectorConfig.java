@@ -23,7 +23,6 @@ import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
-import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import javax.annotation.Nullable;
@@ -85,13 +84,13 @@ public class SalesforceConnectorConfig extends PluginConfig {
   private final Integer connectTimeout;
 
   public SalesforceConnectorConfig(@Nullable String consumerKey,
-                              @Nullable String consumerSecret,
-                              @Nullable String username,
-                              @Nullable String password,
-                              @Nullable String loginUrl,
-                              @Nullable String securityToken,
-                              @Nullable Integer connectTimeout,
-                              @Nullable OAuthInfo oAuthInfo) {
+                                   @Nullable String consumerSecret,
+                                   @Nullable String username,
+                                   @Nullable String password,
+                                   @Nullable String loginUrl,
+                                   @Nullable String securityToken,
+                                   @Nullable Integer connectTimeout,
+                                   @Nullable OAuthInfo oAuthInfo) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -135,14 +134,14 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Nullable
   public Integer getConnectTimeout() {
     if (connectTimeout == null) {
-       return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
+      return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
     }
     return connectTimeout;
   }
 
-  public void validate(FailureCollector collector) {
+  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
     try {
-      validateConnection();
+      validateConnection(oAuthInfo);
     } catch (Exception e) {
       collector.addFailure("Error encountered while establishing connection: " + e.getMessage(),
                            "Please verify authentication properties are provided correctly")
@@ -156,16 +155,8 @@ public class SalesforceConnectorConfig extends PluginConfig {
     if (oAuthInfo != null) {
       return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
     }
-    try {
-      this.oAuthInfo = Authenticator.getOAuthInfo(new AuthenticatorCredentials(getUsername(), getPassword(),
-              getConsumerKey(),
-              getConsumerSecret(), getLoginUrl(), getConnectTimeout()));
-    } catch (Exception e) {
-      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
-      throw new RuntimeException(String.format("Failed to connect and authenticate to Salesforce: %s",
-              errorMessage), e);
-    }
-    return new AuthenticatorCredentials(this.oAuthInfo, getConnectTimeout());
+    return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
+                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout());
   }
 
   /**
@@ -194,18 +185,17 @@ public class SalesforceConnectorConfig extends PluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
-  private void validateConnection() {
+  private void validateConnection(OAuthInfo oAuthInfo) {
     if (!canAttemptToEstablishConnection()) {
       return;
     }
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
+      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout()));
     } catch (ConnectionException e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format("Failed to establish and validate connection to salesforce : %s",
-              e.getMessage()),
-          e);
+        String.format("Failed to establish and validate connection to salesforce: %s", message), e);
     }
   }
 

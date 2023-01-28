@@ -52,8 +52,8 @@ public class SalesforceReceiver extends Receiver<String> {
     pushTopicListener.start();
 
     ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-        .setNameFormat(RECEIVER_THREAD_NAME + "-%d")
-        .build();
+      .setNameFormat(RECEIVER_THREAD_NAME + "-%d")
+      .build();
 
     Executors.newSingleThreadExecutor(namedThreadFactory).submit(this::receive);
   }

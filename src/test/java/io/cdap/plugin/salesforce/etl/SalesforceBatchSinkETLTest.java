@@ -22,6 +22,8 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.cdap.test.ApplicationManager;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -366,7 +368,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
@@ -386,7 +391,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 
@@ -405,7 +413,10 @@ public class SalesforceBatchSinkETLTest extends BaseSalesforceBatchSinkETLTest {
     );
 
     MockFailureCollector collector = new MockFailureCollector();
-    getDefaultConfig(sObject).validate(schema, collector);
+    OAuthInfo oAuthInfo =
+      SalesforceConnectionUtil.getOAuthInfo(
+        getDefaultConfig(sObject).getConnection(), collector);
+    getDefaultConfig(sObject).validate(schema, collector, oAuthInfo);
     Assert.assertEquals(1, collector.getValidationFailures().size());
   }
 }

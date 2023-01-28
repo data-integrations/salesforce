@@ -30,21 +30,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class StructuredRecordToCSVRecordTransformer {
 
-  public CSVRecord transform(StructuredRecord record) {
-    List<String> fieldNames = new ArrayList<>();
-    List<String> values = new ArrayList<>();
-
-    for (Schema.Field field : record.getSchema().getFields()) {
-      String fieldName = field.getName();
-      String value = convertSchemaFieldToString(record.get(fieldName), field);
-
-      fieldNames.add(fieldName);
-      values.add(value);
-    }
-
-    return new CSVRecord(fieldNames, values);
-  }
-
   /**
    * Convert a schema field to String which can be read by Salesforce.
    *
@@ -94,5 +79,20 @@ public class StructuredRecordToCSVRecordTransformer {
     }
 
     return value.toString();
+  }
+
+  public CSVRecord transform(StructuredRecord record) {
+    List<String> fieldNames = new ArrayList<>();
+    List<String> values = new ArrayList<>();
+
+    for (Schema.Field field : record.getSchema().getFields()) {
+      String fieldName = field.getName();
+      String value = convertSchemaFieldToString(record.get(fieldName), field);
+
+      fieldNames.add(fieldName);
+      values.add(value);
+    }
+
+    return new CSVRecord(fieldNames, values);
   }
 }
