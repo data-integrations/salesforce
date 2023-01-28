@@ -77,6 +77,15 @@
           "widget-attributes" : {
             "default": "https://login.salesforce.com/services/oauth2/token"
           }
+        },
+        {
+          "widget-type": "number",
+          "label": "Connect Timeout",
+          "name": "connectTimeout",
+          "widget-attributes": {
+            "min": "0",
+            "default": "30000"
+          }
         }
       ]
     },
@@ -196,6 +205,10 @@
         {
           "type": "property",
           "name": "loginUrl"
+        },
+        {
+          "type": "property",
+          "name": "connectTimeout"
         }
       ]
     },
