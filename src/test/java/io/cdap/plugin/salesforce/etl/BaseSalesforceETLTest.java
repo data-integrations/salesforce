@@ -70,7 +70,8 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
                                                              "https://login.salesforce.com/services/oauth2/token");
   protected static final String SECURITY_TOKEN = System.getProperty("salesforce.test.securityToken",
                                                                "");
-
+  protected static final String CONNECT_TIMEOUT = System.getProperty("salesforce.test.connectTimeout",
+                                                                  "30000");
   public static final int SOAP_RECORDS_LIMIT = 200;
 
   @Rule
@@ -81,15 +82,15 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   @BeforeClass
   public static void initializeTests() throws ConnectionException {
     try {
-      Assume.assumeNotNull(CONSUMER_KEY, CONSUMER_SECRET, USERNAME, PASSWORD, LOGIN_URL);
+      Assume.assumeNotNull(CONSUMER_KEY, CONSUMER_SECRET, USERNAME, PASSWORD, LOGIN_URL, CONNECT_TIMEOUT);
     } catch (AssumptionViolatedException e) {
       LOG.warn("ETL tests are skipped. Please find the instructions on enabling it at" +
         "BaseSalesforceBatchSourceETLTest javadoc");
       throw e;
     }
-
+    Integer connectTimeout = Integer.parseInt(CONNECT_TIMEOUT);
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(USERNAME, PASSWORD, CONSUMER_KEY,
-                                                                        CONSUMER_SECRET, LOGIN_URL);
+                                                                        CONSUMER_SECRET, LOGIN_URL, connectTimeout);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
   }
 

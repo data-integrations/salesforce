@@ -36,6 +36,8 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Login Url:** Salesforce OAuth2 login url.
 
+**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+
 **Topic Name:** Salesforce push topic name. Plugin will track updates from this topic. If the topic does
 not exist, the plugin creates it. To manually create pushTopic use Salesforce workbench, Apex code or API.
 

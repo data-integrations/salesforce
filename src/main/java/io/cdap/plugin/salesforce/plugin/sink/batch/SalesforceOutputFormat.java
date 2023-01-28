@@ -28,8 +28,6 @@ import org.apache.hadoop.mapreduce.OutputCommitter;
 import org.apache.hadoop.mapreduce.OutputFormat;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -46,7 +44,9 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
     try {
       return new SalesforceRecordWriter(taskAttemptContext);
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+          String.format("Failed to initialize a writer to write to Salesforce: ", e.getMessage()),
+          e);
     }
   }
 
@@ -79,7 +79,9 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord
           String jobId = conf.get(SalesforceSinkConstants.CONFIG_JOB_ID);
           SalesforceBulkUtil.closeJob(bulkConnection, jobId);
         } catch (AsyncApiException e) {
-          throw new RuntimeException("There was issue communicating with Salesforce", e);
+          throw new RuntimeException(
+              String.format("Failed to commit a Salesforce bulk job: %s", e.getMessage()),
+              e);
         }
       }
 

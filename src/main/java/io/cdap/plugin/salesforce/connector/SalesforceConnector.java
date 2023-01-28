@@ -91,7 +91,8 @@ public class SalesforceConnector implements DirectConnector {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
-                                                                        config.getLoginUrl());
+                                                                        config.getLoginUrl(),
+                                                                        config.getConnectTimeout());
     BrowseDetail.Builder browseDetailBuilder = BrowseDetail.builder();
     int count = 0;
     try {
@@ -159,7 +160,8 @@ public class SalesforceConnector implements DirectConnector {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
-                                                                        config.getLoginUrl());
+                                                                        config.getLoginUrl(),
+                                                                        config.getConnectTimeout());
     String fields = getObjectFields(object);
     String query = String.format("SELECT %s FROM %s LIMIT %d", fields, object, limit);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);

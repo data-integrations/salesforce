@@ -83,7 +83,11 @@ public final class SalesforceSplitUtil {
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+          String.format("Failed to run a Salesforce bulk query (%s): %s",
+              query,
+              e.getMessage()),
+          e);
     }
   }
 
@@ -132,7 +136,9 @@ public final class SalesforceSplitUtil {
     try {
       return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+          String.format("Failed to create a connection to Salesforce bulk API: %s", e.getMessage()),
+          e);
     }
   }
 
@@ -174,7 +180,7 @@ public final class SalesforceSplitUtil {
         try {
           Thread.sleep(SalesforceSourceConstants.GET_BATCH_RESULTS_SLEEP_MS);
         } catch (InterruptedException e) {
-          throw new RuntimeException("Job is aborted", e);
+          throw new RuntimeException(String.format("Job is aborted: %s", e.getMessage()), e);
         }
       }
     }

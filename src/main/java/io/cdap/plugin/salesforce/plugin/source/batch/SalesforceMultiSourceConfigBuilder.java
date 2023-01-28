@@ -38,6 +38,7 @@ public class SalesforceMultiSourceConfigBuilder {
   private String securityToken;
   private OAuthInfo oAuthInfo;
   private String operation;
+  private Integer connectTimeout;
 
   public SalesforceMultiSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -119,9 +120,14 @@ public class SalesforceMultiSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceMultiSourceConfigBuilder setConnectTimeout(Integer connectTimeout) {
+    this.connectTimeout = connectTimeout;
+    return this;
+  }
+
   public SalesforceMultiSourceConfig build() {
     return new SalesforceMultiSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                           datetimeAfter, datetimeBefore, duration, offset, whiteList,
+                                           connectTimeout, datetimeAfter, datetimeBefore, duration, offset, whiteList,
                                            blackList, sObjectNameField, securityToken, oAuthInfo, operation);
   }
 }

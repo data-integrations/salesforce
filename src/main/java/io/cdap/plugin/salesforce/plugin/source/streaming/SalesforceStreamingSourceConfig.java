@@ -127,12 +127,13 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          @Nullable String loginUrl,
                                          String pushTopicName, String sObjectName,
                                          @Nullable String securityToken,
+                                         @Nullable Integer connectTimeout,
                                          @Nullable OAuthInfo oAuthInfo) {
     super(referenceName);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, oAuthInfo);
+                                                    securityToken, connectTimeout, oAuthInfo);
   }
 
   @Nullable

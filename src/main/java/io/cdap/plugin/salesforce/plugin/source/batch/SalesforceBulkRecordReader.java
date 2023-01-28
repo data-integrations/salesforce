@@ -100,7 +100,9 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
       setupParser();
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+          String.format("Failed to wait for the result of a batch: %s", e.getMessage()),
+          e);
     }
   }
 

@@ -124,6 +124,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable String username,
                               @Nullable String password,
                               @Nullable String loginUrl,
+                              @Nullable Integer connectTimeout,
                               String sObject,
                               String operation, String externalIdField,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
@@ -132,7 +133,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable OAuthInfo oAuthInfo) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
-                                               securityToken, oAuthInfo);
+                                               securityToken, connectTimeout, oAuthInfo);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -354,8 +355,9 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce", null).
-        withStacktrace(e.getStackTrace());
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce with error: %s", errorMessage
+      ), null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
   }

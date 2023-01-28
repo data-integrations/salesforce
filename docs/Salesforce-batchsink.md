@@ -28,6 +28,8 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Login Url:** Salesforce OAuth2 login url.
 
+**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+
 **SObject Name:** Salesforce object name to insert records into.
 
 There are also **sObjects** that are not supported in the Bulk API of Salesforce.

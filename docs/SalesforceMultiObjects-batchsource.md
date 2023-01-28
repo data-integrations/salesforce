@@ -29,6 +29,8 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Login Url:** Salesforce OAuth2 login url.
 
+**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+
 **White List**: List of SObjects to read from. By default all SObjects will be white listed. 
 For each white listed SObject, a SOQL query will be generated of the form:
 `select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`.

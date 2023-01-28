@@ -75,6 +75,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String username,
                                      @Nullable String password,
                                      @Nullable String loginUrl,
+                                     @Nullable Integer connectTimeout,
                                      @Nullable String datetimeAfter,
                                      @Nullable String datetimeBefore,
                                      @Nullable String duration,
@@ -85,7 +86,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
                                      @Nullable String operation) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
     this.whiteList = whiteList;
     this.blackList = blackList;
