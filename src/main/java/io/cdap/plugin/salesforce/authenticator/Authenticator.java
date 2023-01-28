@@ -35,7 +35,6 @@ public class Authenticator {
    * which can be used by salesforce libraries to make a connection.
    *
    * @param credentials information to log in
-   *
    * @return ConnectorConfig which can be used to create BulkConnection and PartnerConnection
    */
   public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
@@ -55,7 +54,8 @@ public class Authenticator {
 
       return connectorConfig;
     } catch (Exception e) {
-      throw new RuntimeException("Connection to salesforce with plugin configurations failed", e);
+      throw new RuntimeException(
+          String.format("Failed to connect and authenticate to Salesforce: %s", e.getMessage()), e);
     }
   }
 
@@ -63,7 +63,6 @@ public class Authenticator {
    * Authenticate via oauth2 to salesforce and return response to auth request.
    *
    * @param credentials information to log in
-   *
    * @return AuthResponse response to http request
    */
   public static OAuthInfo getOAuthInfo(AuthenticatorCredentials credentials) throws Exception {

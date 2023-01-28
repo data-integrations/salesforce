@@ -22,7 +22,7 @@
   <name>Salesforce plugins</name>
   <groupId>io.cdap.plugin</groupId>
   <artifactId>salesforce-plugins</artifactId>
-  <version>1.4.3</version>
+  <version>1.4.4-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Salesforce Plugins</description>
   <url>https://github.com/data-integrations/salesforce</url>
@@ -58,7 +58,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
-    <cdap.version>6.4.0</cdap.version>
+    <cdap.version>6.6.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>

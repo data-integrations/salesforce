@@ -162,7 +162,9 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     try {
       return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
     } catch (ConnectionException e) {
-      throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
+      throw new RuntimeException(
+          String.format("Failed to get schema from the query '%s': %s", query, e.getMessage()),
+          e);
     }
   }
 
