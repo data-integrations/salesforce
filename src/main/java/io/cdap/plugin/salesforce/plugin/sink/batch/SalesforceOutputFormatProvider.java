@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
+import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.batch.OutputFormatProvider;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -78,7 +79,7 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
                                                  config.getExternalIdField());
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
       LOG.info("Started Salesforce job with jobId='{}'", job.getId());
-    } catch (AsyncApiException e) {
+    } catch (AsyncApiException | ConnectionException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
 

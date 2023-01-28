@@ -18,8 +18,8 @@ package io.cdap.plugin.salesforce.authenticator;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
-import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -38,8 +38,10 @@ public class Authenticator {
    *
    * @return ConnectorConfig which can be used to create BulkConnection and PartnerConnection
    */
-  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
-    try {
+  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) throws ConnectionException {
+    throw new ConnectionException("oops");
+
+    /*try {
       OAuthInfo oAuthInfo = getOAuthInfo(credentials);
       ConnectorConfig connectorConfig = new ConnectorConfig();
       connectorConfig.setSessionId(oAuthInfo.getAccessToken());
@@ -56,7 +58,7 @@ public class Authenticator {
       return connectorConfig;
     } catch (Exception e) {
       throw new RuntimeException("Connection to salesforce with plugin configurations failed", e);
-    }
+    }*/
   }
 
   /**

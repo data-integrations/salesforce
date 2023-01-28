@@ -22,6 +22,7 @@ import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
+import com.sforce.ws.ConnectionException;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
@@ -131,7 +132,7 @@ public final class SalesforceSplitUtil {
   public static BulkConnection getBulkConnection(AuthenticatorCredentials authenticatorCredentials) {
     try {
       return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
-    } catch (AsyncApiException e) {
+    } catch (AsyncApiException | ConnectionException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
   }

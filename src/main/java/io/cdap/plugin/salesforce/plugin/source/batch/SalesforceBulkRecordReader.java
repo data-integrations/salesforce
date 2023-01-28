@@ -20,6 +20,7 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
+import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
@@ -99,7 +100,7 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
       resultIds = waitForBatchResults(bulkConnection);
       LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
       setupParser();
-    } catch (AsyncApiException e) {
+    } catch (AsyncApiException | ConnectionException e) {
       throw new RuntimeException("There was issue communicating with Salesforce", e);
     }
   }

@@ -128,8 +128,12 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   public void validate(FailureCollector collector) {
     try {
       validateConnection();
+    } catch (ConnectionException e) {
+      collector.addFailure("Error getting oauth info: " + e,
+                           "Please verify authentication properties are provided correctly")
+        .withStacktrace(e.getStackTrace());
     } catch (Exception e) {
-      collector.addFailure("Error encountered while establishing connection: " + e.getMessage(),
+      collector.addFailure("Error encountered while establishing connectionx: " + e + ": " + e.getCause(),
                            "Please verify authentication properties are provided correctly")
         .withStacktrace(e.getStackTrace());
     }
@@ -171,16 +175,11 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN));
   }
 
-  private void validateConnection() {
+  private void validateConnection() throws ConnectionException {
     if (!canAttemptToEstablishConnection()) {
       return;
     }
-
-    try {
-      SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
-    } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
-    }
+    SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
   }
 
   private String constructPasswordWithToken(String password, @Nullable String securityToken) {
