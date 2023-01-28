@@ -75,7 +75,12 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
       sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       queryResult = partnerConnection.query(query);
     } catch (ConnectionException e) {
-      throw new RuntimeException("Cannot create Salesforce SOAP connection", e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+          String.format("Failed to create a Salesforce SOAP connection to execute query %s: %s",
+              query,
+              errorMessage),
+          e);
     }
   }
 
@@ -137,8 +142,9 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
       sObjects = null;
       queryResult = partnerConnection.queryMore(queryResult.getQueryLocator());
     } catch (ConnectionException e) {
-      throw new IOException(String.format("Cannot create Salesforce SOAP connection for query locator: '%s'",
-                                               queryResult.getQueryLocator()), e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IOException(String.format("Cannot create Salesforce SOAP connection for query locator: '%s' :%s",
+                                               queryResult.getQueryLocator(), errorMessage), e);
     }
   }
 }
