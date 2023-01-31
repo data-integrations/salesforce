@@ -90,7 +90,9 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, CSVRecord
         batchInfoList.add(batchInfo);
         LOG.info("Submitted a batch with batchId='{}'", batchInfo.getId());
       } catch (AsyncApiException e) {
-        throw new RuntimeException("There was issue communicating with Salesforce", e);
+        throw new RuntimeException(
+          String.format("Failed to create and submit a batch for writes: %s", e.getMessage()),
+          e);
       }
       csvBuffer.reset();
     }
@@ -104,7 +106,9 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, CSVRecord
       SalesforceBulkUtil.awaitCompletion(bulkConnection, jobInfo, batchInfoList);
       SalesforceBulkUtil.checkResults(bulkConnection, jobInfo, batchInfoList, errorHandling.equals(ErrorHandling.SKIP));
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+        String.format("Failed to check the result of a batch for writes: %s", e.getMessage()),
+        e);
     } finally {
       try {
         csvBufferSizeCheck.close();

@@ -181,7 +181,10 @@ public class SalesforceConnectorConfig extends PluginConfig {
     try {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to establish and validate connection to salesforce : %s",
+              e.getMessage()),
+          e);
     }
   }
 

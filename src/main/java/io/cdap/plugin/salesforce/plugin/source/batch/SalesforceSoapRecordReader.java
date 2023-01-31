@@ -75,7 +75,11 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
       sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       queryResult = partnerConnection.query(query);
     } catch (ConnectionException e) {
-      throw new RuntimeException("Cannot create Salesforce SOAP connection", e);
+      throw new RuntimeException(
+        String.format("Failed to create a Salesforce SOAP connection to execute query %s: %s",
+                      query,
+                      e.getMessage()),
+        e);
     }
   }
 

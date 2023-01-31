@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Objects;
+import static java.util.Optional.ofNullable;
 
 /**
  *  Provides SalesforceOutputFormat's class name and configuration.
@@ -79,7 +80,13 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
       LOG.info("Started Salesforce job with jobId='{}'", job.getId());
     } catch (AsyncApiException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce", e);
+      throw new RuntimeException(
+        String.format(
+          "Failed to create a Salesforce bulk job for operation (%s) on SObject (%s): %s",
+          config.getOperationEnum().toString(),
+          config.getSObject(),
+          e.getMessage()),
+        e);
     }
     this.configMap = configBuilder.build();
   }
