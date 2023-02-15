@@ -39,10 +39,10 @@ public class SalesforceReceiver extends Receiver<String> {
 
   private final AuthenticatorCredentials credentials;
   private final String topic;
-  private ConcurrentMap<String, Long> dataMap;
+  private ConcurrentMap<String, Integer> dataMap;
   private SalesforcePushTopicListener pushTopicListener;
 
-  SalesforceReceiver(AuthenticatorCredentials credentials, String topic, ConcurrentMap<String, Long> dataMap) {
+  SalesforceReceiver(AuthenticatorCredentials credentials, String topic, ConcurrentMap<String, Integer> dataMap) {
     super(StorageLevel.MEMORY_AND_DISK_2());
     this.credentials = credentials;
     this.topic = topic;

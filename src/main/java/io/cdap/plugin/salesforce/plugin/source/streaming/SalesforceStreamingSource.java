@@ -114,8 +114,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   }
 
   @Override
-  public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws ConnectionException,
-    IOException {
+  public JavaDStream<StructuredRecord> getStream(StreamingContext streamingContext) throws Exception {
     FailureCollector collector = streamingContext.getFailureCollector();
     if (config.getConnection() != null) {
       config.getConnection().validate(collector); // validate when macros are substituted

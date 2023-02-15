@@ -16,19 +16,22 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.Longs;
 import com.google.gson.Gson;
-import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.source.SalesforceDStream;
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.api.java.function.Function;
+import org.apache.spark.api.java.function.Function2;
+import org.apache.spark.api.java.function.VoidFunction;
+import org.apache.spark.streaming.Time;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
-import org.cometd.bayeux.Message;
+import org.apache.spark.streaming.dstream.InputDStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -42,9 +45,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,13 +54,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * Salesforce streaming source uti.
  */
-final class SalesforceStreamingSourceUtil {
+public final class SalesforceStreamingSourceUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceUtil.class);
   private static final Gson gson = new Gson();
 
   static JavaDStream<StructuredRecord> getStructuredRecordJavaDStream(StreamingContext streamingContext,
                                                                       SalesforceStreamingSourceConfig config)
-    throws ConnectionException, IOException {
+          throws Exception {
     config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are substituted
 
     Schema schema = streamingContext.getOutputSchema();
@@ -75,13 +76,14 @@ final class SalesforceStreamingSourceUtil {
     JavaStreamingContext jssc = streamingContext.getSparkStreamingContext();
 
     final Schema finalSchema = schema;
-    return jssc.receiverStream(new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
-                                                      config.getPushTopicName(), getState(streamingContext, config)))
-      .map(jsonMessage -> {
-        saveState(jsonMessage, streamingContext, config);
-        return getStructuredRecord(jsonMessage, finalSchema);
-      })
-      .filter(Objects::nonNull);
+
+    InputDStream inputDStream = jssc.receiverStream(new SalesforceReceiver(config.getConnection()
+      .getAuthenticatorCredentials(), config.getPushTopicName(), getState(streamingContext, config))).inputDStream();
+
+
+    SalesforceDStream salesforceDStream = new SalesforceDStream(jssc.ssc(), inputDStream,
+            new BytesFunction(config, schema), getStateConsumer(streamingContext, config));
+    return salesforceDStream.convertToJavaDStream();
   }
 
   private static StructuredRecord getStructuredRecord(String jsonMessage, Schema schema) {
@@ -160,30 +162,30 @@ final class SalesforceStreamingSourceUtil {
     // no-op
   }
 
-  private static ConcurrentMap<String, Long> getState(StreamingContext streamingContext,
+  private static ConcurrentMap<String, Integer> getState(StreamingContext streamingContext,
     SalesforceStreamingSourceConfig config) throws IOException {
-    Long replayId = -1L;
-    ConcurrentMap<String, Long> replay = new ConcurrentHashMap<>();
+    Integer replayId = -1;
+    ConcurrentMap<String, Integer> replay = new ConcurrentHashMap<>();
 
     //State store is not enabled, do not read state
 
     if (!streamingContext.isStateStoreEnabled()) {
       replay.put("/topic/" + config.getPushTopicName(), replayId);
       return replay;
-      //return (ConcurrentMap<String, Long>) Collections.<String, Long>emptyMap().;
     }
 
     //If state is not present, use configured repayId or defaults
     Optional<byte[]> state = streamingContext.getState(config.getPushTopicName());
     if (!state.isPresent()) {
+      LOG.info("No saved state found.");
       replay.put("/topic/" + config.getPushTopicName(), replayId);
       return replay;
-      //return (ConcurrentMap<String, Long>) Collections.<String, Long>emptyMap();
     }
 
     byte[] bytes = state.get();
     try (Reader reader = new InputStreamReader(new ByteArrayInputStream(bytes), StandardCharsets.UTF_8)) {
-      replayId = gson.fromJson(reader, Long.class);
+      replayId = gson.fromJson(reader, Integer.class);
+      LOG.info("Saved state found. ReplayId = {}. ", replayId);
       if (replay.putIfAbsent("/topic/" + config.getPushTopicName(), replayId) != null) {
         throw new IllegalStateException(String.format("Already subscribed to %s",
                                                       config.getPushTopicName()));
@@ -192,25 +194,55 @@ final class SalesforceStreamingSourceUtil {
     }
   }
 
-  private static void saveState(String jsonMessage, StreamingContext streamingContext,
-                                SalesforceStreamingSourceConfig config) {
-    //long replayId = ReplayExtension.getReplayId((Message.Mutable) message);
-    long replayId;
-    try {
-      JSONObject jsonEvent;
-      try {
-        jsonEvent = new JSONObject(jsonMessage).getJSONObject("event"); // throws a JSONException if not found
-        replayId = Long.parseLong(jsonEvent.get("replayId").toString());
-      } catch (JSONException e) {
-        throw new IllegalStateException(
-          String.format("Cannot retrieve /data/sobject from json message %s", jsonMessage), e);
-      }
+  private static VoidFunction<Object> getStateConsumer(StreamingContext context,
+                                                        SalesforceStreamingSourceConfig config) {
+    return replayId -> saveState(context, (int) replayId, config);
+  }
+  private static void saveState(StreamingContext streamingContext, int replayId,
+                                SalesforceStreamingSourceConfig config) throws IOException {
       if (replayId > 0) {
-        streamingContext.saveState(config.getPushTopicName(), Longs.toByteArray(replayId));
+        byte[] state = gson.toJson(replayId).getBytes(StandardCharsets.UTF_8);
+        streamingContext.saveState(config.getPushTopicName(), state);
       }
-    } catch (IOException e) {
-      LOG.warn("Exception in saving state.", e);
+  }
+  
+  static class RecordTransform
+          implements Function2<JavaRDD<String>, Time, JavaRDD<StructuredRecord>> {
+
+    private final SalesforceStreamingSourceConfig conf;
+    private final Schema outputSchema;
+
+    RecordTransform(SalesforceStreamingSourceConfig conf, Schema outputSchema) {
+      this.conf = conf;
+      this.outputSchema = outputSchema;
     }
 
+    @Override
+    public JavaRDD<StructuredRecord> call(JavaRDD<String> input, Time batchTime) {
+      Function2<String, Time, StructuredRecord> recordFunction =
+              new BytesFunction(conf, outputSchema);
+      return input.map((Function<String, StructuredRecord>) jsonRecord ->
+              recordFunction.call(jsonRecord, batchTime));
+    }
   }
+
+  /**
+   * Common logic for transforming record into a structured record.
+   * Everything here should be serializable, as Spark Streaming will serialize all functions.
+   */
+  public static class BytesFunction implements Function2<String, Time, StructuredRecord> {
+    protected final SalesforceStreamingSourceConfig conf;
+    private final Schema outputSchema;
+
+    BytesFunction(SalesforceStreamingSourceConfig conf, Schema outputSchema) {
+      this.conf = conf;
+      this.outputSchema = outputSchema;
+    }
+
+    @Override
+    public StructuredRecord call(String in, Time batchTime) {
+      return getStructuredRecord(in, this.outputSchema);
+    }
+  }
+
 }

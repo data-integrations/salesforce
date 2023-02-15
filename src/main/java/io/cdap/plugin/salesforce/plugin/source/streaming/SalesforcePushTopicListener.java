@@ -64,13 +64,13 @@ public class SalesforcePushTopicListener {
 
   private final AuthenticatorCredentials credentials;
   private final String topic;
-  private ConcurrentMap<String, Long> dataMap;
+  private ConcurrentMap<String, Integer> dataMap;
   private BayeuxClient bayeuxClient;
 
   private JSONContext.Client jsonContext;
 
   public SalesforcePushTopicListener(AuthenticatorCredentials credentials, String topic,
-                                     ConcurrentMap<String, Long> dataMap) {
+                                     ConcurrentMap<String, Integer> dataMap) {
     this.credentials = credentials;
     this.topic = topic;
     this.dataMap = dataMap;
@@ -175,7 +175,7 @@ public class SalesforcePushTopicListener {
           // Error Codes Reference in Salesforce Streaming :
           // https://developer.salesforce.com/docs/atlas.en-us.api_streaming.meta/api_streaming/streaming_error_codes
           // .htm
-          if (advice.get("reconnect").equals("handshake")) {
+          if (advice != null && advice.get("reconnect").equals("handshake")) {
             LOG.debug("Reconnecting to Salesforce Push Topic");
             try {
               reconnectToTopic();

@@ -34,17 +34,18 @@ public class ReplayExtension implements ClientSession.Extension {
   private static final String EVENT_KEY = "event";
   private static final String REPLAY_ID_KEY = "replayId";
 
-  private final ConcurrentMap<String, Long> dataMap;
+  private final ConcurrentMap<String, Integer> dataMap;
   private final AtomicBoolean supported = new AtomicBoolean();
 
-  public ReplayExtension(ConcurrentMap<String, Long> dataMap) {
+  public ReplayExtension(ConcurrentMap<String, Integer> dataMap) {
     this.dataMap = dataMap;
   }
 
-  public static Long getReplayId(Message.Mutable message) {
+  public static Integer getReplayId(Message.Mutable message) {
     Map<String, Object> data = message.getDataAsMap();
     @SuppressWarnings("unchecked")
-    Optional<Long> optional = resolve(() -> (Long) ((Map<String, Object>) data.get(EVENT_KEY)).get(REPLAY_ID_KEY));
+    Optional<Integer> optional = resolve(() -> (Integer) ((Map<String, Object>) data.get(EVENT_KEY))
+      .get(REPLAY_ID_KEY));
     return optional.orElse(null);
   }
 
@@ -63,7 +64,7 @@ public class ReplayExtension implements ClientSession.Extension {
 
   @Override
   public boolean rcv(ClientSession session, Message.Mutable message) {
-    Long replayId = getReplayId(message);
+    Integer replayId = getReplayId(message);
     if (this.supported.get() && replayId != null) {
       try {
         String channel = topicWithoutQueryString(message.getChannel());
