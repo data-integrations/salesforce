@@ -110,6 +110,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String username,
                                        @Nullable String password,
                                        @Nullable String loginUrl,
+                                       @Nullable Integer connectTimeout,
                                        @Nullable String datetimeAfter,
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
@@ -119,7 +120,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String operation) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, oAuthInfo);
+                                                    securityToken, connectTimeout, oAuthInfo);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;

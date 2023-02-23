@@ -27,6 +27,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
@@ -95,6 +96,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String username,
                          @Nullable String password,
                          @Nullable String loginUrl,
+                         @Nullable Integer connectTimeout,
                          @Nullable String query,
                          @Nullable String sObjectName,
                          @Nullable String datetimeAfter,
@@ -108,7 +110,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
                          @Nullable String parent) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
     this.query = query;
     this.sObjectName = sObjectName;
@@ -117,7 +119,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     this.chunkSize = chunkSize;
     this.parent = parent;
   }
-
 
   /**
    * Returns SOQL to retrieve data from Salesforce. If user has provided SOQL, returns given SOQL. If user has provided
@@ -217,32 +218,32 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector) {
-    if (getConnection() != null) {
-      try {
-        SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                         getConnection().getAuthenticatorCredentials());
-        List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
-          .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
-          .filter(fieldDescriptor -> SalesforceSchemaUtil.COMPOUND_FIELDS.contains(fieldDescriptor.getFieldType()))
-          .map(SObjectDescriptor.FieldDescriptor::getName)
-          .collect(Collectors.toList());
-        if (!compoundFieldNames.isEmpty()) {
-          collector.addFailure(
-              String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
-                              + "Please specify the individual attributes instead of compound field name in SOQL " +
-                              "query. "
-                              + "For example, instead of 'Select BillingAddress ...', use "
-                              + "'Select BillingCountry, BillingCity, BillingStreet ...'",
-                            compoundFieldNames), null)
-            .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-        }
-      } catch (ConnectionException e) {
+    try {
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                       getConnection().getAuthenticatorCredentials());
+      List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
+        .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
+        .filter(fieldDescriptor -> SalesforceSchemaUtil.COMPOUND_FIELDS.contains(fieldDescriptor.getFieldType()))
+        .map(SObjectDescriptor.FieldDescriptor::getName)
+        .collect(Collectors.toList());
+      if (!compoundFieldNames.isEmpty()) {
         collector.addFailure(
-            String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
-          .withStacktrace(e.getStackTrace());
+          String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
+                          + "Please specify the individual attributes instead of compound field name in SOQL query. "
+                          + "For example, instead of 'Select BillingAddress ...', use "
+                          + "'Select BillingCountry, BillingCity, BillingStreet ...'",
+                        compoundFieldNames), null)
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
       }
+    } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s' with error %s", sObjectName,
+                errorMessage), null)
+        .withStacktrace(e.getStackTrace());
     }
   }
+
   private void validatePKChunk(FailureCollector collector) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)

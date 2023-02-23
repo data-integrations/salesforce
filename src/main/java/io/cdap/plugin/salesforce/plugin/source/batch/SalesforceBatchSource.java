@@ -40,10 +40,10 @@ import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import io.cdap.plugin.salesforce.connector.SalesforceConnector;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -96,6 +96,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
         return;
       }
     }
+
     schema = retrieveSchema();
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
@@ -178,7 +179,10 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     try {
       return SalesforceSchemaUtil.getSchema(config.getConnection().getAuthenticatorCredentials(), sObjectDescriptor);
     } catch (ConnectionException e) {
-      throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+          String.format("Failed to get schema from the query '%s': %s", query, errorMessage),
+          e);
     }
   }
 

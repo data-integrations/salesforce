@@ -35,7 +35,6 @@ import io.cdap.cdap.etl.api.batch.BatchSinkContext;
 import io.cdap.cdap.etl.api.connector.Connector;
 import io.cdap.plugin.common.Asset;
 import io.cdap.plugin.common.LineageRecorder;
-import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import org.apache.hadoop.io.NullWritable;
 import org.slf4j.Logger;

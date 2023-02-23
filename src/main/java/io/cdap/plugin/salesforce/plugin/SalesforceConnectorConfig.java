@@ -15,18 +15,15 @@
  */
 package io.cdap.plugin.salesforce.plugin;
 
-import com.google.common.base.Strings;
-import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.plugin.common.ReferenceNames;
-import io.cdap.plugin.common.ReferencePluginConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import javax.annotation.Nullable;
@@ -81,12 +78,19 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Nullable
   private String loginUrl;
 
+  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
+  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
+  @Macro
+  @Nullable
+  private final Integer connectTimeout;
+
   public SalesforceConnectorConfig(@Nullable String consumerKey,
                               @Nullable String consumerSecret,
                               @Nullable String username,
                               @Nullable String password,
                               @Nullable String loginUrl,
                               @Nullable String securityToken,
+                              @Nullable Integer connectTimeout,
                               @Nullable OAuthInfo oAuthInfo) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
@@ -94,6 +98,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
     this.password = password;
     this.loginUrl = loginUrl;
     this.securityToken = securityToken;
+    this.connectTimeout = connectTimeout;
     this.oAuthInfo = oAuthInfo;
   }
 
@@ -127,6 +132,14 @@ public class SalesforceConnectorConfig extends PluginConfig {
     return loginUrl;
   }
 
+  @Nullable
+  public Integer getConnectTimeout() {
+    if (connectTimeout == null) {
+       return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
+    }
+    return connectTimeout;
+  }
+
   public void validate(FailureCollector collector) {
     try {
       validateConnection();
@@ -141,11 +154,18 @@ public class SalesforceConnectorConfig extends PluginConfig {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo);
+      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
     }
-
-    return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl());
+    try {
+      this.oAuthInfo = Authenticator.getOAuthInfo(new AuthenticatorCredentials(getUsername(), getPassword(),
+              getConsumerKey(),
+              getConsumerSecret(), getLoginUrl(), getConnectTimeout()));
+    } catch (Exception e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(String.format("Failed to connect and authenticate to Salesforce: %s",
+              errorMessage), e);
+    }
+    return new AuthenticatorCredentials(this.oAuthInfo, getConnectTimeout());
   }
 
   /**
@@ -170,7 +190,8 @@ public class SalesforceConnectorConfig extends PluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
       || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)
-      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN));
+      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN)
+      || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
   private void validateConnection() {
@@ -181,7 +202,10 @@ public class SalesforceConnectorConfig extends PluginConfig {
     try {
       SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
     } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
+      throw new RuntimeException(
+          String.format("Failed to establish and validate connection to salesforce : %s",
+              e.getMessage()),
+          e);
     }
   }
 
