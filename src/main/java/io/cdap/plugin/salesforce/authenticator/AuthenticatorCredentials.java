@@ -46,13 +46,13 @@ public class AuthenticatorCredentials implements Serializable {
             Objects.requireNonNull(connectTimeout));
   }
 
-  private AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
-                                   @Nullable String username,
-                                   @Nullable String password,
-                                   @Nullable String consumerKey,
-                                   @Nullable String consumerSecret,
-                                   @Nullable String loginUrl,
-                                   @Nullable Integer connectTimeout) {
+  public AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
+                                  @Nullable String username,
+                                  @Nullable String password,
+                                  @Nullable String consumerKey,
+                                  @Nullable String consumerSecret,
+                                  @Nullable String loginUrl,
+                                  @Nullable Integer connectTimeout) {
     this.oAuthInfo = oAuthInfo;
     this.username = username;
     this.password = password;
