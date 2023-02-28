@@ -130,7 +130,9 @@ public class SalesforceConnector implements DirectConnector {
     }
     AuthenticatorCredentials authenticatorCredentials = config.getAuthenticatorCredentials();
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(tableName, authenticatorCredentials);
+      String fields = getObjectFields(tableName);
+      String query = String.format("SELECT %s FROM %s", fields, tableName);
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       Schema schema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
       specBuilder.setSchema(schema);
     } catch (ConnectionException e) {
