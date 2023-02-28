@@ -4,16 +4,6 @@
   },
   "configuration-groups": [
     {
-      "label": "Reference",
-      "properties": [
-        {
-          "widget-type": "textbox",
-          "label": "Reference Name",
-          "name": "referenceName"
-        }
-      ]
-    },
-    {
       "label": "Connection",
       "properties": [
         {
@@ -86,6 +76,16 @@
             "min": "0",
             "default": "30000"
           }
+        }
+      ]
+    },
+    {
+      "label": "Reference",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Reference Name",
+          "name": "referenceName"
         }
       ]
     },
@@ -176,7 +176,7 @@
           "widget-attributes": {
             "values": [
               "Skip on error",
-              "Stop on error"
+              "Fail on error"
             ],
             "default": "Skip on error"
           }

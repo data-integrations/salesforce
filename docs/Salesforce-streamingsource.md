@@ -19,24 +19,28 @@ The plugin can either create a PushTopic for the user, or use an existing one.
 Configuration
 -------------
 
+**Use Connection:** Whether to use a connection. If a connection is used, you do not need to provide the credentials.
+
+**Connection:** Name of the connection to use.
+
 **Reference Name:** Name used to uniquely identify this source for lineage, annotating metadata, etc.
 
 **Username:** Salesforce username.
 
 **Password:** Salesforce password.
 
-**Security Token:** Salesforce security Token. If the password does not contain the security token the plugin 
-will append the token before authenticating with salesforce.
+**Security Token:** Salesforce security token. If the password does not contain the security token, the plugin 
+will append the token before authenticating with Salesforce.
 
-**Consumer Key:** Application Consumer Key. This is also known as the OAuth client id.
+**Consumer Key:** Application Consumer Key. This is also known as the OAuth client ID.
 A Salesforce connected application must be created in order to get a consumer key.
 
 **Consumer Secret:** Application Consumer Secret. This is also known as the OAuth client secret.
 A Salesforce connected application must be created in order to get a client secret.
 
-**Login Url:** Salesforce OAuth2 login url.
+**Login URL:** Salesforce OAuth2 login URL.
 
-**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.  
 
 **Topic Name:** Salesforce push topic name. Plugin will track updates from this topic. If the topic does
 not exist, the plugin creates it. To manually create pushTopic use Salesforce workbench, Apex code or API.
@@ -56,14 +60,14 @@ This field not required if you are using an existing push topic.
 
 
 **Notify For Fields:** Push topic property, which specifies how the record is evaluated against the
-PushTopic query. The NotifyForFields values are:<br>
+PushTopic query. The Notify For Fields values are:  
 _All_	- Notifications are generated for all record field changes, provided the evaluated records match
-the criteria specified in the WHERE clause.<br>
+the criteria specified in the WHERE clause.  
 _Referenced (default)_ -	Changes to fields referenced in the SELECT and WHERE clauses are evaluated.
 Notifications are generated for the evaluated records only if they match the criteria specified
-in the WHERE clause.<br>
+in the WHERE clause.  
 _Select_	- Changes to fields referenced in the SELECT clause are evaluated. Notifications are generated
-for the evaluated records only if they match the criteria specified in the WHERE clause.<br>
+for the evaluated records only if they match the criteria specified in the WHERE clause.  
 _Where_	- Changes to fields referenced in the WHERE clause are evaluated. Notifications are generated
 for the evaluated records only if they match the criteria specified in the WHERE clause.
 

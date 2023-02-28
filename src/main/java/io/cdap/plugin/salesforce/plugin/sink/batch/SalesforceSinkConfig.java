@@ -94,12 +94,13 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   private String externalIdField;
 
   @Name(PROPERTY_CONCURRENCY_MODE)
-  @Description("The concurrency mode for the bulk job. The valid values are: \n" +
-    "Parallel - Process batches in parallel mode. This is the default value.\n" +
-    "Serial - Process batches in serial mode. Processing in parallel can cause database contention. " +
-    "When this is severe, the job can fail. If you’re experiencing this issue, submit the job with serial " +
-    "concurrency mode. This mode guarantees that batches are processed one at a time, but can significantly " +
-    "increase the processing time.")
+  @Description("The concurrency mode for the bulk job. Select one of the following options: \n" +
+    "Parallel - Process batches in parallel mode.\n" +
+    "Serial - Process batches in serial mode. Processing in parallel can cause lock contention. When this is severe, " +
+    "the Salesforce job can fail. If you’re experiencing this issue, in the Salesforce sink, change concurrency " +
+    "mode to Serial and run the pipeline again. This mode guarantees that batches are processed one at a time, but " +
+    "can significantly increase the processing time.\n" +
+    "Default is Parallel.")
   @Macro
   @Nullable
   protected String concurrencyMode;
@@ -119,7 +120,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Name(PROPERTY_ERROR_HANDLING)
   @Description("Strategy used to handle erroneous records.\n" +
     "Skip on error - Ignores erroneous records.\n" +
-    "Stop on error - Fails pipeline due to erroneous record.")
+    "Fail on error - Fails pipeline due to erroneous record.")
   @Macro
   private String errorHandling;
 
