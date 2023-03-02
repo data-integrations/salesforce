@@ -58,6 +58,7 @@ class SalesforceDStream(_ssc: StreamingContext,
   override def dependencies: List[DStream[_]] = List(_salesforceDStream)
 
   override def compute(validTime: Time): Option[RDD[StructuredRecord]] = {
+    LOG.info(">>>> In SalesforceDStream compute()")
     val rddOption = _salesforceDStream.compute(validTime)
     val transformFn = _transformFunction
     // If there is a RDD produced, cache the replayId for the batch and then transform to RDD[StructuredRecord]

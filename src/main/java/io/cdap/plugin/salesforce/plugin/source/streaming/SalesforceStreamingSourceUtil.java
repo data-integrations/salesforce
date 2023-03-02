@@ -36,6 +36,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.reflect.ClassTag;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -77,9 +78,13 @@ public final class SalesforceStreamingSourceUtil {
 
     final Schema finalSchema = schema;
 
-    InputDStream inputDStream = jssc.receiverStream(new SalesforceReceiver(config.getConnection()
-      .getAuthenticatorCredentials(), config.getPushTopicName(), getState(streamingContext, config))).inputDStream();
+    /*InputDStream inputDStream = jssc.receiverStream(new SalesforceReceiver(config.getConnection()
+      .getAuthenticatorCredentials(), config.getPushTopicName(), getState(streamingContext, config))).inputDStream();*/
 
+    InputDStream inputDStream = new DirectSalesforceInputDStream(jssc.ssc(),
+            config, config.getConnection().getAuthenticatorCredentials());
+    /*ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
+    return new JavaDStream<>(inputDStream, tag);*/
 
     SalesforceDStream salesforceDStream = new SalesforceDStream(jssc.ssc(), inputDStream,
             new BytesFunction(config, schema), getStateConsumer(streamingContext, config));
