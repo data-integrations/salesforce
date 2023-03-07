@@ -76,6 +76,7 @@ class SalesforceDStream(_ssc: StreamingContext,
   }
 
   override def onBatchCompleted(context: io.cdap.cdap.etl.api.streaming.StreamingContext): Unit = {
+    LOG.info(">>>> In SalesforceDStream onBatchCompleted()")
     _stateConsumer.call(replayId)
   }
 

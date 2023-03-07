@@ -78,11 +78,16 @@ public final class SalesforceStreamingSourceUtil {
 
     final Schema finalSchema = schema;
 
+    /************************************* Receiver based ***************************************/
+
     /*InputDStream inputDStream = jssc.receiverStream(new SalesforceReceiver(config.getConnection()
       .getAuthenticatorCredentials(), config.getPushTopicName(), getState(streamingContext, config))).inputDStream();*/
 
+    /************************************* Direct Streaming based ***************************************/
+
     InputDStream inputDStream = new DirectSalesforceInputDStream(jssc.ssc(),
-            config, config.getConnection().getAuthenticatorCredentials());
+            config, config.getConnection().getAuthenticatorCredentials(), getState(streamingContext, config));
+
     /*ClassTag<String> tag = scala.reflect.ClassTag$.MODULE$.apply(String.class);
     return new JavaDStream<>(inputDStream, tag);*/
 
@@ -208,6 +213,7 @@ public final class SalesforceStreamingSourceUtil {
       if (replayId > 0) {
         byte[] state = gson.toJson(replayId).getBytes(StandardCharsets.UTF_8);
         streamingContext.saveState(config.getPushTopicName(), state);
+        LOG.info("State saved. ReplayId = {}. ", replayId);
       }
   }
   
