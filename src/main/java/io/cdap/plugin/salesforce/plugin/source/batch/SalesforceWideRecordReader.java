@@ -88,10 +88,10 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format(
-              "Failed to create a Salesforce SOAP connection during the init for reads: %s",
-              errorMessage),
-          e);
+        String.format(
+          "Failed to create a Salesforce SOAP connection during the init for reads: %s",
+          errorMessage),
+        e);
     }
   }
 
@@ -141,6 +141,7 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
    *  <li>Expected list of map format: `List(Map(Id -> SObject_id1), Map(Id -> SObject_id2), ...)`</li>
    *  <li>Result array: `[SObject_id1, SObject_id2, ...]`</li>
    * </ul>
+   *
    * @param subIds list of single entry Map
    * @return array of SObject ids
    */
@@ -169,9 +170,9 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
                 String.join(",", sObjectIds));
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format("Failed to retrieve data for SObject '%s': %s",
-              sObjectName, errorMessage),
-          e);
+        String.format("Failed to retrieve data for SObject '%s': %s",
+                      sObjectName, errorMessage),
+        e);
     }
   }
 }
