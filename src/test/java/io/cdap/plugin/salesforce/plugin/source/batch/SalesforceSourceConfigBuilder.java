@@ -38,6 +38,7 @@ public class SalesforceSourceConfigBuilder {
   private Integer chunkSize;
   private String parent;
   private String operation;
+  private Integer connectTimeout;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -129,9 +130,15 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setConnectTimeout(Integer connectTimeout) {
+    this.connectTimeout = connectTimeout;
+    return this;
+  }
+
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      query, sObjectName, datetimeAfter, datetimeBefore, duration, offset, schema,
-                                      securityToken, operation, null, enablePKChunk, chunkSize, parent);
+                                      connectTimeout, query, sObjectName, datetimeAfter, datetimeBefore, duration,
+                                      offset, schema, securityToken, operation, null, enablePKChunk,
+                                      chunkSize, parent);
   }
 }

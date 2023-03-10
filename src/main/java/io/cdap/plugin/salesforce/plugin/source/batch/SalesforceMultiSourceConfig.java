@@ -29,6 +29,7 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
@@ -47,10 +48,8 @@ import javax.annotation.Nullable;
  */
 public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceMultiSourceConfig.class);
-
   public static final String SOBJECT_NAME_FIELD_DEFAULT = "tablename";
-
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceMultiSourceConfig.class);
   @Name(SalesforceSourceConstants.PROPERTY_WHITE_LIST)
   @Macro
   @Nullable
@@ -75,6 +74,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String username,
                                      @Nullable String password,
                                      @Nullable String loginUrl,
+                                     @Nullable Integer connectTimeout,
                                      @Nullable String datetimeAfter,
                                      @Nullable String datetimeBefore,
                                      @Nullable String duration,
@@ -85,7 +85,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
                                      @Nullable String operation) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
     this.whiteList = whiteList;
     this.blackList = blackList;
@@ -105,8 +105,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   @Override
-  public void validate(FailureCollector collector) {
-    super.validate(collector);
+  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+    super.validate(collector, oAuthInfo);
     validateFilters(collector);
   }
 
@@ -144,9 +144,9 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
    * @param logicalStartTime application start time
    * @return list of SObject queries
    */
-  public List<String> getQueries(long logicalStartTime) {
+  public List<String> getQueries(long logicalStartTime, OAuthInfo oAuthInfo) {
     List<String> queries = getSObjects().parallelStream()
-      .map(sObject -> getSObjectQuery(sObject, null, logicalStartTime))
+      .map(sObject -> getSObjectQuery(sObject, null, logicalStartTime, oAuthInfo))
       .collect(Collectors.toList());
 
     if (queries.isEmpty()) {
@@ -160,14 +160,17 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   /**
    * validate whiteList and blackList SObjects
    */
-  public void validateSObjects(FailureCollector collector) {
+  public void validateSObjects(FailureCollector collector, OAuthInfo oAuthInfo) {
     DescribeGlobalResult describeGlobalResult;
     try {
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                          getConnectTimeout());
       PartnerConnection partnerConnection =
-        SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
+        SalesforceConnectionUtil.getPartnerConnection(credentials);
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
-      throw new IllegalArgumentException("Unable to connect to Salesforce", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IllegalArgumentException(String.format("Unable to connect to Salesforce due to error: %s", message), e);
     }
     Set<String> whileList = getWhiteList();
     Set<String> blackList = getBlackList();
@@ -181,16 +184,18 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
       collect(Collectors.toList());
 
     if (!invalidWhiteListedSObject.isEmpty()) {
-      collector.addFailure(String.format("Invalid SObject name %s in whitelist",  String.join(", ",
-       invalidWhiteListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_WHITE_LIST);
+      collector.addFailure(String.format("Invalid SObject name %s in whitelist",
+                                         String.join(", ", invalidWhiteListedSObject)),
+                           "").withConfigProperty(SalesforceSourceConstants.PROPERTY_WHITE_LIST);
     }
 
     List<String> invalidBlackListedSObject = blackList.stream().filter(name -> !sObjects.contains(name)).
       collect(Collectors.toList());
 
     if (!invalidBlackListedSObject.isEmpty()) {
-      collector.addFailure(String.format("Invalid SObject name %s in blacklist", String.join(", ",
-       invalidBlackListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_BLACK_LIST);
+      collector.addFailure(String.format("Invalid SObject name %s in blacklist",
+                                         String.join(", ", invalidBlackListedSObject)),
+                           "").withConfigProperty(SalesforceSourceConstants.PROPERTY_BLACK_LIST);
     }
 
   }
@@ -207,7 +212,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
         SalesforceConnectionUtil.getPartnerConnection(getAuthenticatorCredentials());
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
-      throw new IllegalArgumentException("Unable to connect to Salesforce", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IllegalArgumentException(String.format("Unable to connect to Salesforce due to error: %s", message), e);
     }
 
     Set<String> whileList = getWhiteList();

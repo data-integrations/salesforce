@@ -25,9 +25,11 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -91,6 +93,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String username,
                                        @Nullable String password,
                                        @Nullable String loginUrl,
+                                       @Nullable Integer connectTimeout,
                                        @Nullable String datetimeAfter,
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
@@ -98,7 +101,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
                                        @Nullable String operation) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout,
+          oAuthInfo);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
@@ -124,7 +128,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
     return datetimeBefore;
   }
 
-  protected void validateFilters(FailureCollector collector) {
+  public void validateFilters(FailureCollector collector) {
     try {
       validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
     } catch (InvalidConfigException e) {
@@ -159,14 +163,17 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
    * Bulk API limitation.
    * This allows to avoid pulling data from Salesforce for the fields which are not needed.
    *
-   * @param sObjectName Salesforce object name
-   * @param schema      CDAP schema
-   * @param logicalStartTime   application start time
+   * @param sObjectName      Salesforce object name
+   * @param schema           CDAP schema
+   * @param logicalStartTime application start time
    * @return SOQL generated based on sObject metadata and given filters
    */
-  protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
+  protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, getAuthenticatorCredentials(),
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                          this.getConnectTimeout());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
+                                                                       credentials,
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();
@@ -182,7 +189,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
         if (fieldNames.isEmpty()) {
           throw new IllegalArgumentException(
             String.format("None of the fields indicated in schema are present in sObject metadata."
-              + " Schema: '%s'. SObject fields: '%s'", schema, sObjectFields));
+                            + " Schema: '%s'. SObject fields: '%s'", schema, sObjectFields));
         }
       }
 
@@ -191,8 +198,10 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
       return sObjectQuery;
     } catch (ConnectionException e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new IllegalStateException(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s' due to error: %s",
+                      sObjectName, message), e);
     }
   }
 
@@ -225,7 +234,7 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
       OperationEnum.valueOf(operation);
     } catch (InvalidConfigException e) {
       throw new InvalidConfigException(
-              String.format("Invalid Query Operation: '%s'. Valid operation values are query and queryAll.",
+        String.format("Invalid Query Operation: '%s'. Valid operation values are query and queryAll.",
                       operation), propertyName);
     }
   }

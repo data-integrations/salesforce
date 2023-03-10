@@ -77,6 +77,12 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   @Nullable
   private String loginUrl;
 
+  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
+  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
+  @Macro
+  @Nullable
+  private final Integer connectTimeout;
+
   public BaseSalesforceConfig(String referenceName,
                               @Nullable String consumerKey,
                               @Nullable String consumerSecret,
@@ -84,6 +90,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
                               @Nullable String password,
                               @Nullable String loginUrl,
                               @Nullable String securityToken,
+                              @Nullable Integer connectTimeout,
                               @Nullable OAuthInfo oAuthInfo) {
     super(referenceName);
     this.consumerKey = consumerKey;
@@ -92,6 +99,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     this.password = password;
     this.loginUrl = loginUrl;
     this.securityToken = securityToken;
+    this.connectTimeout = connectTimeout;
     this.oAuthInfo = oAuthInfo;
   }
 
@@ -125,9 +133,17 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     return loginUrl;
   }
 
-  public void validate(FailureCollector collector) {
+  @Nullable
+  public Integer getConnectTimeout() {
+    if (connectTimeout == null) {
+      return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
+    }
+    return connectTimeout;
+  }
+
+  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
     try {
-      validateConnection();
+      validateConnection(oAuthInfo);
     } catch (Exception e) {
       collector.addFailure("Error encountered while establishing connection: " + e.getMessage(),
                            "Please verify authentication properties are provided correctly")
@@ -139,11 +155,10 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo);
+      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
     }
-
     return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl());
+                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout());
   }
 
   /**
@@ -168,18 +183,21 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
       || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)
-      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN));
+      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN)
+      || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
-  private void validateConnection() {
+  private void validateConnection(OAuthInfo oAuthInfo) {
     if (!canAttemptToEstablishConnection()) {
       return;
     }
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
+      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout()));
     } catch (ConnectionException e) {
-      throw new RuntimeException("There was issue communicating with Salesforce. " + e.getMessage(), e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+        String.format("Failed to establish and validate connection to salesforce: %s", message), e);
     }
   }
 

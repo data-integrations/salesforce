@@ -48,7 +48,7 @@ public class SalesforceSourceConfigTest {
       .setQuery(soql)
       .build();
 
-    String query = config.getQuery(System.currentTimeMillis());
+    String query = config.getQuery(System.currentTimeMillis(), null);
 
     Assert.assertNotNull(query);
     Assert.assertEquals(soql, query);
@@ -225,7 +225,7 @@ public class SalesforceSourceConfigTest {
     MockFailureCollector collector = new MockFailureCollector();
     SalesforceSourceConfig mock = Mockito.spy(config);
     Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
-    mock.validate(collector);
+    mock.validate(collector, null);
     Assert.assertEquals(0, collector.getValidationFailures().size());
   }
 
@@ -265,7 +265,7 @@ public class SalesforceSourceConfigTest {
     Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
     ValidationFailure failure;
     try {
-      mock.validate(collector);
+      mock.validate(collector, null);
       Assert.assertEquals(1, collector.getValidationFailures().size());
       failure = collector.getValidationFailures().get(0);
     } catch (ValidationException e) {

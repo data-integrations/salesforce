@@ -29,6 +29,7 @@ import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -109,13 +110,15 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               @Nullable String username,
                               @Nullable String password,
                               @Nullable String loginUrl,
+                              @Nullable Integer connectTimeout,
                               String sObject,
                               String operation, String externalIdField,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo) {
-    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, oAuthInfo);
+    super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, connectTimeout,
+          oAuthInfo);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -169,9 +172,17 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                                                     SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
   }
 
-  public void validate(Schema schema, FailureCollector collector) {
-    super.validate(collector);
+  public void validate(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
+    super.validate(collector, oAuthInfo);
+    validateSinkProperties(collector);
+    validateSchema(schema, collector, oAuthInfo);
+  }
 
+  /**
+   * Validate the plugin properties which can be tested without establishing a connection. e.g. operation, max records.
+   * @param collector      FailureCollector
+   */
+  public void validateSinkProperties(FailureCollector collector) {
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
       try {
@@ -201,7 +212,6 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       }
     }
 
-
     if (!containsMacro(PROPERTY_MAX_RECORDS_PER_BATCH)) {
       long maxRecordsPerBatch = getMaxRecordsPerBatch();
 
@@ -213,10 +223,9 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       }
     }
     collector.getOrThrowException();
-    validateSchema(schema, collector);
   }
 
-  private void validateSchema(Schema schema, FailureCollector collector) {
+  private void validateSchema(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
     List<Schema.Field> fields = schema.getFields();
     if (fields == null || fields.isEmpty()) {
       collector.addFailure("Sink schema must contain at least one field", null);
@@ -227,8 +236,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
       return;
     }
-
-    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector);
+    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector, oAuthInfo);
     Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
     Set<String> inputFields = schema.getFields()
@@ -257,11 +265,11 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(
-          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
+            String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
         collector.addFailure(
-          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
+            String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
     } else if (operation == OperationEnum.insert || operation == OperationEnum.update) {
@@ -280,7 +288,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     if (!inputFields.isEmpty()) {
       for (String inputField : inputFields) {
         collector.addFailure(
-          String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
+            String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
           .withInputSchemaField(inputField);
       }
     }
@@ -297,16 +305,18 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     return creatableSObjectFields;
   }
 
-  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnectTimeout());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
-                                                                       this.getAuthenticatorCredentials());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce with error: %s", errorMessage
+      ), null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
   }

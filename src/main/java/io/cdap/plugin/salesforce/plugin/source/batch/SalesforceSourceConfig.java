@@ -27,6 +27,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
@@ -95,6 +96,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable String username,
                          @Nullable String password,
                          @Nullable String loginUrl,
+                         @Nullable Integer connectTimeout,
                          @Nullable String query,
                          @Nullable String sObjectName,
                          @Nullable String datetimeAfter,
@@ -108,7 +110,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
                          @Nullable String parent) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
     this.query = query;
     this.sObjectName = sObjectName;
@@ -125,8 +127,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
    * @param logicalStartTime application start time
    * @return SOQL query
    */
-  public String getQuery(long logicalStartTime) {
-    String soql = isSoqlQuery() ? query : getSObjectQuery(sObjectName, getSchema(), logicalStartTime);
+  public String getQuery(long logicalStartTime, OAuthInfo oAuthInfo) {
+    String soql = isSoqlQuery() ? query : getSObjectQuery(sObjectName, getSchema(), logicalStartTime, oAuthInfo);
     return Objects.requireNonNull(soql).trim();
   }
 
@@ -161,16 +163,15 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                      SalesforceSourceConstants.PROPERTY_QUERY);
   }
 
-  @Override
-  public void validate(FailureCollector collector) {
-    super.validate(collector);
+  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+    super.validate(collector, oAuthInfo);
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
         collector.addFailure(
-          String.format(
-            "SOQL Query with restricted field types (function calls, sub-query fields) or "
-              + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
-              + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query), null)
+            String.format(
+              "SOQL Query with restricted field types (function calls, sub-query fields) or "
+                + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length: '%d'. "
+                + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query), null)
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
         throw collector.getOrThrowException();
       }
@@ -184,7 +185,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         throw collector.getOrThrowException();
       }
       if (canAttemptToEstablishConnection()) {
-        validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector);
+        validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector, oAuthInfo);
       }
     }
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
@@ -199,7 +200,47 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       }
     }
     validateSchema(collector);
-    validatePKChunk(collector);
+    validatePKChunk(collector, oAuthInfo);
+  }
+
+  /**
+   * This method will validate the SOQL query parameters which can be tested without establishing a connection.
+   * @param collector       FailureCollector
+   */
+  public void validateSOQLQueryParameters(FailureCollector collector) {
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
+      if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
+        collector.addFailure(
+            String.format(
+              "SOQL Query with restricted field types (function calls, sub-query fields) or "
+                + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length:"
+                + " '%d'. "
+                + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query),
+            null)
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
+      }
+      try {
+        SalesforceQueryParser.getObjectDescriptorFromQuery(query);
+      } catch (SOQLParsingException e) {
+        collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
+          .withStacktrace(e.getStackTrace())
+          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
+        throw collector.getOrThrowException();
+      }
+    }
+    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+      && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)) {
+      try {
+        boolean isSoql = isSoqlQuery();
+        if (!isSoql) {
+          validateFilters(collector);
+        }
+      } catch (InvalidConfigException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
+      }
+    }
+    validateSchema(collector);
   }
 
   private void validateSchema(FailureCollector collector) {
@@ -217,10 +258,12 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     }
   }
 
-  private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector) {
+  private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector,
+                                      OAuthInfo oAuthInfo) {
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                       getAuthenticatorCredentials());
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                          this.getConnectTimeout());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, credentials);
       List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
         .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
         .filter(fieldDescriptor -> SalesforceSchemaUtil.COMPOUND_FIELDS.contains(fieldDescriptor.getFieldType()))
@@ -228,21 +271,23 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         .collect(Collectors.toList());
       if (!compoundFieldNames.isEmpty()) {
         collector.addFailure(
-          String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
-                          + "Please specify the individual attributes instead of compound field name in SOQL query. "
-                          + "For example, instead of 'Select BillingAddress ...', use "
-                          + "'Select BillingCountry, BillingCity, BillingStreet ...'",
-                        compoundFieldNames), null)
+            String.format("Compound fields %s cannot be fetched when a SOQL query is given. "
+                            + "Please specify the individual attributes instead of compound field name in SOQL query. "
+                            + "For example, instead of 'Select BillingAddress ...', use "
+                            + "'Select BillingCountry, BillingCity, BillingStreet ...'",
+                          compoundFieldNames), null)
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
       }
     } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       collector.addFailure(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), null)
+          String.format("Cannot establish connection to Salesforce to describe SObject: '%s' with error %s",
+                        sObjectName, errorMessage), null)
         .withStacktrace(e.getStackTrace());
     }
   }
 
-  private void validatePKChunk(FailureCollector collector) {
+  private void validatePKChunk(FailureCollector collector, OAuthInfo oAuthInfo) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME)) {
@@ -256,54 +301,56 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (SalesforceQueryParser.isRestrictedPKQuery(query)) {
         collector.addFailure(
-          String.format("SOQL Query contains restricted clauses when PK Chunk is Enabled. Unsupported query: '%s'.",
-                        query),
-          "Set Enable PK Chunk to false, because 'WHERE' is the only supported conditions clause.")
+            String.format("SOQL Query contains restricted clauses when PK Chunk is Enabled. Unsupported query: '%s'.",
+                          query),
+            "Set Enable PK Chunk to false, because 'WHERE' is the only supported conditions clause.")
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
       }
 
       // If a parent object is defined then use that to check for PK support, otherwise use the object from the query
       if (!containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME) && !Strings.isNullOrEmpty(getParent())) {
-        checkForPKSupportedObject(getParent(), collector);
+        checkForPKSupportedObject(getParent(), collector, oAuthInfo);
       } else {
         String sObject = SalesforceQueryParser.getObjectDescriptorFromQuery(query).getName();
-        checkForPKSupportedObject(sObject, collector);
+        checkForPKSupportedObject(sObject, collector, oAuthInfo);
       }
     }
 
     // If a parent object is defined then use that to check for PK support, otherwise use the object from the config
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME) && !Strings.isNullOrEmpty(getSObjectName())) {
       if (!containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME) && !Strings.isNullOrEmpty(getParent())) {
-        checkForPKSupportedObject(getParent(), collector);
+        checkForPKSupportedObject(getParent(), collector, oAuthInfo);
       } else {
-        checkForPKSupportedObject(getSObjectName(), collector);
+        checkForPKSupportedObject(getSObjectName(), collector, oAuthInfo);
       }
     }
 
     if (getChunkSize() > SalesforceSourceConstants.MAX_PK_CHUNK_SIZE) {
       collector.addFailure(
-        String.format("Chunk Size '%d' is bigger than maximum allowed size '%d'.", getChunkSize(),
-                      SalesforceSourceConstants.MAX_PK_CHUNK_SIZE),
-        String.format("Allowed values are between the range of '%d' and '%d'.",
-                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
+          String.format("Chunk Size '%d' is bigger than maximum allowed size '%d'.", getChunkSize(),
+                        SalesforceSourceConstants.MAX_PK_CHUNK_SIZE),
+          String.format("Allowed values are between the range of '%d' and '%d'.",
+                        SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
         .withConfigProperty(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
     } else if (getChunkSize() < SalesforceSourceConstants.MIN_PK_CHUNK_SIZE) {
       collector.addFailure(
-        String.format("Chunk Size %d is lower than minimum allowed size '%d'.", getChunkSize(),
-                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE),
-        String.format("Allowed values are between the range of '%d' and '%d'.",
-                      SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
+          String.format("Chunk Size %d is lower than minimum allowed size '%d'.", getChunkSize(),
+                        SalesforceSourceConstants.MIN_PK_CHUNK_SIZE),
+          String.format("Allowed values are between the range of '%d' and '%d'.",
+                        SalesforceSourceConstants.MIN_PK_CHUNK_SIZE, SalesforceSourceConstants.MAX_PK_CHUNK_SIZE))
         .withConfigProperty(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME);
     }
   }
 
-  private void checkForPKSupportedObject(String sObject, FailureCollector collector) {
+  private void checkForPKSupportedObject(String sObject, FailureCollector collector, OAuthInfo oAuthInfo) {
     if (canAttemptToEstablishConnection()) {
-      if (!isCustomObject(sObject, collector)) {
+      if (!isCustomObject(sObject, collector, oAuthInfo)) {
         if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
           collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
-                               "Please check documentation for supported Objects. If this is a history " +
-                                 "or shared table, you may need to specify a SObject Parent in the Advanced section.");
+                               "Please check documentation for supported Objects. " +
+                                 "If this is a history " +
+                                 "or shared table, you may need to specify a SObject Parent in the" +
+                                 " Advanced section.");
         }
       }
     }
@@ -317,13 +364,16 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     return chunkSize == null ? SalesforceSourceConstants.DEFAULT_PK_CHUNK_SIZE : chunkSize;
   }
 
-  private boolean isCustomObject(String sObjectName, FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.getAuthenticatorCredentials();
+  private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnectTimeout());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
     } catch (ConnectionException e) {
-      collector.addFailure("There was issue communicating with Salesforce", null).withStacktrace(e.getStackTrace());
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce due to error: %s", message),
+                           null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
   }

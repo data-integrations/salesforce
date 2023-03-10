@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
@@ -35,8 +36,10 @@ import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
 import io.cdap.plugin.common.LineageRecorder;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
@@ -71,7 +74,13 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     // validate when macros not yet substituted
-    config.validate(pipelineConfigurer.getStageConfigurer().getFailureCollector());
+    FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
+    if (!config.canAttemptToEstablishConnection()) {
+      config.validateSOQLQueryParameters(collector);
+      return;
+    }
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
+    config.validate(collector, oAuthInfo);
 
     if (config.containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
       // schema will be available later during `prepareRun` stage
@@ -88,18 +97,19 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       return;
     }
 
-    schema = retrieveSchema();
+    schema = retrieveSchema(oAuthInfo);
     pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
   }
 
   @Override
   public void prepareRun(BatchSourceContext context) {
     FailureCollector collector = context.getFailureCollector();
-    config.validate(collector); // validate when macros are already substituted
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
+    config.validate(collector, oAuthInfo); // validate when macros are already substituted
     collector.getOrThrowException();
 
     if (schema == null) {
-      schema = retrieveSchema();
+      schema = retrieveSchema(oAuthInfo);
     }
 
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
@@ -109,7 +119,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
         .map(Schema.Field::getName)
         .collect(Collectors.toList()));
 
-    String query = config.getQuery(context.getLogicalStartTime());
+    String query = config.getQuery(context.getLogicalStartTime(), oAuthInfo);
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
     authenticatorCredentials = config.getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
@@ -156,13 +166,18 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    * @param config Salesforce Source Batch config
    * @return schema calculated from query
    */
-  private Schema getSchema(SalesforceSourceConfig config) {
-    String query = config.getQuery(System.currentTimeMillis());
+  private Schema getSchema(SalesforceSourceConfig config, OAuthInfo oAuthInfo) {
+    String query = config.getQuery(System.currentTimeMillis(), oAuthInfo);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
-      return SalesforceSchemaUtil.getSchema(config.getAuthenticatorCredentials(), sObjectDescriptor);
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+        config.getConnectTimeout());
+      return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor);
     } catch (ConnectionException e) {
-      throw new RuntimeException(String.format("Unable to get schema from the query '%s'", query), e);
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+          String.format("Failed to get schema from the query '%s': %s", query, errorMessage),
+          e);
     }
   }
 
@@ -172,9 +187,10 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    *
    * @return provided schema if present, otherwise actual schema
    */
-  private Schema retrieveSchema() {
+  @VisibleForTesting
+  public Schema retrieveSchema(OAuthInfo oAuthInfo) {
     Schema providedSchema = config.getSchema();
-    Schema actualSchema = getSchema(config);
+    Schema actualSchema = getSchema(config, oAuthInfo);
     if (providedSchema != null) {
       SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
       return providedSchema;

@@ -43,7 +43,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
                                        @Nullable String sObjectNameField) {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
-    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits));
+    configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits))
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnectTimeout().toString());
     OAuthInfo oAuthInfo = config.getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder
@@ -54,10 +55,10 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
         .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getUsername()))
         .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getPassword()))
         .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConsumerKey()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConsumerSecret()))
+        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.
+                                                                                  getConsumerSecret()))
         .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getLoginUrl()));
     }
-
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);
     }

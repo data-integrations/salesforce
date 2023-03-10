@@ -32,7 +32,9 @@ import io.cdap.cdap.etl.api.action.SettableArguments;
 import io.cdap.cdap.etl.api.batch.BatchRuntimeContext;
 import io.cdap.cdap.etl.api.batch.BatchSource;
 import io.cdap.cdap.etl.api.batch.BatchSourceContext;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
@@ -70,24 +72,32 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
-    config.validate(stageConfigurer.getFailureCollector()); // validate before macros are substituted
+    FailureCollector collector = stageConfigurer.getFailureCollector();
+    if (!config.canAttemptToEstablishConnection()) {
+      config.validateFilters(collector);
+      return;
+    }
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
+    config.validate(stageConfigurer.getFailureCollector(), oAuthInfo); // validate before macros are substituted
 
     // if connection params are macro or null
     if (!config.canAttemptToEstablishConnection()) {
       return;
     }
-    config.validateSObjects(stageConfigurer.getFailureCollector());
+    config.validateSObjects(stageConfigurer.getFailureCollector(), oAuthInfo);
     stageConfigurer.setOutputSchema(null);
   }
 
   @Override
   public void prepareRun(BatchSourceContext context) throws ConnectionException {
     FailureCollector collector = context.getFailureCollector();
-    config.validate(collector);
-    config.validateSObjects(collector);
+    config.validateFilters(collector);
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
+    config.validate(collector, oAuthInfo);
+    config.validateSObjects(collector, oAuthInfo);
     collector.getOrThrowException();
 
-    List<String> queries = config.getQueries(context.getLogicalStartTime());
+    List<String> queries = config.getQueries(context.getLogicalStartTime(), oAuthInfo);
     Map<String, Schema> schemas = config.getSObjectsSchemas(queries);
 
     // propagate schema for each SObject for multi sink plugin
@@ -139,7 +149,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
    * For each given schema adds name field of type String and converts it to string representation.
    *
    * @param sObjectNameField sObject field name
-   * @param schemas map of schemas where key is SObject name to which value schema corresponds
+   * @param schemas          map of schemas where key is SObject name to which value schema corresponds
    * @return schema with named field
    */
   private Map<String, String> getSchemaWithNameField(String sObjectNameField, Map<String, Schema> schemas) {
@@ -154,7 +164,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
    * Adds sObject name field to the given schema and converts it to string representation.
    *
    * @param sObjectNameField sObject name field
-   * @param schema CDAP schema
+   * @param schema           CDAP schema
    * @return updated schema in string representation
    */
   private String getSchemaString(String sObjectNameField, Schema schema) {

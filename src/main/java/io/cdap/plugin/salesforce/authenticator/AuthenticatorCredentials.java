@@ -33,15 +33,17 @@ public class AuthenticatorCredentials implements Serializable {
   private final String consumerKey;
   private final String consumerSecret;
   private final String loginUrl;
+  private final Integer connectTimeout;
 
-  public AuthenticatorCredentials(OAuthInfo oAuthInfo) {
-    this(Objects.requireNonNull(oAuthInfo), null, null, null, null, null);
+  public AuthenticatorCredentials(OAuthInfo oAuthInfo, Integer connectTimeout) {
+    this(Objects.requireNonNull(oAuthInfo), null, null, null, null, null, connectTimeout);
   }
 
   public AuthenticatorCredentials(String username, String password,
-                                  String consumerKey, String consumerSecret, String loginUrl) {
+                                  String consumerKey, String consumerSecret, String loginUrl, Integer connectTimeout) {
     this(null, Objects.requireNonNull(username), Objects.requireNonNull(password), Objects.requireNonNull(consumerKey),
-         Objects.requireNonNull(consumerSecret), Objects.requireNonNull(loginUrl));
+         Objects.requireNonNull(consumerSecret), Objects.requireNonNull(loginUrl),
+            Objects.requireNonNull(connectTimeout));
   }
 
   private AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
@@ -49,13 +51,15 @@ public class AuthenticatorCredentials implements Serializable {
                                    @Nullable String password,
                                    @Nullable String consumerKey,
                                    @Nullable String consumerSecret,
-                                   @Nullable String loginUrl) {
+                                   @Nullable String loginUrl,
+                                   @Nullable Integer connectTimeout) {
     this.oAuthInfo = oAuthInfo;
     this.username = username;
     this.password = password;
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.loginUrl = loginUrl;
+    this.connectTimeout = connectTimeout;
   }
 
   @Nullable
@@ -86,6 +90,11 @@ public class AuthenticatorCredentials implements Serializable {
   @Nullable
   public String getLoginUrl() {
     return loginUrl;
+  }
+
+  @Nullable
+  public Integer getConnectTimeout() {
+    return connectTimeout;
   }
 
   @Override
