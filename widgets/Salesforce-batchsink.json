@@ -102,6 +102,25 @@
           "name": "externalIdField"
         },
         {
+          "name": "concurrencyMode",
+          "label": "Job Concurrency Mode",
+          "widget-type": "radio-group",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "Parallel",
+            "options": [
+              {
+                "id": "Serial",
+                "label": "Serial"
+              },
+              {
+                "id": "Parallel",
+                "label": "Parallel"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Max Records Per Batch",
           "name": "maxRecordsPerBatch",

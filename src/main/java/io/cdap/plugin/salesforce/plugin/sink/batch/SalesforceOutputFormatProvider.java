@@ -48,6 +48,7 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSinkConstants.CONFIG_SOBJECT, config.getSObject())
       .put(SalesforceSinkConstants.CONFIG_OPERATION, config.getOperation())
+      .put(SalesforceSinkConstants.CONFIG_CONCURRENCY_MODE, config.getConcurrencyMode())
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
@@ -75,7 +76,7 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
     try {
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
-                                                 config.getExternalIdField());
+                                                 config.getExternalIdField(), config.getConcurrencyModeEnum());
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());
       LOG.info("Started Salesforce job with jobId='{}'", job.getId());
     } catch (AsyncApiException e) {

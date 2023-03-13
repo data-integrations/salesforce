@@ -76,9 +76,8 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
 
     try {
-      OAuthInfo oAuthInfo =
-        SalesforceConnectionUtil.getOAuthInfo(config, collector);
       if (config.canAttemptToEstablishConnection()) {
+        OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
         config.validate(collector, oAuthInfo); // validate when macros are not substituted
         config.ensurePushTopicExistAndWithCorrectFields(oAuthInfo); // run when macros are not substituted
 
