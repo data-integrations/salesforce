@@ -22,6 +22,7 @@ public class SalesforceSinkConstants {
   public static final String CONFIG_SOBJECT = "mapred.salesforce.sobject.name";
   public static final String CONFIG_OPERATION = "mapred.salesforce.operation.type";
   public static final String CONFIG_EXTERNAL_ID_FIELD = "mapred.salesforce.external.id";
+  public static final String CONFIG_CONCURRENCY_MODE = "mapred.salesforce.concurrency.mode";
   public static final String CONFIG_ERROR_HANDLING = "mapred.salesforce.error.handling";
   public static final String CONFIG_JOB_ID = "mapred.salesforce.job.id";
   public static final String CONFIG_MAX_BYTES_PER_BATCH = "mapred.salesforce.max.bytes.per.batch";
