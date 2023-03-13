@@ -81,6 +81,13 @@ Update - updates existing records based on Id field.
 **Upsert External ID Field:** External id field name. It is used only if operation is upsert.
 The field specified can be either 'Id' or any customly created field, which has external id attribute set.
 
+**Concurrency Mode:** The concurrency mode for the bulk job. The valid values are:<br>
+Parallel - Process batches in parallel mode. This is the default value.<br>
+Serial - Process batches in serial mode. Processing in parallel can cause database contention.
+When this is severe, the job can fail. If you’re experiencing this issue, submit the job with serial 
+concurrency mode. This mode guarantees that batches are processed one at a time, but can significantly
+increase the processing time.
+
 **Max Records Per Batch:** Maximum number of records to include in a batch when writing to Salesforce.
 This value cannot be greater than 10,000.
 
