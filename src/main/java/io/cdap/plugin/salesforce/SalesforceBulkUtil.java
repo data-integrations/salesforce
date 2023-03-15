@@ -150,7 +150,7 @@ public final class SalesforceBulkUtil {
 
     long batchWaitTimeSeconds = SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS;
     if (job.getConcurrencyMode().equals(ConcurrencyMode.Serial)) {
-      batchWaitTimeSeconds *= batchInfoList.size();
+      batchWaitTimeSeconds = SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE;
     }
 
     Awaitility.await()
