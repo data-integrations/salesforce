@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.google.common.base.Strings;
+import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.OperationEnum;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.PartnerConnection;
@@ -35,7 +36,8 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -46,12 +48,14 @@ import javax.annotation.Nullable;
  * Provides the configurations for {@link SalesforceBatchSink} plugin.
  */
 public class SalesforceSinkConfig extends BaseSalesforceConfig {
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceSinkConfig.class);
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_MAX_BYTES_PER_BATCH = "maxBytesPerBatch";
   public static final String PROPERTY_MAX_RECORDS_PER_BATCH = "maxRecordsPerBatch";
   public static final String PROPERTY_SOBJECT = "sObject";
   public static final String PROPERTY_OPERATION = "operation";
   public static final String PROPERTY_EXTERNAL_ID_FIELD = "externalIdField";
+  public static final String PROPERTY_CONCURRENCY_MODE = "concurrencyMode";
 
   private static final String SALESFORCE_ID_FIELD = "Id";
 
@@ -85,6 +89,17 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Macro
   private String externalIdField;
 
+  @Name(PROPERTY_CONCURRENCY_MODE)
+  @Description("The concurrency mode for the bulk job. The valid values are: \n" +
+    "Parallel - Process batches in parallel mode. This is the default value.\n" +
+    "Serial - Process batches in serial mode. Processing in parallel can cause database contention. " +
+    "When this is severe, the job can fail. If you’re experiencing this issue, submit the job with serial " +
+    "concurrency mode. This mode guarantees that batches are processed one at a time, but can significantly " +
+    "increase the processing time.")
+  @Macro
+  @Nullable
+  protected String concurrencyMode;
+
   @Name(PROPERTY_MAX_BYTES_PER_BATCH)
   @Description("Maximum size in bytes of a batch of records when writing to Salesforce. " +
     "This value cannot be greater than 10,000,000.")
@@ -112,7 +127,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               @Nullable String loginUrl,
                               @Nullable Integer connectTimeout,
                               String sObject,
-                              String operation, String externalIdField,
+                              String operation, String externalIdField, String concurrencyMode,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
@@ -122,6 +137,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
+    this.concurrencyMode = concurrencyMode;
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
@@ -146,6 +162,19 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
 
   public String getExternalIdField() {
     return externalIdField;
+  }
+
+  public String getConcurrencyMode() {
+    return concurrencyMode;
+  }
+
+  public ConcurrencyMode getConcurrencyModeEnum() {
+    try {
+      return ConcurrencyMode.valueOf(concurrencyMode);
+    } catch (Exception ex) {
+      LOG.info("Value received was {}. Default concurrency mode i.e. Parallel is used instead.", concurrencyMode);
+      return ConcurrencyMode.Parallel;
+    }
   }
 
   public Long getMaxBytesPerBatch() {
@@ -198,6 +227,15 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
         getOperationEnum();
       } catch (InvalidConfigException e) {
         collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_OPERATION);
+      }
+    }
+
+    if (!containsMacro(PROPERTY_CONCURRENCY_MODE)) {
+      // triggering getter will also trigger value validity check
+      try {
+        getConcurrencyModeEnum();
+      } catch (InvalidConfigException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_CONCURRENCY_MODE);
       }
     }
 
