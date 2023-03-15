@@ -157,6 +157,7 @@ public class SalesforcePushTopicListener {
 
         boolean success = message.isSuccessful();
         if (!success) {
+          LOG.error(String.format("Error in meta connect, message: %s", message));
           String error = (String) message.get("error");
           Map<String, Object> advice = message.getAdvice();
 
@@ -167,7 +168,7 @@ public class SalesforcePushTopicListener {
           // Error Codes Reference in Salesforce Streaming :
           // https://developer.salesforce.com/docs/atlas.en-us.api_streaming.meta/api_streaming/streaming_error_codes
           // .htm
-          if (advice.get("reconnect").equals("handshake")) {
+          if (advice != null && "handshake".equals(advice.get("reconnect"))) {
             LOG.debug("Reconnecting to Salesforce Push Topic");
             try {
               reconnectToTopic();
