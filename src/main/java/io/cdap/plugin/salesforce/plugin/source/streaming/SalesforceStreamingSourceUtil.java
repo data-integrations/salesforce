@@ -25,11 +25,13 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.reflect.ClassTag$;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -63,8 +65,15 @@ final class SalesforceStreamingSourceUtil {
     JavaStreamingContext jssc = streamingContext.getSparkStreamingContext();
 
     final Schema finalSchema = schema;
-    return jssc.receiverStream(new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
-                                                      config.getPushTopicName()))
+
+    SalesforceReceiver receiver = new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
+                                                         config.getPushTopicName(), streamingContext.getArguments());
+    SalesforceReceiverInputDStream<String> salesforceReceiverInputDStream = new SalesforceReceiverInputDStream<>(
+      jssc.ssc(),
+      ClassTag$.MODULE$.apply(String.class),
+      receiver);
+    return new JavaReceiverInputDStream<>(salesforceReceiverInputDStream,
+                                          ClassTag$.MODULE$.apply(String.class))
       .map(jsonMessage -> getStructuredRecord(jsonMessage, finalSchema))
       .filter(Objects::nonNull);
   }

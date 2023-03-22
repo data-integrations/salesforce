@@ -17,6 +17,7 @@
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.cdap.cdap.etl.api.Arguments;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.streaming.receiver.Receiver;
@@ -39,22 +40,23 @@ public class SalesforceReceiver extends Receiver<String> {
   private final AuthenticatorCredentials credentials;
   private final String topic;
   private SalesforcePushTopicListener pushTopicListener;
+  private final Arguments arguments;
 
-  SalesforceReceiver(AuthenticatorCredentials credentials, String topic) {
+  SalesforceReceiver(AuthenticatorCredentials credentials, String topic, Arguments arguments) {
     super(StorageLevel.MEMORY_AND_DISK_2());
     this.credentials = credentials;
     this.topic = topic;
+    this.arguments = arguments;
   }
 
   @Override
   public void onStart() {
-    pushTopicListener = new SalesforcePushTopicListener(this.credentials, this.topic);
+    pushTopicListener = new SalesforcePushTopicListener(this);
     pushTopicListener.start();
 
     ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
       .setNameFormat(RECEIVER_THREAD_NAME + "-%d")
       .build();
-
     Executors.newSingleThreadExecutor(namedThreadFactory).submit(this::receive);
   }
 
@@ -62,6 +64,7 @@ public class SalesforceReceiver extends Receiver<String> {
   public void onStop() {
     // There is nothing we can do here as the thread calling receive()
     // is designed to stop by itself if isStopped() returns false
+    //Shutdown thread pool executor
   }
 
   private void receive() {
@@ -76,7 +79,19 @@ public class SalesforceReceiver extends Receiver<String> {
       String errorMessage = "Exception while receiving messages from pushTopic";
       // Since it's top level method of thread, we need to log the exception or it will be unseen
       LOG.error(errorMessage, e);
-      throw new RuntimeException(errorMessage, e);
+      stop(errorMessage, e);
     }
+  }
+
+  public AuthenticatorCredentials getCredentials() {
+    return credentials;
+  }
+
+  public String getTopic() {
+    return topic;
+  }
+
+  public Arguments getArguments() {
+    return arguments;
   }
 }
