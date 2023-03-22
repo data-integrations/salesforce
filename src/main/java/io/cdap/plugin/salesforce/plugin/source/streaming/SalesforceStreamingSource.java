@@ -94,10 +94,11 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
           && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
           && config.getConnection().canAttemptToEstablishConnection()) {
 
-          Schema schema = SalesforceSchemaUtil.getSchema(new AuthenticatorCredentials(oAuthInfo,
-                                                                                      config.getConnection()
-                                                                                        .getConnectTimeout()),
-                                                         SObjectDescriptor.fromQuery(query));
+          Schema schema = SalesforceSchemaUtil.getSchema(
+            new AuthenticatorCredentials(oAuthInfo,
+                                         config.getConnection().getConnectTimeout(),
+                                         config.getConnection().getProxyUrl()),
+            SObjectDescriptor.fromQuery(query));
           pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
         }
       }

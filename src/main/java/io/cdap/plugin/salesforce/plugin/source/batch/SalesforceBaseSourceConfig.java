@@ -38,7 +38,6 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import javax.annotation.Nullable;
 
 /**
@@ -117,10 +115,11 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String offset,
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
-                                       @Nullable String operation) {
+                                       @Nullable String operation,
+                                       @Nullable String proxyUrl) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, oAuthInfo);
+                                                    securityToken, connectTimeout, oAuthInfo, proxyUrl);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
@@ -170,7 +169,8 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout());
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
   }
@@ -218,7 +218,8 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          this.getConnection().getConnectTimeout());
+                                                                          this.getConnection().getConnectTimeout(),
+                                                                          this.connection.getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
                                                                        credentials,
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);

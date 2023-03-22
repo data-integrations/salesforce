@@ -14,6 +14,22 @@
         },
         {
           "widget-type": "textbox",
+          "label": "User Name",
+          "name": "username",
+          "widget-attributes" : {
+            "placeholder": "Salesforce User Name"
+          }
+        },
+        {
+          "widget-type": "password",
+          "label": "Password",
+          "name": "password",
+          "widget-attributes" : {
+            "placeholder": "Salesforce User Password"
+          }
+        },
+        {
+          "widget-type": "textbox",
           "label": "Consumer Key",
           "name": "consumerKey",
           "widget-attributes" : {
@@ -38,22 +54,6 @@
         },
         {
           "widget-type": "textbox",
-          "label": "User Name",
-          "name": "username",
-          "widget-attributes" : {
-            "placeholder": "Salesforce User Name"
-          }
-        },
-        {
-          "widget-type": "password",
-          "label": "Password",
-          "name": "password",
-          "widget-attributes" : {
-            "placeholder": "Salesforce User Password"
-          }
-        },
-        {
-          "widget-type": "textbox",
           "label": "Login Url",
           "name": "loginUrl",
           "widget-attributes" : {
@@ -70,7 +70,21 @@
           }
         }
       ]
+    },
+    {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl",
+          "widget-attributes" : {
+            "placeholder": "Proxy URL"
+          }
+        }
+      ]
     }
   ],
-  "outputs": []
+  "outputs": [],
+  "filters": []
 }
