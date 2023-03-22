@@ -30,6 +30,8 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
 
+**Proxy URL:** Proxy URL. Must contain a protocol, address and port.
+
 **SObject Name:** Salesforce object name to insert records into.
 
 There are also **sObjects** that are not supported in the Bulk API of Salesforce.

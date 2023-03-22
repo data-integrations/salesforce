@@ -38,6 +38,8 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
 
+**Proxy URL:** Proxy URL. Must contain a protocol, address and port.
+
 **Topic Name:** Salesforce push topic name. Plugin will track updates from this topic. If the topic does
 not exist, the plugin creates it. To manually create pushTopic use Salesforce workbench, Apex code or API.
 

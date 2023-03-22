@@ -189,7 +189,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          config.getConnection().getConnectTimeout());
+                                                                          config.getConnection().getConnectTimeout(),
+                                                                          config.getConnection().getProxyUrl());
       return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor);
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

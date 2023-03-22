@@ -231,6 +231,6 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
                                     BaseSalesforceETLTest.LOGIN_URL, 30000, sObject, "Insert", null,
                                     ConcurrencyMode.Parallel.name(), "1000000", "10000", "Stop on Error",
                                     BaseSalesforceETLTest.SECURITY_TOKEN,
-                                    null);
+                                    null, null);
   }
 }

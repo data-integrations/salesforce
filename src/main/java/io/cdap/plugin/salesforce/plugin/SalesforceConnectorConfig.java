@@ -32,6 +32,18 @@ import javax.annotation.Nullable;
  */
 public class SalesforceConnectorConfig extends PluginConfig {
 
+  @Nullable
+  @Name(SalesforceConstants.PROPERTY_PROXY_URL)
+  @Description("Proxy URL. Must contain a protocol, address and port.")
+  @Macro
+  protected final String proxyUrl;
+
+  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
+  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
+  @Macro
+  @Nullable
+  private final Integer connectTimeout;
+
   @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
   @Description("OAuth information for connecting to Salesforce. " +
     "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
@@ -70,18 +82,12 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Macro
   @Nullable
   private String securityToken;
-
+  
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
   @Nullable
   private String loginUrl;
-
-  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
-  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
-  @Macro
-  @Nullable
-  private final Integer connectTimeout;
 
   public SalesforceConnectorConfig(@Nullable String consumerKey,
                                    @Nullable String consumerSecret,
@@ -90,7 +96,8 @@ public class SalesforceConnectorConfig extends PluginConfig {
                                    @Nullable String loginUrl,
                                    @Nullable String securityToken,
                                    @Nullable Integer connectTimeout,
-                                   @Nullable OAuthInfo oAuthInfo) {
+                                   @Nullable OAuthInfo oAuthInfo,
+                                   @Nullable String proxyUrl) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -99,6 +106,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
     this.securityToken = securityToken;
     this.connectTimeout = connectTimeout;
     this.oAuthInfo = oAuthInfo;
+    this.proxyUrl = proxyUrl;
   }
 
   @Nullable
@@ -153,10 +161,12 @@ public class SalesforceConnectorConfig extends PluginConfig {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
+      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout(),
+                                          getProxyUrl());
     }
     return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout());
+                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout(),
+                                        getProxyUrl());
   }
 
   /**
@@ -191,7 +201,8 @@ public class SalesforceConnectorConfig extends PluginConfig {
     }
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout()));
+      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout(),
+                                                                                 getProxyUrl()));
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
@@ -206,4 +217,10 @@ public class SalesforceConnectorConfig extends PluginConfig {
       return password;
     }
   }
+
+  @Nullable
+  public String getProxyUrl() {
+    return proxyUrl;
+  }
+
 }

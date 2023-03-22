@@ -91,7 +91,8 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),
-                                                                        config.getConnectTimeout());
+                                                                        config.getConnectTimeout(),
+                                                                        config.getProxyUrl());
     BrowseDetail.Builder browseDetailBuilder = BrowseDetail.builder();
     int count = 0;
     try {
@@ -163,7 +164,8 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),
-                                                                        config.getConnectTimeout());
+                                                                        config.getConnectTimeout(),
+                                                                        config.getProxyUrl());
     String fields = getObjectFields(object);
     String query = String.format("SELECT %s FROM %s LIMIT %d", fields, object, limit);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);

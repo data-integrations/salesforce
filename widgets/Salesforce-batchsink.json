@@ -90,6 +90,19 @@
       ]
     },
     {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl",
+          "widget-attributes" : {
+            "placeholder": "Proxy Url"
+          }
+        }
+      ]
+    },
+    {
       "label": "Advanced",
       "properties": [
         {
@@ -218,6 +231,10 @@
         {
           "type": "property",
           "name": "connectTimeout"
+        },
+        {
+          "type": "property",
+          "name": "proxyUrl"
         }
       ]
     },

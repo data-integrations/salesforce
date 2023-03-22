@@ -146,10 +146,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
-                              @Nullable OAuthInfo oAuthInfo) {
+                              @Nullable OAuthInfo oAuthInfo,
+                              @Nullable String proxyUrl) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
-                                               securityToken, connectTimeout, oAuthInfo);
+                                               securityToken, connectTimeout, oAuthInfo, proxyUrl);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -242,7 +243,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout());
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
       (credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
@@ -391,7 +393,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout());
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);

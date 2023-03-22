@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforce.plugin.source.streaming;
 
+import com.google.common.base.Strings;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -108,6 +109,10 @@ public class SalesforcePushTopicListener {
     // Set up a Jetty HTTP client to use with CometD
     HttpClient httpClient = new HttpClient(sslContextFactory);
     httpClient.setConnectTimeout(CONNECTION_TIMEOUT_MS);
+    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
+      Authenticator.setProxy(credentials, httpClient);
+    }
+
     httpClient.start();
 
     // Use the Jackson implementation

@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
@@ -53,6 +54,10 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
       .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
+
+    if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
+      configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
+    }
     OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder

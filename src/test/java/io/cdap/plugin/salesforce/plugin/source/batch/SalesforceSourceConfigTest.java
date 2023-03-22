@@ -273,8 +273,9 @@ public class SalesforceSourceConfigTest {
     PowerMockito.whenNew(SalesforceConnectorConfig.class).withArguments(Mockito.anyString(), Mockito.anyString(),
                                                                         Mockito.anyString(), Mockito.anyString(),
                                                                         Mockito.anyString(), Mockito.anyString(),
-                                                                        Mockito.any(),
-                                                                        Mockito.any()).thenReturn(connectorConfig);
+                                                                        Mockito.any(), Mockito.any(),
+                                                                        Mockito.anyString())
+      .thenReturn(connectorConfig);
     Mockito.when(mock.getConnection()).thenReturn(connectorConfig);
     PowerMockito.when(connectorConfig.canAttemptToEstablishConnection()).thenReturn(false);
     ValidationFailure failure;

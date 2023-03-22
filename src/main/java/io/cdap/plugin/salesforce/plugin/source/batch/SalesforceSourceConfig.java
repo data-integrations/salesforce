@@ -109,9 +109,10 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable OAuthInfo oAuthInfo,
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
-                         @Nullable String parent) {
+                         @Nullable String parent,
+                         @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;
@@ -258,7 +259,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                       OAuthInfo oAuthInfo) {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          this.getConnection().getConnectTimeout());
+                                                                          this.getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, credentials);
       List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
         .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
@@ -364,7 +366,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
   private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout());
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
