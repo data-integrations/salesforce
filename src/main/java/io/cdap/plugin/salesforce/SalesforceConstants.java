@@ -45,4 +45,8 @@ public class SalesforceConstants {
   public static final int DEFAULT_CONNECTION_TIMEOUT_MS = 30000;
   public static final String PROPERTY_CONNECT_TIMEOUT = "connectTimeout";
   public static final String CONFIG_CONNECT_TIMEOUT = "mapred.salesforce.connectTimeout";
+
+  public static final String PROPERTY_PROXY_URL = "proxyUrl";
+  public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";
+  public static final String REGEX_PROXY_URL = "^(?i)(https?)://.*$";
 }

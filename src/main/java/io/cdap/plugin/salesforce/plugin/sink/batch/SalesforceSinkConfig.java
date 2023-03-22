@@ -38,6 +38,7 @@ import io.cdap.plugin.salesforce.plugin.BaseSalesforceConfig;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -131,9 +132,10 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
-                              @Nullable OAuthInfo oAuthInfo) {
+                              @Nullable OAuthInfo oAuthInfo,
+                              @Nullable String proxyUrl) {
     super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, connectTimeout,
-          oAuthInfo);
+          oAuthInfo, proxyUrl);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -345,7 +347,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
 
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnectTimeout());
+                                                                        this.getConnectTimeout(),
+                                                                        this.getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);

@@ -66,6 +66,19 @@
       ]
     },
     {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl",
+          "widget-attributes" : {
+            "placeholder": "Proxy Url"
+          }
+        }
+      ]
+    },
+    {
       "label": "SOQL Query",
       "properties": [
         {
