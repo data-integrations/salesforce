@@ -67,6 +67,8 @@ public class SalesforcePushTopicListener {
 
   private JSONContext.Client jsonContext;
 
+  private long startTime;
+
   public SalesforcePushTopicListener(AuthenticatorCredentials credentials, String topic) {
     this.credentials = credentials;
     this.topic = topic;
@@ -81,6 +83,7 @@ public class SalesforcePushTopicListener {
       createSalesforceListener();
       waitForHandshake();
       subscribe();
+      this.startTime = System.currentTimeMillis();
     } catch (Exception e) {
       throw new RuntimeException("Could not start client", e);
     }
@@ -97,6 +100,11 @@ public class SalesforcePushTopicListener {
    * @throws InterruptedException blocking call is interrupted
    */
   public String getMessage(long timeout, TimeUnit unit) throws InterruptedException {
+    // throw exception to test
+    if (System.currentTimeMillis() - startTime > 2 * 60 * 1000) {
+      throw new RuntimeException("Test exception from SalesforcePushTopicListener");
+    }
+
     return messagesQueue.poll(timeout, unit);
   }
 

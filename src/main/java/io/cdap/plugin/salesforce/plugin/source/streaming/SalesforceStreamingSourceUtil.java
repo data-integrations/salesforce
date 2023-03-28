@@ -25,11 +25,22 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.spark.streaming.api.java.JavaDStream;
+import org.apache.spark.streaming.api.java.JavaReceiverInputDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
+import org.apache.spark.streaming.scheduler.StreamingListener;
+import org.apache.spark.streaming.scheduler.StreamingListenerBatchCompleted;
+import org.apache.spark.streaming.scheduler.StreamingListenerBatchStarted;
+import org.apache.spark.streaming.scheduler.StreamingListenerBatchSubmitted;
+import org.apache.spark.streaming.scheduler.StreamingListenerOutputOperationCompleted;
+import org.apache.spark.streaming.scheduler.StreamingListenerOutputOperationStarted;
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverError;
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStarted;
+import org.apache.spark.streaming.scheduler.StreamingListenerReceiverStopped;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.reflect.ClassTag$;
 
 import java.time.Instant;
 import java.time.LocalTime;
@@ -63,8 +74,62 @@ final class SalesforceStreamingSourceUtil {
     JavaStreamingContext jssc = streamingContext.getSparkStreamingContext();
 
     final Schema finalSchema = schema;
-    return jssc.receiverStream(new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
-                                                      config.getPushTopicName()))
+
+    SalesforceReceiver receiver = new SalesforceReceiver(config.getConnection().getAuthenticatorCredentials(),
+                                                         config.getPushTopicName());
+    //ReceiverInputDStream<String> receiverStream = jssc.ssc()
+      //.receiverStream(receiver, ClassTag$.MODULE$.apply(String.class));
+    //JavaReceiverInputDStream<String> stringJavaReceiverInputDStream = jssc.receiverStream(receiver);
+    SalesforceReceiverInputDStream<String> salesforceReceiverInputDStream = new SalesforceReceiverInputDStream<>(
+      jssc.ssc(),
+      ClassTag$.MODULE$.apply(String.class),
+      receiver);
+    jssc.addStreamingListener(new StreamingListener() {
+      @Override
+      public void onOutputOperationCompleted(StreamingListenerOutputOperationCompleted outputOperationCompleted) {
+
+      }
+
+      @Override
+      public void onOutputOperationStarted(StreamingListenerOutputOperationStarted outputOperationStarted) {
+
+      }
+
+      @Override
+      public void onBatchCompleted(StreamingListenerBatchCompleted batchCompleted) {
+
+      }
+
+      @Override
+      public void onBatchStarted(StreamingListenerBatchStarted batchStarted) {
+
+      }
+
+      @Override
+      public void onBatchSubmitted(StreamingListenerBatchSubmitted batchSubmitted) {
+
+      }
+
+      @Override
+      public void onReceiverError(StreamingListenerReceiverError receiverError) {
+
+      }
+
+      @Override
+      public void onReceiverStarted(StreamingListenerReceiverStarted receiverStarted) {
+
+      }
+
+      @Override
+      public void onReceiverStopped(StreamingListenerReceiverStopped receiverStopped) {
+        LOG.info("Receiver stopped event received!!!!. Stopping the context.");
+        // This does not work due to this -  https://issues.apache.org/jira/browse/SPARK-11761
+        // jssc.stop(true, true);
+        salesforceReceiverInputDStream.setReceiverFailed();
+      }
+    });
+    return new JavaReceiverInputDStream<>(salesforceReceiverInputDStream,
+                                          ClassTag$.MODULE$.apply(String.class))
       .map(jsonMessage -> getStructuredRecord(jsonMessage, finalSchema))
       .filter(Objects::nonNull);
   }

@@ -40,6 +40,8 @@ public class SalesforceReceiver extends Receiver<String> {
   private final String topic;
   private SalesforcePushTopicListener pushTopicListener;
 
+  // private AtomicBoolean failed = new AtomicBoolean(false);
+
   SalesforceReceiver(AuthenticatorCredentials credentials, String topic) {
     super(StorageLevel.MEMORY_AND_DISK_2());
     this.credentials = credentials;
@@ -75,8 +77,9 @@ public class SalesforceReceiver extends Receiver<String> {
     } catch (Exception e) {
       String errorMessage = "Exception while receiving messages from pushTopic";
       // Since it's top level method of thread, we need to log the exception or it will be unseen
-      LOG.error(errorMessage, e);
-      throw new RuntimeException(errorMessage, e);
+      // LOG.error(errorMessage, e);
+      stop(errorMessage, e);
+      //throw new RuntimeException(errorMessage, e);
     }
   }
 }
