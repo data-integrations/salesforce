@@ -83,6 +83,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
     if (!config.getConnection().canAttemptToEstablishConnection()) {
       config.validateSOQLQueryParameters(collector);
+      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
       return;
     }
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);

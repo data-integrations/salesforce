@@ -17,7 +17,7 @@
       "label": "Connection",
       "properties": [
         {
-          "widget-type": "toggle",
+          "widget-type": "hidden",
           "label": "Use connection",
           "name": "useConnection",
           "widget-attributes": {
@@ -33,7 +33,7 @@
           }
         },
         {
-          "widget-type": "connection-select",
+          "widget-type": "hidden",
           "label": "Connection",
           "name": "connection",
           "widget-attributes": {
@@ -188,60 +188,7 @@
       ]
     }
   ],
-  "filters": [
-    {
-      "name": "showConnectionProperties ",
-      "condition": {
-        "expression": "useConnection == false"
-      },
-      "show": [
-        {
-          "type": "property",
-          "name": "consumerKey"
-        },
-        {
-          "type": "property",
-          "name": "consumerSecret"
-        },
-        {
-          "type": "property",
-          "name": "securityToken"
-        },
-        {
-          "type": "property",
-          "name": "username"
-        },
-        {
-          "type": "property",
-          "name": "password"
-        },
-        {
-          "type": "property",
-          "name": "loginUrl"
-        },
-        {
-          "type": "property",
-          "name": "connectTimeout"
-        },
-        {
-          "type": "property",
-          "name": "proxyUrl"
-        }
-      ]
-    },
-    {
-      "name": "showConnectionId",
-      "condition": {
-        "expression": "useConnection == true"
-      },
-      "show": [
-        {
-          "type": "property",
-          "name": "connection"
-        }
-      ]
-    }
-  ],
+  "filters": [],
   "outputs": [
     {
       "name": "schema",
