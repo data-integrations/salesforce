@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import io.cdap.cdap.api.data.batch.InputFormatProvider;
@@ -45,6 +46,9 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
     configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits))
       .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
+    if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
+      configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
+    }
     OAuthInfo oAuthInfo = config.getConnection().getOAuthInfo();
     if (oAuthInfo != null) {
       configBuilder

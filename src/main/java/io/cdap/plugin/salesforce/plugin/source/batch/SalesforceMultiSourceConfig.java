@@ -84,9 +84,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String sObjectNameField,
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
-                                     @Nullable String operation) {
+                                     @Nullable String operation,
+                                     @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;
@@ -167,7 +168,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     DescribeGlobalResult describeGlobalResult;
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          getConnection().getConnectTimeout());
+                                                                          getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getProxyUrl());
       PartnerConnection partnerConnection =
         SalesforceConnectionUtil.getPartnerConnection(credentials);
       describeGlobalResult = partnerConnection.describeGlobal();
