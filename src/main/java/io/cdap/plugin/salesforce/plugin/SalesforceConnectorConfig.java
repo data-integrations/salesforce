@@ -147,7 +147,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
     return connectTimeout;
   }
 
-  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     try {
       validateConnection(oAuthInfo);
     } catch (Exception e) {
@@ -195,8 +195,8 @@ public class SalesforceConnectorConfig extends PluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
-  private void validateConnection(OAuthInfo oAuthInfo) {
-    if (!canAttemptToEstablishConnection()) {
+  private void validateConnection(@Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo == null) {
       return;
     }
 

@@ -121,11 +121,13 @@ public class AuthenticatorCredentials implements Serializable {
       Objects.equals(password, that.password) &&
       Objects.equals(consumerKey, that.consumerKey) &&
       Objects.equals(consumerSecret, that.consumerSecret) &&
-      Objects.equals(loginUrl, that.loginUrl);
+      Objects.equals(loginUrl, that.loginUrl) &&
+      Objects.equals(connectTimeout, that.connectTimeout) &&
+      Objects.equals(proxyUrl, that.proxyUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl);
+    return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl, connectTimeout, proxyUrl);
   }
 }

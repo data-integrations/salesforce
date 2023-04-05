@@ -105,7 +105,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     return Strings.isNullOrEmpty(sObjectNameField) ? SOBJECT_NAME_FIELD_DEFAULT : sObjectNameField;
   }
 
-  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (super.getConnection() != null) {
       super.getConnection().validate(collector, oAuthInfo);
     }
@@ -164,7 +164,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   /**
    * validate whiteList and blackList SObjects
    */
-  public void validateSObjects(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validateSObjects(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo == null) {
+      return;
+    }
     DescribeGlobalResult describeGlobalResult;
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,

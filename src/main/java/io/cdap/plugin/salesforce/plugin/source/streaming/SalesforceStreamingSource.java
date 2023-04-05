@@ -81,26 +81,23 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
     pipelineConfigurer.createDataset(config.referenceName, Constants.EXTERNAL_DATASET_TYPE, DatasetProperties.EMPTY);
 
     try {
-      if (config.getConnection() != null && config.getConnection().canAttemptToEstablishConnection()) {
-        OAuthInfo oAuthInfo =
-                SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
-        config.getConnection().validate(collector, oAuthInfo); // validate when macros are not substituted
-        config.ensurePushTopicExistAndWithCorrectFields(oAuthInfo); // run when macros are not substituted
-
-        String query = config.getQuery();
-
-        if (!Strings.isNullOrEmpty(query)
-          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
-          && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
-          && config.getConnection().canAttemptToEstablishConnection()) {
-
-          Schema schema = SalesforceSchemaUtil.getSchema(
-            new AuthenticatorCredentials(oAuthInfo,
-                                         config.getConnection().getConnectTimeout(),
-                                         config.getConnection().getProxyUrl()),
-            SObjectDescriptor.fromQuery(query));
-          pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
-        }
+      OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
+      config.getConnection().validate(collector, oAuthInfo); // validate when macros are not substituted
+      config.ensurePushTopicExistAndWithCorrectFields(oAuthInfo); // run when macros are not substituted
+      String query = config.getQuery();
+      if (!Strings.isNullOrEmpty(query)
+        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
+        && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
+        && oAuthInfo != null) {
+        Schema schema = SalesforceSchemaUtil.getSchema(new AuthenticatorCredentials(oAuthInfo,
+                                                                                    config.getConnection()
+                                                                                      .getConnectTimeout(),
+                                                                                    config.getConnection()
+                                                                                      .getProxyUrl()),
+                                                       SObjectDescriptor.fromQuery(query));
+        pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
+      } else {
+        pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
       }
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

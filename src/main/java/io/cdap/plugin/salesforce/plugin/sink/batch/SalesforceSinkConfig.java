@@ -42,7 +42,6 @@ import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -251,7 +250,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     return partnerConnection.getUserInfo().getOrganizationId();
   }
 
-  public void validate(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (connection != null) {
       connection.validate(collector, oAuthInfo);
     }
@@ -259,6 +258,10 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     validateSchema(schema, collector, oAuthInfo);
   }
 
+  /**
+   * Validate the plugin properties which can be tested without establishing a connection. e.g. operation, max records.
+   * @param collector      FailureCollector
+   */
   public void validateSinkProperties(FailureCollector collector) {
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
@@ -311,14 +314,13 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     collector.getOrThrowException();
   }
 
-  private void validateSchema(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
-    List<Schema.Field> fields = schema.getFields();
-    if (fields == null || fields.isEmpty()) {
+  private void validateSchema(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (schema == null || schema.getFields() == null || schema.getFields().isEmpty()) {
       collector.addFailure("Sink schema must contain at least one field", null);
       throw collector.getOrThrowException();
     }
     if (connection != null) {
-      if (!connection.canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+      if (oAuthInfo == null || containsMacro(PROPERTY_SOBJECT)
         || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
         return;
       }
