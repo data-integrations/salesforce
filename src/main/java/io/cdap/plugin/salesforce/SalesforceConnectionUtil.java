@@ -73,7 +73,7 @@ public class SalesforceConnectionUtil {
 
   /**
    * @param e Exception thrown from salesforce APIs
-   * @return error message sent by APIs.
+   * @return  error message sent by APIs.
    */
   public static String getSalesforceErrorMessageFromException(Exception e) {
     if (e instanceof IApiFault) {
@@ -82,8 +82,16 @@ public class SalesforceConnectionUtil {
       return e.getMessage();
     }
   }
-
+  /**
+   *
+   * @param config     SalesforceConnectorConfig from where credentials can be taken
+   * @param collector  FailureCollector
+   * @return           OAuthInfo which contains Access Token and login URL.
+   */
   public static OAuthInfo getOAuthInfo(SalesforceConnectorConfig config, FailureCollector collector) {
+    if (!config.canAttemptToEstablishConnection()) {
+      return null;
+    }
     OAuthInfo oAuthInfo = null;
     try {
       oAuthInfo = Authenticator.getOAuthInfo(config.getAuthenticatorCredentials());

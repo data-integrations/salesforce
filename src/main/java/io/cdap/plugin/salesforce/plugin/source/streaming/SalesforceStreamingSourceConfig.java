@@ -25,6 +25,7 @@ import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.common.ConfigUtil;
 import io.cdap.plugin.common.ReferencePluginConfig;
@@ -38,11 +39,13 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.soap.SObjectBuilder;
 import io.cdap.plugin.salesforce.soap.SObjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
@@ -118,6 +121,12 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
   @Name("pushTopicNotifyForFields")
   private String pushTopicNotifyForFields;
 
+  @Name(SalesforceSourceConstants.PROPERTY_SCHEMA)
+  @Macro
+  @Nullable
+  @Description("Schema of the data to read. Can be imported or fetched by clicking the `Get Schema` button.")
+  private String schema;
+
   public SalesforceStreamingSourceConfig(String referenceName,
                                          @Nullable String consumerKey,
                                          @Nullable String consumerSecret,
@@ -128,12 +137,14 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          @Nullable String securityToken,
                                          @Nullable Integer connectTimeout,
                                          @Nullable OAuthInfo oAuthInfo,
-                                         @Nullable String proxyUrl) {
+                                         @Nullable String proxyUrl,
+                                         @Nullable String schema) {
     super(referenceName);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
                                                     securityToken, connectTimeout, oAuthInfo, proxyUrl);
+    this.schema = schema;
   }
 
   @Nullable
@@ -165,6 +176,16 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
     return pushTopicNotifyForFields;
   }
 
+  @Nullable
+  public Schema getSchema() {
+    try {
+      return Strings.isNullOrEmpty(schema) ? null : Schema.parseJson(schema);
+    } catch (IOException e) {
+      throw new InvalidConfigException("Unable to parse output schema: " +
+                                         schema, e, SalesforceSourceConstants.PROPERTY_SCHEMA);
+    }
+  }
+
   /**
    * Get query to use, either pushTopicQuery or query generated using sObjectName.
    *
@@ -191,10 +212,11 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
   public void ensurePushTopicExistAndWithCorrectFields(OAuthInfo oAuthInfo) {
     if (connection != null) {
       if (containsMacro(PROPERTY_PUSH_TOPIC_NAME) ||
-        containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || !connection.canAttemptToEstablishConnection()) {
+        containsMacro(PROPERTY_PUSH_TOPIC_QUERY) || oAuthInfo == null) {
         return;
       }
     }
+
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
         Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,

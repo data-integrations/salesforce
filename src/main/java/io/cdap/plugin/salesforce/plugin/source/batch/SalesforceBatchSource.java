@@ -79,13 +79,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
-    // validate when macros not yet substituted
     FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
-    if (!config.getConnection().canAttemptToEstablishConnection()) {
-      config.validateSOQLQueryParameters(collector);
-      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
-      return;
-    }
+
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
     config.validate(collector, oAuthInfo);
 
@@ -94,15 +89,14 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       pipelineConfigurer.getStageConfigurer().setOutputSchema(null);
       return;
     }
-    if (config.getConnection() != null) {
-      if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-        || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
-        || !config.getConnection().canAttemptToEstablishConnection()) {
-        // some config properties required for schema generation are not available
-        // will validate schema later in `prepareRun` stage
-        pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
-        return;
-      }
+
+    if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
+      || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
+      || oAuthInfo == null) {
+      // this block will execute when connection got established but schema can not be fetched due to above macro fields
+      // will validate schema later in `prepareRun` stage
+      pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
+      return;
     }
 
     schema = retrieveSchema(oAuthInfo);
