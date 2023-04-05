@@ -18,11 +18,19 @@ package io.cdap.plugin.salesforce;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.FieldType;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.cdap.etl.mock.common.MockPipelineConfigurer;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchMultiSource;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfig;
+import io.cdap.plugin.salesforce.plugin.source.streaming.SalesforceStreamingSource;
+import io.cdap.plugin.salesforce.plugin.source.streaming.SalesforceStreamingSourceConfig;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -243,5 +251,47 @@ public class SalesforceSchemaUtilTest {
     field.setNillable(isNillable);
 
     return field;
+  }
+  
+  @Test
+  public void testSourceSchemaNotNullIfConnectionMacroAndImportManually() {
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Id",
+                                                    Schema.of(Schema.Type.STRING)));
+    SalesforceSourceConfig mockConfig = Mockito.mock(SalesforceSourceConfig.class);
+    MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
+    SalesforceBatchSource source = new SalesforceBatchSource(mockConfig);
+    Mockito.when(mockConfig.canAttemptToEstablishConnection()).thenReturn(false);
+    Mockito.when(mockConfig.getSchema()).thenReturn(schema);
+    source.configurePipeline(mockPipelineConfigurer);
+    Assert.assertNotNull(mockPipelineConfigurer.getOutputSchema());
+    Assert.assertEquals(mockPipelineConfigurer.getOutputSchema(), schema);
+  }
+
+  @Test
+  public void testStreamingSchemaNotNullIfConnectionMacroAndImportManually() {
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("Id",
+                                                    Schema.of(Schema.Type.STRING)));
+    SalesforceStreamingSourceConfig mockConfig = Mockito.mock(SalesforceStreamingSourceConfig.class);
+    MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
+    SalesforceStreamingSource source = new SalesforceStreamingSource(mockConfig);
+    mockConfig.referenceName = "TestStreaming";
+    Mockito.when(mockConfig.canAttemptToEstablishConnection()).thenReturn(false);
+    Mockito.when(mockConfig.getSchema()).thenReturn(schema);
+    source.configurePipeline(mockPipelineConfigurer);
+    Assert.assertNotNull(mockPipelineConfigurer.getOutputSchema());
+    Assert.assertEquals(mockPipelineConfigurer.getOutputSchema(), schema);
+  }
+
+  @Test
+  public void testMultiSourceSchemaNotNullIfConnectionMacroAndImportManually() {
+    SalesforceMultiSourceConfig mockConfig = Mockito.mock(SalesforceMultiSourceConfig.class);
+    MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
+    SalesforceBatchMultiSource source = new SalesforceBatchMultiSource(mockConfig);
+    mockConfig.referenceName = "TestStreaming";
+    Mockito.when(mockConfig.canAttemptToEstablishConnection()).thenReturn(false);
+    source.configurePipeline(mockPipelineConfigurer);
+    Assert.assertNull(mockPipelineConfigurer.getOutputSchema());
   }
 }

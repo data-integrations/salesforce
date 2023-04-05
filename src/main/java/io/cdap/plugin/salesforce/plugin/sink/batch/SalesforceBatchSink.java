@@ -58,10 +58,6 @@ public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritabl
     super.configurePipeline(pipelineConfigurer);
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
     FailureCollector collector = stageConfigurer.getFailureCollector();
-    if (!config.canAttemptToEstablishConnection()) {
-      config.validateSinkProperties(collector);
-      return;
-    }
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
     config.validate(stageConfigurer.getInputSchema(), stageConfigurer.getFailureCollector(), oAuthInfo);
   }
