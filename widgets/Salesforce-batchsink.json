@@ -66,6 +66,19 @@
       ]
     },
     {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl",
+          "widget-attributes" : {
+            "placeholder": "Proxy Url"
+          }
+        }
+      ]
+    },
+    {
       "label": "Advanced",
       "properties": [
         {
@@ -151,6 +164,7 @@
       ]
     }
   ],
+  "filters": [],
   "outputs": [
     {
       "name": "schema",

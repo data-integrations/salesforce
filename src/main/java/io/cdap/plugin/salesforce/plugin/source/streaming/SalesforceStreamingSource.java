@@ -89,7 +89,8 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
           && config.canAttemptToEstablishConnection()) {
 
           Schema schema = SalesforceSchemaUtil.getSchema(new AuthenticatorCredentials(oAuthInfo,
-                                                                                      config.getConnectTimeout()),
+                                                                                      config.getConnectTimeout(),
+                                                                                      config.getProxyUrl()),
                                                          SObjectDescriptor.fromQuery(query));
           pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
         }

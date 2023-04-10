@@ -54,19 +54,19 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   @Macro
   @Nullable
   @Description("List of SObjects to fetch from Salesforce. By default all SObjects will be white listed")
-  private String whiteList;
+  private final String whiteList;
 
   @Name(SalesforceSourceConstants.PROPERTY_BLACK_LIST)
   @Macro
   @Nullable
   @Description("List of SObjects NOT to fetch from Salesforce. By default NONE of SObjects will be black listed")
-  private String blackList;
+  private final String blackList;
 
   @Name(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME_FIELD)
   @Nullable
   @Description("The name of the field that holds SObject name. "
     + "Must not be the name of any sObject column that will be read. Defaults to 'tablename'.")
-  private String sObjectNameField;
+  private final String sObjectNameField;
 
   public SalesforceMultiSourceConfig(String referenceName,
                                      @Nullable String consumerKey,
@@ -84,9 +84,11 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String sObjectNameField,
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
-                                     @Nullable String operation) {
+                                     @Nullable String operation,
+                                     @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation,
+          proxyUrl);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;
@@ -164,7 +166,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     DescribeGlobalResult describeGlobalResult;
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          getConnectTimeout());
+                                                                          getConnectTimeout(),
+                                                                          getProxyUrl());
       PartnerConnection partnerConnection =
         SalesforceConnectionUtil.getPartnerConnection(credentials);
       describeGlobalResult = partnerConnection.describeGlobal();

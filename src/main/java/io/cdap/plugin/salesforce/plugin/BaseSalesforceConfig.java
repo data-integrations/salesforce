@@ -32,6 +32,12 @@ import javax.annotation.Nullable;
  */
 public class BaseSalesforceConfig extends ReferencePluginConfig {
 
+  @Nullable
+  @Name(SalesforceConstants.PROPERTY_PROXY_URL)
+  @Description("Proxy URL. Must contain a protocol, address and port.")
+  @Macro
+  protected final String proxyUrl;
+
   @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
   @Description("OAuth information for connecting to Salesforce. " +
     "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
@@ -91,7 +97,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
                               @Nullable String loginUrl,
                               @Nullable String securityToken,
                               @Nullable Integer connectTimeout,
-                              @Nullable OAuthInfo oAuthInfo) {
+                              @Nullable OAuthInfo oAuthInfo,
+                              @Nullable String proxyUrl) {
     super(referenceName);
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
@@ -101,6 +108,7 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     this.securityToken = securityToken;
     this.connectTimeout = connectTimeout;
     this.oAuthInfo = oAuthInfo;
+    this.proxyUrl = proxyUrl;
   }
 
   @Nullable
@@ -155,10 +163,12 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
+      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout(),
+                                          getProxyUrl());
     }
     return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout());
+                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout(),
+                                        getProxyUrl());
   }
 
   /**
@@ -193,7 +203,8 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
     }
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout()));
+      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout(),
+                                                                                 getProxyUrl()));
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
@@ -208,4 +219,10 @@ public class BaseSalesforceConfig extends ReferencePluginConfig {
       return password;
     }
   }
+
+  @Nullable
+  public String getProxyUrl() {
+    return proxyUrl;
+  }
+
 }

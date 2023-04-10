@@ -100,16 +100,17 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
                                        @Nullable String offset,
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
-                                       @Nullable String operation) {
+                                       @Nullable String operation,
+                                       @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout,
-          oAuthInfo);
+          oAuthInfo, proxyUrl);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
     this.operation = operation;
   }
-
+  
   public Map<ChronoUnit, Integer> getDuration() {
     return extractRangeValue(SalesforceSourceConstants.PROPERTY_DURATION, duration);
   }
@@ -171,7 +172,8 @@ public abstract class SalesforceBaseSourceConfig extends BaseSalesforceConfig {
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          this.getConnectTimeout());
+                                                                          this.getConnectTimeout(),
+                                                                          this.getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
                                                                        credentials,
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);

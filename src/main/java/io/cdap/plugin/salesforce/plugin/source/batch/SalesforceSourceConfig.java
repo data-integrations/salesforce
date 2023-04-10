@@ -56,38 +56,38 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Description("The SOQL query to retrieve results from. Example: select Id, Name from Opportunity")
   @Nullable
   @Macro
-  private String query;
+  private final String query;
 
   @Name(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
   @Description("Salesforce SObject name. Example: Opportunity")
   @Nullable
   @Macro
-  private String sObjectName;
+  private final String sObjectName;
 
   @Name(SalesforceSourceConstants.PROPERTY_SCHEMA)
   @Macro
   @Nullable
   @Description("Schema of the data to read. Can be imported or fetched by clicking the `Get Schema` button.")
-  private String schema;
+  private final String schema;
 
   @Name(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
   @Macro
   @Nullable
   @Description("Primary key (PK) Chunking splits query on large tables into chunks based on the record IDs, or " +
     "primary keys, of the queried records.")
-  private Boolean enablePKChunk;
+  private final Boolean enablePKChunk;
 
   @Name(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
   @Macro
   @Nullable
   @Description("Specify size of chunk. Maximum Size is 250,000. Default Size is 100,000.")
-  private Integer chunkSize;
+  private final Integer chunkSize;
 
   @Name(SalesforceSourceConstants.PROPERTY_PARENT_NAME)
   @Macro
   @Nullable
   @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
-  private String parent;
+  private final String parent;
 
   @VisibleForTesting
   SalesforceSourceConfig(String referenceName,
@@ -109,9 +109,10 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                          @Nullable OAuthInfo oAuthInfo,
                          @Nullable Boolean enablePKChunk,
                          @Nullable Integer chunkSize,
-                         @Nullable String parent) {
+                         @Nullable String parent,
+                         @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;
@@ -262,7 +263,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                       OAuthInfo oAuthInfo) {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                          this.getConnectTimeout());
+                                                                          this.getConnectTimeout(),
+                                                                          this.getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, credentials);
       List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
         .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
@@ -366,7 +368,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
 
   private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-                                                                        this.getConnectTimeout());
+                                                                        this.getConnectTimeout(),
+                                                                        this.getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);

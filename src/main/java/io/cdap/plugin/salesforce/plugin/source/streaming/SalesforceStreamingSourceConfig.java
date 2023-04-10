@@ -114,9 +114,10 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
                                          String pushTopicName, String sObjectName,
                                          @Nullable String securityToken,
                                          @Nullable Integer connectTimeout,
-                                         @Nullable OAuthInfo oAuthInfo) {
+                                         @Nullable OAuthInfo oAuthInfo,
+                                         @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout,
-          oAuthInfo);
+          oAuthInfo, proxyUrl);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
   }
@@ -177,7 +178,8 @@ public class SalesforceStreamingSourceConfig extends BaseSalesforceConfig implem
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
         Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,
-                                                                         this.getConnectTimeout())));
+                                                                         this.getConnectTimeout(),
+                                                                         this.getProxyUrl())));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();
