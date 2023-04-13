@@ -18,6 +18,7 @@ package io.cdap.plugin.salesforce;
 
 import com.google.common.base.Preconditions;
 import com.sforce.async.AsyncApiException;
+import com.sforce.async.AsyncExceptionCode;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
@@ -80,8 +82,8 @@ public final class SalesforceBulkUtil {
    * Close a job in Salesforce
    *
    * @param bulkConnection bulk connection instance
-   * @param jobId a job id
-   * @throws AsyncApiException  if there is an issue creating the job
+   * @param jobId          a job id
+   * @throws AsyncApiException if there is an issue creating the job
    */
   public static void closeJob(BulkConnection bulkConnection, String jobId) throws AsyncApiException {
     JobInfo job = new JobInfo();
@@ -94,11 +96,11 @@ public final class SalesforceBulkUtil {
    * Gets the results of the insert operation for every batch and checks them for errors.
    *
    * @param bulkConnection bulk connection instance
-   * @param job a Salesforce job
-   * @param batchInfoList a list of batches to check
+   * @param job            a Salesforce job
+   * @param batchInfoList  a list of batches to check
    * @param ignoreFailures if true, unsuccessful row insertions do not cause an exception
    * @throws AsyncApiException if there is an issue checking for batch results
-   * @throws IOException reading csv from Salesforce failed
+   * @throws IOException       reading csv from Salesforce failed
    */
   public static void checkResults(BulkConnection bulkConnection, JobInfo job,
                                   List<BatchInfo> batchInfoList, boolean ignoreFailures)
@@ -138,11 +140,12 @@ public final class SalesforceBulkUtil {
    * Wait for a job to complete by polling the Bulk API.
    *
    * @param bulkConnection BulkConnection used to check results.
-   * @param job The job awaiting completion.
-   * @param batchInfoList List of batches for this job.
+   * @param job            The job awaiting completion.
+   * @param batchInfoList  List of batches for this job.
+   * @param ignoreFailures if true, unsuccessful row insertions do not cause an exception
    */
   public static void awaitCompletion(BulkConnection bulkConnection, JobInfo job,
-                                     List<BatchInfo> batchInfoList) {
+                                     List<BatchInfo> batchInfoList, boolean ignoreFailures) {
     Set<String> incomplete = batchInfoList
       .stream()
       .map(BatchInfo::getId)
@@ -152,7 +155,7 @@ public final class SalesforceBulkUtil {
     if (job.getConcurrencyMode().equals(ConcurrencyMode.Serial)) {
       batchWaitTimeSeconds = SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE;
     }
-
+    AtomicInteger failures = new AtomicInteger(0);
     Awaitility.await()
       .atMost(batchWaitTimeSeconds, TimeUnit.SECONDS)
       .pollInterval(SalesforceSourceConstants.GET_SINK_BATCH_RESULTS_SLEEP_MS, TimeUnit.MILLISECONDS)
@@ -163,13 +166,28 @@ public final class SalesforceBulkUtil {
 
           for (BatchInfo b : statusList) {
             if (b.getState() == BatchStateEnum.Failed) {
-              throw new BulkAPIBatchException("Batch failed", b);
+              if (ignoreFailures) {
+                LOG.error(String.format("Batch failed with error: '%s'. BatchId='%s'. This error will be ignored and " +
+                                          "pipeline will continue.", b.getStateMessage(), b.getId()));
+                incomplete.remove(b.getId());
+              } else {
+                throw new BulkAPIBatchException("Batch failed", b);
+              }
             } else if (b.getState() == BatchStateEnum.Completed) {
               incomplete.remove(b.getId());
             }
           }
         } catch (AsyncApiException e) {
-          renewSession(bulkConnection, e);
+          if (AsyncExceptionCode.InvalidSessionId == e.getExceptionCode()) {
+            renewSession(bulkConnection, e);
+          } else if (AsyncExceptionCode.ClientInputError == e.getExceptionCode() &&
+            failures.get() < SalesforceSourceConstants.MAX_RETRIES_ON_API_FAILURE) {
+            // This error can occur when server is not responding with proper error message due to network glitch.
+            LOG.warn("Error while calling Salesforce APIs. Retrying again");
+            failures.getAndIncrement();
+          } else {
+            throw e;
+          }
         }
 
         return incomplete.isEmpty();
