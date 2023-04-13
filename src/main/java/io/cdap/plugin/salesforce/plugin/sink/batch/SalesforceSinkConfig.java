@@ -26,7 +26,6 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.common.ConfigUtil;
 import io.cdap.plugin.common.ReferenceNames;
 import io.cdap.plugin.common.ReferencePluginConfig;
@@ -381,6 +380,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
           .withInputSchemaField(inputField);
       }
     }
+    validateInputSchema(schema, collector);
   }
 
   private Set<String> getCreatableSObjectFields(SObjectsDescribeResult describeResult) {
@@ -397,7 +397,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
-                                                                        this.connection.getProxyUrl());
+                                                                        this.getConnection().getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
@@ -418,16 +418,17 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
    *
    * @param schema input schema to check
    */
-  private void validateInputSchema(Schema schema) {
-    if (connection != null) {
-      AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
-      try {
-        SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
-        Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
-        SalesforceSchemaUtil.checkCompatibility(sObjectActualSchema, schema, false);
-      } catch (ConnectionException e) {
-        throw new InvalidStageException("There was issue communicating with Salesforce", e);
-      }
+  private void validateInputSchema(Schema schema, FailureCollector collector) {
+    AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
+    try {
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
+      Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
+      SalesforceSchemaUtil.checkCompatibility(sObjectActualSchema, schema, false);
+    } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      collector.addFailure(String.format("There was issue communicating with Salesforce with error: %s", errorMessage),
+                           null).withStacktrace(e.getStackTrace());
+      throw collector.getOrThrowException();
     }
   }
 }

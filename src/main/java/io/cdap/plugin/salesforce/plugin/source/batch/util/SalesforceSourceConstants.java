@@ -126,23 +126,27 @@ public class SalesforceSourceConstants {
                                                                                    "WorkOrderLineItem");
 
   /**
-   * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch
+   * Salesforce Bulk API has a limitation, which is 5 minutes per processing of a batch, after that it will
+   * retry 20 times before failing the batch. Refer below link.
+   * https://developer.salesforce.com/docs/atlas.en-us.242.0.salesforce_app_limits_cheatsheet.meta/
+   * salesforce_app_limits_cheatsheet/salesforce_app_limits_platform_bulkapi.htm
    */
-  public static final long GET_BATCH_WAIT_TIME_SECONDS = 600;
+  public static final long GET_BATCH_WAIT_TIME_SECONDS = 6000;
   /**
    * Sleep time between polling the batch status
    */
-  public static final long GET_BATCH_RESULTS_SLEEP_MS = 500;
+  public static final long GET_BATCH_RESULTS_SLEEP_MS = 5000;
 
   /**
    * Sleep time between polling the batch status for Salesforce Sink
    */
   public static final long GET_SINK_BATCH_RESULTS_SLEEP_MS = 5000;
-  
+
   /**
    * Number of tries while polling the batch status
    */
-  public static final long GET_BATCH_RESULTS_TRIES = GET_BATCH_WAIT_TIME_SECONDS * (1000 / GET_BATCH_RESULTS_SLEEP_MS);
+  public static final long GET_BATCH_RESULTS_TRIES = (long) (GET_BATCH_WAIT_TIME_SECONDS *
+    (1000 * 1.0 / GET_BATCH_RESULTS_SLEEP_MS));
 
   /**
    * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch. But for serial mode,
@@ -150,4 +154,6 @@ public class SalesforceSourceConstants {
    * So, setting this to a large value to avoid timeout issues.
    */
   public static final long GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE = 600000;
+
+  public static final long MAX_RETRIES_ON_API_FAILURE = 10;
 }

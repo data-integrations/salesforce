@@ -19,6 +19,7 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.JobInfo;
+import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -27,6 +28,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.awaitility.core.ConditionTimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,12 +105,14 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, CSVRecord
     submitCurrentBatch();
 
     try {
-      SalesforceBulkUtil.awaitCompletion(bulkConnection, jobInfo, batchInfoList);
+      SalesforceBulkUtil.awaitCompletion(bulkConnection, jobInfo, batchInfoList,
+                                         errorHandling.equals(ErrorHandling.SKIP));
       SalesforceBulkUtil.checkResults(bulkConnection, jobInfo, batchInfoList, errorHandling.equals(ErrorHandling.SKIP));
-    } catch (AsyncApiException e) {
-      throw new RuntimeException(
-        String.format("Failed to check the result of a batch for writes: %s", e.getMessage()),
-        e);
+    } catch (AsyncApiException | ConditionTimeoutException | BulkAPIBatchException e) {
+      throw new RuntimeException(String.format("Failed to check the result of a batch for writes: %s",
+                                               e.getMessage()), e);
+    } catch (Exception e) {
+      throw new RuntimeException(String.format("Pipeline Failed due to error: %s", e.getMessage()), e);
     } finally {
       try {
         csvBufferSizeCheck.close();
