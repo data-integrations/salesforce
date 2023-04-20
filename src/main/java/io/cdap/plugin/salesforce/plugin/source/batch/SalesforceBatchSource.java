@@ -73,12 +73,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
   @Override
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
-    // validate when macros not yet substituted
     FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
-    if (!config.canAttemptToEstablishConnection()) {
-      config.validateSOQLQueryParameters(collector);
-      return;
-    }
+
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
     config.validate(collector, oAuthInfo);
 
@@ -90,8 +86,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
 
     if (config.containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
       || config.containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)
-      || !config.canAttemptToEstablishConnection()) {
-      // some config properties required for schema generation are not available
+      || oAuthInfo == null) {
+      // this block will execute when connection got established but schema can not be fetched due to above macro fields
       // will validate schema later in `prepareRun` stage
       pipelineConfigurer.getStageConfigurer().setOutputSchema(config.getSchema());
       return;
@@ -115,9 +111,9 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     LineageRecorder lineageRecorder = new LineageRecorder(context, config.referenceName);
     lineageRecorder.createExternalDataset(schema);
     lineageRecorder.recordRead("Read", "Read from Salesforce",
-      Preconditions.checkNotNull(schema.getFields()).stream()
-        .map(Schema.Field::getName)
-        .collect(Collectors.toList()));
+                               Preconditions.checkNotNull(schema.getFields()).stream()
+                                 .map(Schema.Field::getName)
+                                 .collect(Collectors.toList()));
 
     String query = config.getQuery(context.getLogicalStartTime(), oAuthInfo);
     String sObjectName = SObjectDescriptor.fromQuery(query).getName();
@@ -135,10 +131,10 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
       bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK, String.join(";", chunkHeaderValues));
     }
     List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
-            enablePKChunk, config.getOperation());
+                                                                           enablePKChunk, config.getOperation());
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
     context.setInput(Input.of(config.referenceName, new SalesforceInputFormatProvider(
-    config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
+      config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
 
   @Override
@@ -177,8 +173,8 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format("Failed to get schema from the query '%s': %s", query, errorMessage),
-          e);
+        String.format("Failed to get schema from the query '%s': %s", query, errorMessage),
+        e);
     }
   }
 

@@ -107,7 +107,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   @Override
-  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     super.validate(collector, oAuthInfo);
     validateFilters(collector);
   }
@@ -162,7 +162,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   /**
    * validate whiteList and blackList SObjects
    */
-  public void validateSObjects(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validateSObjects(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo == null) {
+      return;
+    }
     DescribeGlobalResult describeGlobalResult;
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,

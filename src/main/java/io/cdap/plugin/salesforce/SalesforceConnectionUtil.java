@@ -92,6 +92,9 @@ public class SalesforceConnectionUtil {
    * @return           OAuthInfo which contains Access Token and login URL.
    */
   public static OAuthInfo getOAuthInfo(BaseSalesforceConfig config, FailureCollector collector) {
+    if (!config.canAttemptToEstablishConnection()) {
+      return null;
+    }
     OAuthInfo oAuthInfo = null;
     try {
       oAuthInfo = Authenticator.getOAuthInfo(config.getAuthenticatorCredentials());

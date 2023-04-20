@@ -203,7 +203,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                                                     SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
   }
 
-  public void validate(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     super.validate(collector, oAuthInfo);
     validateSinkProperties(collector);
     validateSchema(schema, collector, oAuthInfo);
@@ -265,14 +265,13 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     collector.getOrThrowException();
   }
 
-  private void validateSchema(Schema schema, FailureCollector collector, OAuthInfo oAuthInfo) {
-    List<Schema.Field> fields = schema.getFields();
-    if (fields == null || fields.isEmpty()) {
+  private void validateSchema(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (schema == null || schema.getFields() == null || schema.getFields().isEmpty()) {
       collector.addFailure("Sink schema must contain at least one field", null);
       throw collector.getOrThrowException();
     }
 
-    if (!canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+    if (oAuthInfo == null || containsMacro(PROPERTY_SOBJECT)
       || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
       return;
     }
