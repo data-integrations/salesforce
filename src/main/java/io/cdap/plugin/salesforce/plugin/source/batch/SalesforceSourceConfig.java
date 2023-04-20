@@ -164,7 +164,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                      SalesforceSourceConstants.PROPERTY_QUERY);
   }
 
-  public void validate(FailureCollector collector, OAuthInfo oAuthInfo) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     this.getConnection().validate(collector, oAuthInfo);
     if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
@@ -185,7 +185,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
         throw collector.getOrThrowException();
       }
-      if (getConnection().canAttemptToEstablishConnection()) {
+      if (oAuthInfo != null) {
         validateCompoundFields(queryDescriptor.getName(), queryDescriptor.getFieldsNames(), collector, oAuthInfo);
       }
     }
@@ -202,42 +202,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     }
     validateSchema(collector);
     validatePKChunk(collector, oAuthInfo);
-  }
-
-  public void validateSOQLQueryParameters(FailureCollector collector) {
-    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY) && !Strings.isNullOrEmpty(query)) {
-      if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query) && SalesforceQueryParser.isRestrictedQuery(query)) {
-        collector.addFailure(
-            String.format(
-              "SOQL Query with restricted field types (function calls, sub-query fields) or "
-                + "GROUP BY [ROLLUP / CUBE], OFFSET clauses cannot exceed SOQL query length:"
-                + " '%d'. "
-                + "Unsupported SOQL query: '%s'", SalesforceConstants.SOQL_MAX_LENGTH, query),
-            null)
-          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-        throw collector.getOrThrowException();
-      }
-      try {
-        SalesforceQueryParser.getObjectDescriptorFromQuery(query);
-      } catch (SOQLParsingException e) {
-        collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
-          .withStacktrace(e.getStackTrace())
-          .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
-        throw collector.getOrThrowException();
-      }
-    }
-    if (!containsMacro(SalesforceSourceConstants.PROPERTY_QUERY)
-      && !containsMacro(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME)) {
-      try {
-        boolean isSoql = isSoqlQuery();
-        if (!isSoql) {
-          validateFilters(collector);
-        }
-      } catch (InvalidConfigException e) {
-        collector.addFailure(e.getMessage(), null).withConfigProperty(e.getProperty());
-      }
-    }
-    validateSchema(collector);
   }
 
   private void validateSchema(FailureCollector collector) {
@@ -285,7 +249,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     }
   }
 
-  private void validatePKChunk(FailureCollector collector, OAuthInfo oAuthInfo) {
+  private void validatePKChunk(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (containsMacro(SalesforceSourceConstants.PROPERTY_PK_CHUNK_ENABLE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_CHUNK_SIZE_NAME)
       || containsMacro(SalesforceSourceConstants.PROPERTY_PARENT_NAME)) {
@@ -340,17 +304,15 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     }
   }
 
-  private void checkForPKSupportedObject(String sObject, FailureCollector collector, OAuthInfo oAuthInfo) {
-    if (getConnection() != null) {
-      if (getConnection().canAttemptToEstablishConnection()) {
-        if (!isCustomObject(sObject, collector, oAuthInfo)) {
-          if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
-            collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
-                                 "Please check documentation for supported Objects. " +
-                                   "If this is a history " +
-                                   "or shared table, you may need to specify a SObject Parent in the" +
-                                   " Advanced section.");
-          }
+  private void checkForPKSupportedObject(String sObject, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo != null) {
+      if (!isCustomObject(sObject, collector, oAuthInfo)) {
+        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
+          collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
+                               "Please check documentation for supported Objects. " +
+                                 "If this is a history " +
+                                 "or shared table, you may need to specify a SObject Parent in the" +
+                                 " Advanced section.");
         }
       }
     }

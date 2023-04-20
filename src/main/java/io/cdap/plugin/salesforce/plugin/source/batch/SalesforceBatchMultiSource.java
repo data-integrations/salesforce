@@ -78,19 +78,8 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     StageConfigurer stageConfigurer = pipelineConfigurer.getStageConfigurer();
     FailureCollector collector = stageConfigurer.getFailureCollector();
-    if (!config.getConnection().canAttemptToEstablishConnection()) {
-      config.validateFilters(collector);
-      return;
-    }
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
     config.validate(stageConfigurer.getFailureCollector(), oAuthInfo); // validate before macros are substituted
-
-    // if connection params are macro or null
-    if (config.getConnection() != null) {
-      if (!config.getConnection().canAttemptToEstablishConnection()) {
-        return;
-      }
-    }
     config.validateSObjects(stageConfigurer.getFailureCollector(), oAuthInfo);
     stageConfigurer.setOutputSchema(null);
   }
