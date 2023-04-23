@@ -34,6 +34,7 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -58,7 +59,8 @@ import javax.annotation.Nullable;
 public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceBaseSourceConfig.class);
-
+  private static final String DEFAULT_OPERATION = "query";
+  private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
   @Name(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER)
   @Description("Salesforce SObject query datetime filter. Example: 2019-03-12T11:29:52Z")
   @Nullable
@@ -85,11 +87,9 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   @Name(SalesforceSourceConstants.PROPERTY_OPERATION)
   @Description("If set to query, the query result will only return current rows. If set to queryAll, " +
-          "all records, including deletes will be sourced")
+    "all records, including deletes will be sourced")
   @Nullable
   private String operation;
-
-  private static final String DEFAULT_OPERATION = "query";
 
   @Name(ConfigUtil.NAME_USE_CONNECTION)
   @Nullable
@@ -101,8 +101,6 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   @Nullable
   @Description("The existing connection to use.")
   private SalesforceConnectorConfig connection;
-
-  private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
 
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
@@ -117,10 +115,11 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String offset,
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
-                                       @Nullable String operation) {
+                                       @Nullable String operation,
+                                       @Nullable String proxyUrl) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, oAuthInfo);
+                                                    securityToken, connectTimeout, oAuthInfo, proxyUrl);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
@@ -168,13 +167,15 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
     return String.format("salesforce://%s/%s.%s", firstFQNPart, orgId, sObject);
   }
 
-  public String getOrgId() throws ConnectionException {
-    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
-      (connection.getAuthenticatorCredentials());
+  public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
   }
 
-  protected void validateFilters(FailureCollector collector) {
+  public void validateFilters(FailureCollector collector) {
     try {
       validateIntervalFilterProperty(SalesforceSourceConstants.PROPERTY_DATETIME_AFTER, getDatetimeAfter());
     } catch (InvalidConfigException e) {
@@ -209,15 +210,18 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
    * Bulk API limitation.
    * This allows to avoid pulling data from Salesforce for the fields which are not needed.
    *
-   * @param sObjectName Salesforce object name
-   * @param schema      CDAP schema
-   * @param logicalStartTime   application start time
+   * @param sObjectName      Salesforce object name
+   * @param schema           CDAP schema
+   * @param logicalStartTime application start time
    * @return SOQL generated based on sObject metadata and given filters
    */
-  protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime) {
+  protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                          this.getConnection().getConnectTimeout(),
+                                                                          this.connection.getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
-                                                                       connection.getAuthenticatorCredentials(),
+                                                                       credentials,
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
 
       List<String> sObjectFields = sObjectDescriptor.getFieldsNames();
@@ -233,7 +237,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
         if (fieldNames.isEmpty()) {
           throw new IllegalArgumentException(
             String.format("None of the fields indicated in schema are present in sObject metadata."
-              + " Schema: '%s'. SObject fields: '%s'", schema, sObjectFields));
+                            + " Schema: '%s'. SObject fields: '%s'", schema, sObjectFields));
         }
       }
 
@@ -242,8 +246,10 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
       return sObjectQuery;
     } catch (ConnectionException e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new IllegalStateException(
-        String.format("Cannot establish connection to Salesforce to describe SObject: '%s'", sObjectName), e);
+        String.format("Cannot establish connection to Salesforce to describe SObject: '%s' due to error: %s",
+                      sObjectName, message), e);
     }
   }
 
@@ -276,7 +282,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
       OperationEnum.valueOf(operation);
     } catch (InvalidConfigException e) {
       throw new InvalidConfigException(
-              String.format("Invalid Query Operation: '%s'. Valid operation values are query and queryAll.",
+        String.format("Invalid Query Operation: '%s'. Valid operation values are query and queryAll.",
                       operation), propertyName);
     }
   }

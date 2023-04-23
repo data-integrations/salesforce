@@ -27,6 +27,10 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.SessionHeader_element;
+import com.sforce.ws.ConnectionException;
+import com.sforce.ws.ConnectorConfig;
+import com.sforce.ws.SessionRenewer;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.awaitility.Awaitility;
 import org.slf4j.Logger;
@@ -54,13 +58,13 @@ public final class SalesforceBulkUtil {
    * @return The JobInfo for the new job.
    * @throws AsyncApiException if there is an issue creating the job
    */
-  public static JobInfo createJob(BulkConnection bulkConnection,
-                                  String sObject, OperationEnum operationEnum,
-                                  @Nullable String externalIdField) throws AsyncApiException {
+  public static JobInfo createJob(BulkConnection bulkConnection, String sObject, OperationEnum operationEnum,
+                                  @Nullable String externalIdField,
+                                  ConcurrencyMode concurrencyMode) throws AsyncApiException {
     JobInfo job = new JobInfo();
     job.setObject(sObject);
     job.setOperation(operationEnum);
-    job.setConcurrencyMode(ConcurrencyMode.Parallel);
+    job.setConcurrencyMode(concurrencyMode);
     job.setContentType(ContentType.CSV);
     if (externalIdField != null) {
       job.setExternalIdFieldName(externalIdField);
@@ -144,22 +148,50 @@ public final class SalesforceBulkUtil {
       .map(BatchInfo::getId)
       .collect(Collectors.toSet());
 
-    Awaitility.await()
-      .atMost(SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS, TimeUnit.SECONDS)
-      .pollInterval(SalesforceSourceConstants.GET_BATCH_RESULTS_SLEEP_MS, TimeUnit.MILLISECONDS)
-      .until(() -> {
-        BatchInfo[] statusList =
-          bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+    long batchWaitTimeSeconds = SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS;
+    if (job.getConcurrencyMode().equals(ConcurrencyMode.Serial)) {
+      batchWaitTimeSeconds = SalesforceSourceConstants.GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE;
+    }
 
-        for (BatchInfo b : statusList) {
-          if (b.getState() == BatchStateEnum.Failed) {
-            throw new BulkAPIBatchException("Batch failed", b);
-          } else if (b.getState() == BatchStateEnum.Completed) {
-            incomplete.remove(b.getId());
+    Awaitility.await()
+      .atMost(batchWaitTimeSeconds, TimeUnit.SECONDS)
+      .pollInterval(SalesforceSourceConstants.GET_SINK_BATCH_RESULTS_SLEEP_MS, TimeUnit.MILLISECONDS)
+      .until(() -> {
+        try {
+          BatchInfo[] statusList =
+            bulkConnection.getBatchInfoList(job.getId()).getBatchInfo();
+
+          for (BatchInfo b : statusList) {
+            if (b.getState() == BatchStateEnum.Failed) {
+              throw new BulkAPIBatchException("Batch failed", b);
+            } else if (b.getState() == BatchStateEnum.Completed) {
+              incomplete.remove(b.getId());
+            }
           }
+        } catch (AsyncApiException e) {
+          renewSession(bulkConnection, e);
         }
 
         return incomplete.isEmpty();
       });
+  }
+
+  /**
+   * Renew session if bulk connection resets
+   *
+   * @param connection Bulk Connection
+   * @param e          AsyncApiException
+   * @throws AsyncApiException
+   */
+  private static void renewSession(BulkConnection connection, AsyncApiException e) throws AsyncApiException {
+    ConnectorConfig config = connection.getConfig();
+    try {
+      SessionRenewer.SessionRenewalHeader sessionHeader = config.getSessionRenewer().renewSession(config);
+      config.setSessionId(((SessionHeader_element) sessionHeader.headerElement).getSessionId());
+    } catch (ConnectionException ex) {
+      // Can't renew the session - log an error and throw the original AsyncApiException
+      LOG.error("Exception renewing session", ex);
+      throw e;
+    }
   }
 }

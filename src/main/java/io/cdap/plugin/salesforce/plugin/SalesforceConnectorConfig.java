@@ -23,7 +23,6 @@ import io.cdap.cdap.api.plugin.PluginConfig;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
-import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 
 import javax.annotation.Nullable;
@@ -32,6 +31,18 @@ import javax.annotation.Nullable;
  * Base configuration for Salesforce Streaming and Batch plugins
  */
 public class SalesforceConnectorConfig extends PluginConfig {
+
+  @Nullable
+  @Name(SalesforceConstants.PROPERTY_PROXY_URL)
+  @Description("Proxy URL. Must contain a protocol, address and port.")
+  @Macro
+  protected final String proxyUrl;
+
+  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
+  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
+  @Macro
+  @Nullable
+  private final Integer connectTimeout;
 
   @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
   @Description("OAuth information for connecting to Salesforce. " +
@@ -71,27 +82,22 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Macro
   @Nullable
   private String securityToken;
-
+  
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
   @Nullable
   private String loginUrl;
 
-  @Name(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT)
-  @Description("Maximum time in milliseconds to wait for connection initialization before time out.")
-  @Macro
-  @Nullable
-  private final Integer connectTimeout;
-
   public SalesforceConnectorConfig(@Nullable String consumerKey,
-                              @Nullable String consumerSecret,
-                              @Nullable String username,
-                              @Nullable String password,
-                              @Nullable String loginUrl,
-                              @Nullable String securityToken,
-                              @Nullable Integer connectTimeout,
-                              @Nullable OAuthInfo oAuthInfo) {
+                                   @Nullable String consumerSecret,
+                                   @Nullable String username,
+                                   @Nullable String password,
+                                   @Nullable String loginUrl,
+                                   @Nullable String securityToken,
+                                   @Nullable Integer connectTimeout,
+                                   @Nullable OAuthInfo oAuthInfo,
+                                   @Nullable String proxyUrl) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -100,6 +106,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
     this.securityToken = securityToken;
     this.connectTimeout = connectTimeout;
     this.oAuthInfo = oAuthInfo;
+    this.proxyUrl = proxyUrl;
   }
 
   @Nullable
@@ -135,14 +142,14 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Nullable
   public Integer getConnectTimeout() {
     if (connectTimeout == null) {
-       return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
+      return SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
     }
     return connectTimeout;
   }
 
-  public void validate(FailureCollector collector) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     try {
-      validateConnection();
+      validateConnection(oAuthInfo);
     } catch (Exception e) {
       collector.addFailure("Error encountered while establishing connection: " + e.getMessage(),
                            "Please verify authentication properties are provided correctly")
@@ -154,18 +161,12 @@ public class SalesforceConnectorConfig extends PluginConfig {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout());
+      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout(),
+                                          getProxyUrl());
     }
-    try {
-      this.oAuthInfo = Authenticator.getOAuthInfo(new AuthenticatorCredentials(getUsername(), getPassword(),
-              getConsumerKey(),
-              getConsumerSecret(), getLoginUrl(), getConnectTimeout()));
-    } catch (Exception e) {
-      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
-      throw new RuntimeException(String.format("Failed to connect and authenticate to Salesforce: %s",
-              errorMessage), e);
-    }
-    return new AuthenticatorCredentials(this.oAuthInfo, getConnectTimeout());
+    return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
+                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout(),
+                                        getProxyUrl());
   }
 
   /**
@@ -194,18 +195,18 @@ public class SalesforceConnectorConfig extends PluginConfig {
       || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
-  private void validateConnection() {
-    if (!canAttemptToEstablishConnection()) {
+  private void validateConnection(@Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo == null) {
       return;
     }
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(this.getAuthenticatorCredentials());
+      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout(),
+                                                                                 getProxyUrl()));
     } catch (ConnectionException e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-          String.format("Failed to establish and validate connection to salesforce : %s",
-              e.getMessage()),
-          e);
+        String.format("Failed to establish and validate connection to salesforce: %s", message), e);
     }
   }
 
@@ -216,4 +217,10 @@ public class SalesforceConnectorConfig extends PluginConfig {
       return password;
     }
   }
+
+  @Nullable
+  public String getProxyUrl() {
+    return proxyUrl;
+  }
+
 }

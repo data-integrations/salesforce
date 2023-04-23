@@ -133,8 +133,21 @@ public class SalesforceSourceConstants {
    * Sleep time between polling the batch status
    */
   public static final long GET_BATCH_RESULTS_SLEEP_MS = 500;
+
+  /**
+   * Sleep time between polling the batch status for Salesforce Sink
+   */
+  public static final long GET_SINK_BATCH_RESULTS_SLEEP_MS = 5000;
+  
   /**
    * Number of tries while polling the batch status
    */
   public static final long GET_BATCH_RESULTS_TRIES = GET_BATCH_WAIT_TIME_SECONDS * (1000 / GET_BATCH_RESULTS_SLEEP_MS);
+
+  /**
+   * Salesforce Bulk API has a limitation, which is 10 minutes per processing of a batch. But for serial mode,
+   * we can't get the exact no. of batches as batches are getting submitted from multiple nodes.
+   * So, setting this to a large value to avoid timeout issues.
+   */
+  public static final long GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE = 600000;
 }

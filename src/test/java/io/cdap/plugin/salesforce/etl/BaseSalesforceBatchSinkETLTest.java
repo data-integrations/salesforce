@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.etl;
 
+import com.sforce.async.ConcurrencyMode;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.artifact.ArtifactSummary;
@@ -228,8 +229,8 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
                                     BaseSalesforceETLTest.CONSUMER_KEY, BaseSalesforceETLTest.CONSUMER_SECRET,
                                     BaseSalesforceETLTest.USERNAME, BaseSalesforceETLTest.PASSWORD,
                                     BaseSalesforceETLTest.LOGIN_URL, 30000, sObject, "Insert", null,
-                                    "1000000", "10000", "Stop on Error",
+                                    ConcurrencyMode.Parallel.name(), "1000000", "10000", "Stop on Error",
                                     BaseSalesforceETLTest.SECURITY_TOKEN,
-                                    null);
+                                    null, null);
   }
 }

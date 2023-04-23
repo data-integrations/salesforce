@@ -47,6 +47,7 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceBatchSink;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
@@ -54,8 +55,6 @@ import io.cdap.plugin.salesforce.plugin.source.batch.MapToRecordTransformer;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SoapRecordToMapTransformer;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -70,7 +69,6 @@ import java.util.Map;
 @Name(SalesforceConstants.PLUGIN_NAME)
 @Description("Connection to access data in Salesforce SObject.")
 public class SalesforceConnector implements DirectConnector {
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceConnector.class);
   private static final String ENTITY_TYPE_OBJECTS = "object";
   private static final String LABEL_NAME = "label";
   private final SalesforceConnectorConfig config;
@@ -83,7 +81,8 @@ public class SalesforceConnector implements DirectConnector {
   @Override
   public void test(ConnectorContext connectorContext) throws ValidationException {
     FailureCollector collector = connectorContext.getFailureCollector();
-    config.validate(collector);
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config, collector);
+    config.validate(collector, oAuthInfo);
   }
 
   @Override
@@ -92,7 +91,8 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),
-                                                                        config.getConnectTimeout());
+                                                                        config.getConnectTimeout(),
+                                                                        config.getProxyUrl());
     BrowseDetail.Builder browseDetailBuilder = BrowseDetail.builder();
     int count = 0;
     try {
@@ -110,7 +110,8 @@ public class SalesforceConnector implements DirectConnector {
         count++;
       }
     } catch (ConnectionException e) {
-      throw  new IOException("Unable to create the connection.", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IOException(String.format("Cannot establish connection to Salesforce with error: %s", message), e);
     }
     return browseDetailBuilder.setTotalCount(count).build();
   }
@@ -129,11 +130,14 @@ public class SalesforceConnector implements DirectConnector {
     }
     AuthenticatorCredentials authenticatorCredentials = config.getAuthenticatorCredentials();
     try {
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(tableName, authenticatorCredentials);
+      String fields = getObjectFields(tableName);
+      String query = String.format("SELECT %s FROM %s", fields, tableName);
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       Schema schema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);
       specBuilder.setSchema(schema);
     } catch (ConnectionException e) {
-      throw new IOException("Unable to generate Schema", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IOException(String.format("Unable to generate Schema due to error: %s", message), e);
     }
     return specBuilder.addRelatedPlugin(new PluginSpec(SalesforceBatchSource.NAME, BatchSource.PLUGIN_TYPE,
                                                        properties)).
@@ -150,7 +154,8 @@ public class SalesforceConnector implements DirectConnector {
     try {
       return listObjectDetails(object, sampleRequest.getLimit());
     } catch (AsyncApiException | ConnectionException e) {
-      throw new IOException("unable to fetch records", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IOException(String.format("unable to fetch records due to error: %s", message), e);
     }
   }
 
@@ -161,7 +166,8 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),
-                                                                        config.getConnectTimeout());
+                                                                        config.getConnectTimeout(),
+                                                                        config.getProxyUrl());
     String fields = getObjectFields(object);
     String query = String.format("SELECT %s FROM %s LIMIT %d", fields, object, limit);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);

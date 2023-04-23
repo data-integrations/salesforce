@@ -19,6 +19,7 @@ import com.sforce.async.AsyncApiException;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
+import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
@@ -50,9 +51,10 @@ public final class SalesforceSplitUtil {
 
   /**
    * Generates and returns Salesforce splits for a query
-   * @param query the query for the sobject
+   *
+   * @param query          the query for the sobject
    * @param bulkConnection used to create salesforce jobs
-   * @param enablePKChunk indicates if pk chunking is enabled
+   * @param enablePKChunk  indicates if pk chunking is enabled
    * @return list of salesforce splits
    */
   public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection,
@@ -67,9 +69,9 @@ public final class SalesforceSplitUtil {
    * original query. If not, switches to wide object logic, i.e. generates Id query to retrieve batch info for Ids only
    * that will be used later to retrieve data using SOAP API.
    *
-   * @param query SOQL query
+   * @param query          SOQL query
    * @param bulkConnection bulk connection
-   * @param enablePKChunk enable PK Chunking
+   * @param enablePKChunk  enable PK Chunking
    * @return array of batch info
    */
   private static BatchInfo[] getBatches(String query, BulkConnection bulkConnection,
@@ -84,10 +86,10 @@ public final class SalesforceSplitUtil {
       return batches;
     } catch (AsyncApiException | IOException e) {
       throw new RuntimeException(
-          String.format("Failed to run a Salesforce bulk query (%s): %s",
-              query,
-              e.getMessage()),
-          e);
+        String.format("Failed to run a Salesforce bulk query (%s): %s",
+                      query,
+                      e.getMessage()),
+        e);
     }
   }
 
@@ -95,19 +97,19 @@ public final class SalesforceSplitUtil {
    * Start batch job of reading a given guery result.
    *
    * @param bulkConnection bulk connection instance
-   * @param query a SOQL query
-   * @param enablePKChunk enable PK Chunk
+   * @param query          a SOQL query
+   * @param enablePKChunk  enable PK Chunk
    * @return an array of batches
-   * @throws AsyncApiException  if there is an issue creating the job
-   * @throws IOException failed to close the query
+   * @throws AsyncApiException if there is an issue creating the job
+   * @throws IOException       failed to close the query
    */
   private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query,
                                           boolean enablePKChunk, String operation)
     throws AsyncApiException, IOException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(),
-            getOperationEnum(operation), null);
+    JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), getOperationEnum(operation),
+                                               null, ConcurrencyMode.Parallel);
     BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);
@@ -137,18 +139,19 @@ public final class SalesforceSplitUtil {
       return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
     } catch (AsyncApiException e) {
       throw new RuntimeException(
-          String.format("Failed to create a connection to Salesforce bulk API: %s", e.getMessage()),
-          e);
+        String.format("Failed to create a connection to Salesforce bulk API: %s", e.getMessage()),
+        e);
     }
   }
 
-  /** When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
+  /**
+   * When PK Chunk is enabled, wait for state of initial batch to be NotProcessed, in this case Salesforce API will
    * decide how many batches will be created
+   *
    * @param bulkConnection bulk connection instance
-   * @param jobId a job id
+   * @param jobId          a job id
    * @param initialBatchId a batch id
    * @return Array with Batches created by Salesforce API
-   *
    * @throws AsyncApiException if there is an issue creating the job
    */
   private static BatchInfo[] waitForBatchChunks(BulkConnection bulkConnection, String jobId, String initialBatchId)
@@ -211,7 +214,7 @@ public final class SalesforceSplitUtil {
       return OperationEnum.valueOf(operation);
     } catch (IllegalArgumentException ex) {
       throw new InvalidConfigException("Unsupported value for operation: " + operation,
-              SalesforceSourceConstants.PROPERTY_OPERATION);
+                                       SalesforceSourceConstants.PROPERTY_OPERATION);
     }
   }
 }

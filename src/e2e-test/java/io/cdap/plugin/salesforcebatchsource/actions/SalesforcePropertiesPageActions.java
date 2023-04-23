@@ -21,7 +21,10 @@ import io.cdap.e2e.utils.AssertionHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.e2e.utils.SeleniumHelper;
 import io.cdap.e2e.utils.WaitHelper;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfigBuilder;
@@ -124,12 +127,11 @@ public class SalesforcePropertiesPageActions {
   }
 
   private static AuthenticatorCredentials setAuthenticationCredentialsOfAdminUser() {
-    return new AuthenticatorCredentials(
-      PluginPropertyUtils.pluginProp("admin.username"),
+    return new AuthenticatorCredentials(PluginPropertyUtils.pluginProp("admin.username"),
       PluginPropertyUtils.pluginProp("admin.password"),
       PluginPropertyUtils.pluginProp("admin.consumer.key"),
       PluginPropertyUtils.pluginProp("admin.consumer.secret"),
-      PluginPropertyUtils.pluginProp("login.url")
+      PluginPropertyUtils.pluginProp("login.url"), null, null
     );
   }
 
@@ -151,7 +153,16 @@ public class SalesforcePropertiesPageActions {
 
   public static SchemaTable getExpectedSchemaTableForSOQLQuery(SOQLQueryType queryType) {
     SalesforceBatchSource batchSource = new SalesforceBatchSource(getSourceConfigWithSOQLQuery(queryType));
-    Schema expectedSchema = batchSource.retrieveSchema();
+    OAuthInfo oAuthInfo = null;
+    try {
+      oAuthInfo =
+              Authenticator.getOAuthInfo(getSourceConfigWithSOQLQuery(queryType).getConnection()
+                      .getAuthenticatorCredentials());
+    } catch (Exception e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw  new RuntimeException("Error encountered while establishing connection: " + message);
+    }
+    Schema expectedSchema = batchSource.retrieveSchema(oAuthInfo);
     return getExpectedSchemaTableFromSchema(expectedSchema);
   }
 
@@ -173,7 +184,16 @@ public class SalesforcePropertiesPageActions {
 
   public static SchemaTable getExpectedSchemaTableForSObjectQuery(SObjects sObjectName) {
     SalesforceBatchSource batchSource = new SalesforceBatchSource(getSourceConfigWithSObjectName(sObjectName));
-    Schema expectedSchema = batchSource.retrieveSchema();
+    OAuthInfo oAuthInfo = null;
+    try {
+      oAuthInfo =
+              Authenticator.getOAuthInfo(getSourceConfigWithSObjectName(sObjectName).getConnection()
+                      .getAuthenticatorCredentials());
+    } catch (Exception e) {
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw  new RuntimeException("Error encountered while establishing connection: " + message);
+    }
+    Schema expectedSchema = batchSource.retrieveSchema(oAuthInfo);
     return getExpectedSchemaTableFromSchema(expectedSchema);
   }
 

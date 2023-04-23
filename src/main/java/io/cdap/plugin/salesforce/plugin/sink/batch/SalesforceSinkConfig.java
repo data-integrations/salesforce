@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.google.common.base.Strings;
+import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.OperationEnum;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.PartnerConnection;
@@ -38,8 +39,9 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -49,12 +51,14 @@ import javax.annotation.Nullable;
  * Provides the configurations for {@link SalesforceBatchSink} plugin.
  */
 public class SalesforceSinkConfig extends ReferencePluginConfig {
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceSinkConfig.class);
   public static final String PROPERTY_ERROR_HANDLING = "errorHandling";
   public static final String PROPERTY_MAX_BYTES_PER_BATCH = "maxBytesPerBatch";
   public static final String PROPERTY_MAX_RECORDS_PER_BATCH = "maxRecordsPerBatch";
   public static final String PROPERTY_SOBJECT = "sObject";
   public static final String PROPERTY_OPERATION = "operation";
   public static final String PROPERTY_EXTERNAL_ID_FIELD = "externalIdField";
+  public static final String PROPERTY_CONCURRENCY_MODE = "concurrencyMode";
 
   private static final String SALESFORCE_ID_FIELD = "Id";
 
@@ -88,6 +92,18 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Macro
   private String externalIdField;
 
+  @Name(PROPERTY_CONCURRENCY_MODE)
+  @Description("The concurrency mode for the bulk job. Select one of the following options: \n" +
+    "Parallel - Process batches in parallel mode.\n" +
+    "Serial - Process batches in serial mode. Processing in parallel can cause lock contention. When this is severe, " +
+    "the Salesforce job can fail. If you’re experiencing this issue, in the Salesforce sink, change concurrency " +
+    "mode to Serial and run the pipeline again. This mode guarantees that batches are processed one at a time, but " +
+    "can significantly increase the processing time.\n" +
+    "Default is Parallel.")
+  @Macro
+  @Nullable
+  protected String concurrencyMode;
+
   @Name(PROPERTY_MAX_BYTES_PER_BATCH)
   @Description("Maximum size in bytes of a batch of records when writing to Salesforce. " +
     "This value cannot be greater than 10,000,000.")
@@ -103,7 +119,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Name(PROPERTY_ERROR_HANDLING)
   @Description("Strategy used to handle erroneous records.\n" +
     "Skip on error - Ignores erroneous records.\n" +
-    "Stop on error - Fails pipeline due to erroneous record.")
+    "Fail on error - Fails pipeline due to erroneous record.")
   @Macro
   private String errorHandling;
 
@@ -126,17 +142,19 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable String loginUrl,
                               @Nullable Integer connectTimeout,
                               String sObject,
-                              String operation, String externalIdField,
+                              String operation, String externalIdField, String concurrencyMode,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
                               String errorHandling,
                               @Nullable String securityToken,
-                              @Nullable OAuthInfo oAuthInfo) {
+                              @Nullable OAuthInfo oAuthInfo,
+                              @Nullable String proxyUrl) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
-                                               securityToken, connectTimeout, oAuthInfo);
+                                               securityToken, connectTimeout, oAuthInfo, proxyUrl);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
+    this.concurrencyMode = concurrencyMode;
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
@@ -168,6 +186,19 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   public String getExternalIdField() {
     return externalIdField;
+  }
+
+  public String getConcurrencyMode() {
+    return concurrencyMode;
+  }
+
+  public ConcurrencyMode getConcurrencyModeEnum() {
+    try {
+      return ConcurrencyMode.valueOf(concurrencyMode);
+    } catch (Exception ex) {
+      LOG.info("Value received was {}. Default concurrency mode i.e. Parallel is used instead.", concurrencyMode);
+      return ConcurrencyMode.Parallel;
+    }
   }
 
   public Long getMaxBytesPerBatch() {
@@ -210,16 +241,28 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     return String.format("salesforce://%s/%s.%s", firstFQNPart, orgId, sObject);
   }
 
-  public String getOrgId() throws ConnectionException {
+  public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
-      (connection.getAuthenticatorCredentials());
+      (credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
   }
 
-  public void validate(Schema schema, FailureCollector collector) {
+  public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (connection != null) {
-      connection.validate(collector);
+      connection.validate(collector, oAuthInfo);
     }
+    validateSinkProperties(collector);
+    validateSchema(schema, collector, oAuthInfo);
+  }
+
+  /**
+   * Validate the plugin properties which can be tested without establishing a connection. e.g. operation, max records.
+   * @param collector      FailureCollector
+   */
+  public void validateSinkProperties(FailureCollector collector) {
     if (!containsMacro(PROPERTY_ERROR_HANDLING)) {
       // triggering getter will also trigger value validity check
       try {
@@ -238,6 +281,15 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       }
     }
 
+    if (!containsMacro(PROPERTY_CONCURRENCY_MODE)) {
+      // triggering getter will also trigger value validity check
+      try {
+        getConcurrencyModeEnum();
+      } catch (InvalidConfigException e) {
+        collector.addFailure(e.getMessage(), null).withConfigProperty(PROPERTY_CONCURRENCY_MODE);
+      }
+    }
+
     if (!containsMacro(PROPERTY_MAX_BYTES_PER_BATCH)) {
       long maxBytesPerBatch = getMaxBytesPerBatch();
 
@@ -248,7 +300,6 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
         collector.addFailure(errorMessage, null).withConfigProperty(PROPERTY_MAX_BYTES_PER_BATCH);
       }
     }
-
 
     if (!containsMacro(PROPERTY_MAX_RECORDS_PER_BATCH)) {
       long maxRecordsPerBatch = getMaxRecordsPerBatch();
@@ -261,22 +312,20 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       }
     }
     collector.getOrThrowException();
-    validateSchema(schema, collector);
   }
 
-  private void validateSchema(Schema schema, FailureCollector collector) {
-    List<Schema.Field> fields = schema.getFields();
-    if (fields == null || fields.isEmpty()) {
+  private void validateSchema(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (schema == null || schema.getFields() == null || schema.getFields().isEmpty()) {
       collector.addFailure("Sink schema must contain at least one field", null);
       throw collector.getOrThrowException();
     }
     if (connection != null) {
-      if (!connection.canAttemptToEstablishConnection() || containsMacro(PROPERTY_SOBJECT)
+      if (oAuthInfo == null || containsMacro(PROPERTY_SOBJECT)
         || containsMacro(PROPERTY_OPERATION) || containsMacro(PROPERTY_EXTERNAL_ID_FIELD)) {
         return;
       }
     }
-    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector);
+    SObjectsDescribeResult describeResult = getSObjectDescribeResult(collector, oAuthInfo);
     Set<String> creatableSObjectFields = getCreatableSObjectFields(describeResult);
 
     Set<String> inputFields = schema.getFields()
@@ -305,11 +354,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(
-          String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
+            String.format("SObject '%s' does not contain external id field '%s'", sObject, externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       } else if (!externalIdField.isExternalId() && !externalIdField.getName().equals(SALESFORCE_ID_FIELD)) {
         collector.addFailure(
-          String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
+            String.format("Field '%s' is not configured as external id in Salesforce", externalIdFieldName), null)
           .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
       }
     } else if (operation == OperationEnum.insert || operation == OperationEnum.update) {
@@ -328,7 +377,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     if (!inputFields.isEmpty()) {
       for (String inputField : inputFields) {
         collector.addFailure(
-          String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
+            String.format("Field '%s' is not present or not creatable in target Salesforce sObject.", inputField), null)
           .withInputSchemaField(inputField);
       }
     }
@@ -345,13 +394,13 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     return creatableSObjectFields;
   }
 
-  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector) {
-    AuthenticatorCredentials credentials = this.connection.getAuthenticatorCredentials();
+  private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
+    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                        this.getConnection().getConnectTimeout(),
+                                                                        this.connection.getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(),
-                                                                       this.connection.
-                                                                         getAuthenticatorCredentials());
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
     } catch (ConnectionException e) {

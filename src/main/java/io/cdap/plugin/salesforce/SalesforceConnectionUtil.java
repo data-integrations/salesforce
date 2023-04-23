@@ -19,9 +19,11 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.fault.IApiFault;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -56,8 +58,9 @@ public class SalesforceConnectionUtil {
     if (conf.get(SalesforceConstants.CONFIG_CONNECT_TIMEOUT) != null) {
       connectTimeout = Integer.parseInt(conf.get(SalesforceConstants.CONFIG_CONNECT_TIMEOUT));
     }
+    String proxyUrl = conf.get(SalesforceConstants.CONFIG_PROXY_URL);
     if (oAuthToken != null && instanceURL != null) {
-      return new AuthenticatorCredentials(new OAuthInfo(oAuthToken, instanceURL), connectTimeout);
+      return new AuthenticatorCredentials(new OAuthInfo(oAuthToken, instanceURL), connectTimeout, proxyUrl);
     }
 
     return new AuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
@@ -65,11 +68,10 @@ public class SalesforceConnectionUtil {
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
                                         conf.get(SalesforceConstants.CONFIG_LOGIN_URL),
-                                        connectTimeout);
+                                        connectTimeout, proxyUrl);
   }
 
   /**
-   *
    * @param e Exception thrown from salesforce APIs
    * @return  error message sent by APIs.
    */
@@ -79,5 +81,27 @@ public class SalesforceConnectionUtil {
     } else {
       return e.getMessage();
     }
+  }
+  /**
+   *
+   * @param config     SalesforceConnectorConfig from where credentials can be taken
+   * @param collector  FailureCollector
+   * @return           OAuthInfo which contains Access Token and login URL.
+   */
+  public static OAuthInfo getOAuthInfo(SalesforceConnectorConfig config, FailureCollector collector) {
+    if (!config.canAttemptToEstablishConnection()) {
+      return null;
+    }
+    OAuthInfo oAuthInfo = null;
+    try {
+      oAuthInfo = Authenticator.getOAuthInfo(config.getAuthenticatorCredentials());
+    } catch (Exception e) {
+      String message = getSalesforceErrorMessageFromException(e);
+      collector.addFailure("Error encountered while establishing connection: " + message,
+                           "Please verify authentication properties are provided correctly")
+        .withStacktrace(e.getStackTrace());
+      throw collector.getOrThrowException();
+    }
+    return oAuthInfo;
   }
 }

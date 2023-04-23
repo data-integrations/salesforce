@@ -12,24 +12,32 @@ and the value is the schema of the SObject.
 Configuration
 -------------
 
+**Use Connection:** Whether to use a connection. If a connection is used, you do not need to provide the credentials.
+
+**Connection:** Name of the connection to use.
+
 **Reference Name:** Name used to uniquely identify this source for lineage, annotating metadata, etc.
 
 **Username:** Salesforce username.
 
 **Password:** Salesforce password.
 
-**Security Token:** Salesforce security Token. If the password does not contain the security token the plugin 
-will append the token before authenticating with salesforce.
+**Security Token:** Salesforce security token. If the password does not contain the security token, the plugin 
+will append the token before authenticating with Salesforce.
 
-**Consumer Key:** Application Consumer Key. This is also known as the OAuth client id.
+**Consumer Key:** Application Consumer Key. This is also known as the OAuth client ID.
 A Salesforce connected application must be created in order to get a consumer key.
 
 **Consumer Secret:** Application Consumer Secret. This is also known as the OAuth client secret.
 A Salesforce connected application must be created in order to get a client secret.
 
-**Login Url:** Salesforce OAuth2 login url.
+**Login URL:** Salesforce OAuth2 login URL.
+
+**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+
+**Proxy URL:** Proxy URL. Must contain a protocol, address and port.
 
 **White List**: List of SObjects to read from. By default all SObjects will be white listed. 
 For each white listed SObject, a SOQL query will be generated of the form:

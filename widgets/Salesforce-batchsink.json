@@ -90,6 +90,19 @@
       ]
     },
     {
+      "label": "HTTP Proxy",
+      "properties": [
+        {
+          "widget-type": "textbox",
+          "label": "Proxy URL",
+          "name": "proxyUrl",
+          "widget-attributes" : {
+            "placeholder": "Proxy Url"
+          }
+        }
+      ]
+    },
+    {
       "label": "Advanced",
       "properties": [
         {
@@ -135,6 +148,25 @@
           "name": "externalIdField"
         },
         {
+          "name": "concurrencyMode",
+          "label": "Job Concurrency Mode",
+          "widget-type": "radio-group",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "Parallel",
+            "options": [
+              {
+                "id": "Serial",
+                "label": "Serial"
+              },
+              {
+                "id": "Parallel",
+                "label": "Parallel"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "Max Records Per Batch",
           "name": "maxRecordsPerBatch",
@@ -157,7 +189,7 @@
           "widget-attributes": {
             "values": [
               "Skip on error",
-              "Stop on error"
+              "Fail on error"
             ],
             "default": "Skip on error"
           }
@@ -199,6 +231,10 @@
         {
           "type": "property",
           "name": "connectTimeout"
+        },
+        {
+          "type": "property",
+          "name": "proxyUrl"
         }
       ]
     },

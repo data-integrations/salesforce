@@ -29,6 +29,7 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
@@ -47,27 +48,25 @@ import javax.annotation.Nullable;
  */
 public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SalesforceMultiSourceConfig.class);
-
   public static final String SOBJECT_NAME_FIELD_DEFAULT = "tablename";
-
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceMultiSourceConfig.class);
   @Name(SalesforceSourceConstants.PROPERTY_WHITE_LIST)
   @Macro
   @Nullable
   @Description("List of SObjects to fetch from Salesforce. By default all SObjects will be white listed")
-  private String whiteList;
+  private final String whiteList;
 
   @Name(SalesforceSourceConstants.PROPERTY_BLACK_LIST)
   @Macro
   @Nullable
   @Description("List of SObjects NOT to fetch from Salesforce. By default NONE of SObjects will be black listed")
-  private String blackList;
+  private final String blackList;
 
   @Name(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME_FIELD)
   @Nullable
   @Description("The name of the field that holds SObject name. "
     + "Must not be the name of any sObject column that will be read. Defaults to 'tablename'.")
-  private String sObjectNameField;
+  private final String sObjectNameField;
 
   public SalesforceMultiSourceConfig(String referenceName,
                                      @Nullable String consumerKey,
@@ -85,9 +84,10 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String sObjectNameField,
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
-                                     @Nullable String operation) {
+                                     @Nullable String operation,
+                                     @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation);
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;
@@ -105,9 +105,9 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     return Strings.isNullOrEmpty(sObjectNameField) ? SOBJECT_NAME_FIELD_DEFAULT : sObjectNameField;
   }
 
-  public void validate(FailureCollector collector) {
+  public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (super.getConnection() != null) {
-      super.getConnection().validate(collector);
+      super.getConnection().validate(collector, oAuthInfo);
     }
     validateFilters(collector);
   }
@@ -148,9 +148,9 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
    * @param logicalStartTime application start time
    * @return list of SObject queries
    */
-  public List<String> getQueries(long logicalStartTime) {
+  public List<String> getQueries(long logicalStartTime, OAuthInfo oAuthInfo) {
     List<String> queries = getSObjects().parallelStream()
-      .map(sObject -> getSObjectQuery(sObject, null, logicalStartTime))
+      .map(sObject -> getSObjectQuery(sObject, null, logicalStartTime, oAuthInfo))
       .collect(Collectors.toList());
 
     if (queries.isEmpty()) {
@@ -164,14 +164,21 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
   /**
    * validate whiteList and blackList SObjects
    */
-  public void validateSObjects(FailureCollector collector) {
+  public void validateSObjects(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
+    if (oAuthInfo == null) {
+      return;
+    }
     DescribeGlobalResult describeGlobalResult;
     try {
+      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+                                                                          getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getProxyUrl());
       PartnerConnection partnerConnection =
-        SalesforceConnectionUtil.getPartnerConnection(getConnection().getAuthenticatorCredentials());
+        SalesforceConnectionUtil.getPartnerConnection(credentials);
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
-      throw new IllegalArgumentException("Unable to connect to Salesforce", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IllegalArgumentException(String.format("Unable to connect to Salesforce due to error: %s", message), e);
     }
     Set<String> whileList = getWhiteList();
     Set<String> blackList = getBlackList();
@@ -185,16 +192,18 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
       collect(Collectors.toList());
 
     if (!invalidWhiteListedSObject.isEmpty()) {
-      collector.addFailure(String.format("Invalid SObject name %s in whitelist",  String.join(", ",
-       invalidWhiteListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_WHITE_LIST);
+      collector.addFailure(String.format("Invalid SObject name %s in whitelist",
+                                         String.join(", ", invalidWhiteListedSObject)),
+                           "").withConfigProperty(SalesforceSourceConstants.PROPERTY_WHITE_LIST);
     }
 
     List<String> invalidBlackListedSObject = blackList.stream().filter(name -> !sObjects.contains(name)).
       collect(Collectors.toList());
 
     if (!invalidBlackListedSObject.isEmpty()) {
-      collector.addFailure(String.format("Invalid SObject name %s in blacklist", String.join(", ",
-       invalidBlackListedSObject)), "").withConfigProperty(SalesforceSourceConstants.PROPERTY_BLACK_LIST);
+      collector.addFailure(String.format("Invalid SObject name %s in blacklist",
+                                         String.join(", ", invalidBlackListedSObject)),
+                           "").withConfigProperty(SalesforceSourceConstants.PROPERTY_BLACK_LIST);
     }
 
   }
@@ -211,7 +220,8 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
         SalesforceConnectionUtil.getPartnerConnection(getConnection().getAuthenticatorCredentials());
       describeGlobalResult = partnerConnection.describeGlobal();
     } catch (ConnectionException e) {
-      throw new IllegalArgumentException("Unable to connect to Salesforce", e);
+      String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new IllegalArgumentException(String.format("Unable to connect to Salesforce due to error: %s", message), e);
     }
 
     Set<String> whileList = getWhiteList();

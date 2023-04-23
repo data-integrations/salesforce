@@ -23,6 +23,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.streaming.StreamingContext;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.spark.streaming.api.java.JavaDStream;
 import org.apache.spark.streaming.api.java.JavaStreamingContext;
 import org.json.JSONException;
@@ -44,9 +45,10 @@ final class SalesforceStreamingSourceUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SalesforceStreamingSourceUtil.class);
 
   static JavaDStream<StructuredRecord> getStructuredRecordJavaDStream(StreamingContext streamingContext,
-                                                                      SalesforceStreamingSourceConfig config)
+                                                                      SalesforceStreamingSourceConfig config,
+                                                                      OAuthInfo oAuthInfo)
     throws ConnectionException {
-    config.ensurePushTopicExistAndWithCorrectFields(); // run when macros are substituted
+    config.ensurePushTopicExistAndWithCorrectFields(oAuthInfo); // run when macros are substituted
 
     Schema schema = streamingContext.getOutputSchema();
 
@@ -132,7 +134,7 @@ final class SalesforceStreamingSourceUtil {
       } else {
         throw new UnexpectedFormatException(
           String.format("Field '%s' is of type '%s', but value found is '%s'",
-                        field.getName(), fieldSchemaType.toString(), value.toString()));
+                        field.getName(), fieldSchemaType, value));
       }
     }
 
