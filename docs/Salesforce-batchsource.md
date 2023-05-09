@@ -98,8 +98,8 @@ for example generates Id query to retrieve batch info only for Ids that will be 
 **Last Modified After:** Filter data to only include records where the system field `LastModifiedDate` is greater than 
 or equal to the specified date. The date must be provided in the Salesforce date format:
 
-|              Format              |       Format Syntax       |          Example          |
-| -------------------------------- | ------------------------- | ------------------------- |
+| Format                           | Format Syntax             | Example                   |
+|----------------------------------|---------------------------|---------------------------|
 | Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
 |                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
 |                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
@@ -109,8 +109,8 @@ If no value is provided, no lower bound for LastModifiedDate is applied.
 **Last Modified Before:** Filter data to only include records where the system field `LastModifiedDate` is less than 
 the specified date. The date must be provided in the Salesforce date format:
 
-|              Format              |       Format Syntax       |          Example          |
-| -------------------------------- | ------------------------- | ------------------------- |
+| Format                           | Format Syntax             | Example                   |
+|----------------------------------|---------------------------|---------------------------|
 | Date, time, and time zone offset | YYYY-MM-DDThh:mm:ss+hh:mm | 1999-01-01T23:01:01+01:00 |
 |                                  | YYYY-MM-DDThh:mm:ss-hh:mm | 1999-01-01T23:01:01-08:00 |
 |                                  | YYYY-MM-DDThh:mm:ssZ      | 1999-01-01T23:01:01Z      |
@@ -122,8 +122,8 @@ If no value is provided, no upper bound for `LastModifiedDate` is applied.
 For example, if the duration is '6 hours' and the pipeline runs at 9am, it will read data that was last updated 
 from 3am (inclusive) to 9am (exclusive). The duration is specified using numbers and time units:
 
-|  Unit   |
-| ------- |
+| Unit    |
+|---------|
 | SECONDS |
 | MINUTES |
 | HOURS   |
@@ -139,8 +139,8 @@ of the pipeline minus the given offset. For example, if duration is '6 hours' an
 runs at 9am, data last modified between 2am (inclusive) and 8am (exclusive) will be read. 
 The duration is specified using numbers and time units:
 
-|  Unit   |
-| ------- |
+| Unit    |
+|---------|
 | SECONDS |
 | MINUTES |
 | HOURS   |
@@ -154,18 +154,18 @@ The offset is ignored if a value is already specified for `Last Modified After` 
 **Schema:** The schema of output objects.
 The Salesforce types will be automatically mapped to schema types as shown below:
 
-| Schema type |                              Salesforce type                               |    Notes     |
-| ----------- | -------------------------------------------------------------------------- | ------------ |
-| bool        | _bool                                                                      |              |
-| int         | _int                                                                       |              |
-| long        | _long                                                                      |              |
-| double      | _double, currency, percent                                                 |              |
-| date        | date                                                                       |              |
-| timestamp   | datetime                                                                   | Microseconds |
-| time        | time                                                                       | Microseconds |
-| string      | picklist, multipicklist, combobox, reference, base64,                      |              |
-|             | textarea, phone, id, url, email, encryptedstring,                          |              |
-|             | datacategorygroupreference, location, address, anyType, json, complexvalue |              |
+| Schema type | Salesforce type                                                             | Notes        |
+|-------------|-----------------------------------------------------------------------------|--------------|
+| bool        | _bool                                                                       |              |
+| int         | _int                                                                        |              |
+| long        | _long                                                                       |              |
+| double      | _double, currency, percent, geolocation (latitude), geolocation (longitude) |              |
+| date        | date                                                                        |              |
+| timestamp   | datetime                                                                    | Microseconds |
+| time        | time                                                                        | Microseconds |
+| string      | picklist, multipicklist, combobox, reference, base64,                       |              |
+|             | textarea, phone, id, url, email, encryptedstring,                           |              |
+|             | datacategorygroupreference, location, address, anyType, json, complexvalue  |              |
 
 **Enable PK Chunking:**
 Primary key (PK) Chunking splits query on large tables into chunks based on the record IDs, or primary keys, of the queried records.
