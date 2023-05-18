@@ -16,12 +16,14 @@
 
 package io.cdap.plugin.salesforcemultiobjectsbatchsource.stepsdesign;
 
+import io.cdap.plugin.salesforcebatchsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.salesforcemultiobjectsbatchsource.actions.SalesforceMultiObjectsPropertiesPageActions;
 import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,5 +66,11 @@ public class DesignTimeSteps {
   public void verifyInvalidSObjectNameValidationMessageForBlackList() {
     SalesforceMultiObjectsPropertiesPageActions
       .verifyInvalidSObjectNameValidationMessageForBlackList(blackListedSObjects);
+  }
+
+  @Then("Validate record created in Sink application for Multi Objects are equal to expected output file {string}")
+  public void validateRecordCreatedInSinkApplicationForMultiObjectsAreEqualToExpectedOutputFile(String
+  expectedOutputFile) throws IOException, InterruptedException {
+    SalesforceMultiObjectsPropertiesPageActions.verifyIfRecordCreatedInSinkForObjectsAreCorrect(expectedOutputFile);
   }
 }
