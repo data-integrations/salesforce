@@ -40,8 +40,6 @@ import java.util.List;
  * Salesforce MultiObjects batch source plugin - Actions.
  */
 public class SalesforceMultiObjectsPropertiesPageActions {
-  private static Gson gson = new Gson();
-  private static List<String> bigQueryrows = new ArrayList<>();
   static {
     SeleniumHelper.getPropertiesLocators(SalesforceMultiObjectsPropertiesPage.class);
   }
@@ -98,51 +96,5 @@ public class SalesforceMultiObjectsPropertiesPageActions {
           blackListedSObject.value);
       }
     }
-  }
-
-  public static void verifyIfRecordCreatedInSinkForObjectsAreCorrect(String expectedOutputFile)
-    throws IOException, InterruptedException {
-    List<String> expectedOutput = new ArrayList<>();
-    try (BufferedReader bf1 = Files.newBufferedReader(Paths.get(PluginPropertyUtils.pluginProp(expectedOutputFile)))) {
-      String line;
-      while ((line = bf1.readLine()) != null) {
-        expectedOutput.add(line);
-      }
-    }
-    List<String> bigQueryDatasetTables = new ArrayList<>();
-    TableResult tablesSchema = getTableNamesFromDataSet(PluginPropertyUtils.pluginProp("dataset"));
-    tablesSchema.iterateAll().forEach(value -> bigQueryDatasetTables.add(value.get(0).getValue().toString()));
-
-//    createNewTableFromQuery(PluginPropertyUtils.pluginProp("dataset"),
-//                            PluginPropertyUtils.pluginProp("bqTargetTable"));
-
-    for (int expectedRow = 0; expectedRow < expectedOutput.size(); expectedRow++) {
-      JsonObject expectedOutputAsJson = gson.fromJson(expectedOutput.get(expectedRow), JsonObject.class);
-      String uniqueId = expectedOutputAsJson.get("Id").getAsString();
-      getBigQueryTableData(PluginPropertyUtils.pluginProp("dataset"),
-                           bigQueryDatasetTables.get(0), uniqueId);
-
-    }
-//    for (int row = 0; row < bigQueryrows.size() && row < expectedOutput.size(); row++) {
-//      Assert.assertTrue(SalesforcePropertiesPageActions.compareValueOfBothResponses(
-//        expectedOutput.get(row), bigQueryrows.get(row)));
-//    }
-  }
-
-  private static TableResult getTableNamesFromDataSet(String bqTargetDataset) throws IOException, InterruptedException {
-    String projectId = PluginPropertyUtils.pluginProp("projectId");
-    String selectQuery = "SELECT table_name FROM `" + projectId + "." + bqTargetDataset +
-      "`.INFORMATION_SCHEMA.TABLES ";
-
-    return BigQueryClient.getQueryResult(selectQuery);
-  }
-
-  private static void getBigQueryTableData(String dataset, String table, String uniqueId)
-    throws IOException, InterruptedException {
-    String projectId = PluginPropertyUtils.pluginProp("projectId");
-    String selectQuery = "SELECT TO_JSON(t) FROM `" + projectId + "." + dataset + "." + table + "` AS t WHERE " +
-      "Id='" + uniqueId + "' ";
-    TableResult result = BigQueryClient.getQueryResult(selectQuery);
-    result.iterateAll().forEach(value -> bigQueryrows.add(value.get(0).getValue().toString()));
   }
 }

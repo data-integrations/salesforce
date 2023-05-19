@@ -777,6 +777,14 @@
             <version>31.0.1-jre</version>
             <scope>compile</scope>
           </dependency>
+
+          <!-- Adding this dependency to resolve soql error in local remove if running tests on Github Actions. -->
+          <dependency>
+            <groupId>io.cdap.cdap</groupId>
+            <artifactId>cdap-spark-core2_2.11</artifactId>
+            <version>${cdap.version}</version>
+            <scope>compile</scope>
+          </dependency>
         </dependencies>
       </dependencyManagement>
       <dependencies>

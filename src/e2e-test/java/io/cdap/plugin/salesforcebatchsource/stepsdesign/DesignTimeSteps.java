@@ -56,7 +56,7 @@ public class DesignTimeSteps {
   @When("Click on the Macro button of SOQL Property: {string} and set the value to: {string}")
   public void fillValueInMacroEnabledSoqlProperty(String property, String value) {
     CdfPluginPropertiesActions.clickMacroButtonOfProperty(property);
-    SalesforcePropertiesPageActions.fillSOQLPropertyField(value);
+    SalesforcePropertiesPageActions.fillSOQLPropertyField(SOQLQueryType.valueOf(value));
   }
 
   @When("configure Salesforce source for an SOQL Query of type: {string}")

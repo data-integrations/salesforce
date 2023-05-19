@@ -32,7 +32,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
-    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
+    And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
@@ -93,7 +93,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
     And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
     And Click on the Macro button of Property: "blackList" and set the value to: "BlackList"
-    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
+    And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list

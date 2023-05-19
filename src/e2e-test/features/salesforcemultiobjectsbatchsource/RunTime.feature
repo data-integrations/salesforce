@@ -67,7 +67,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Reference Name property
     And fill Black List with below listed SObjects:
       | ACCOUNT | CONTACT |
-    And fill 'Last Modified After' property in format yyyy-MM-ddThh:mm:ssZ: "last.modified.after"
+    And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
