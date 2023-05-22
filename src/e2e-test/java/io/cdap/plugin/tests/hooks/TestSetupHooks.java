@@ -191,4 +191,11 @@ public class TestSetupHooks {
       }
     }
   }
+
+  @Before(order = 1, value = "@CONNECTION")
+  public static void setNewConnectionName() {
+    String connectionName = "SalesforceConnection" + RandomStringUtils.randomAlphanumeric(10);
+    PluginPropertyUtils.addPluginProp("connection.name", connectionName);
+    BeforeActions.scenario.write("New Connection name: " + connectionName);
+  }
 }

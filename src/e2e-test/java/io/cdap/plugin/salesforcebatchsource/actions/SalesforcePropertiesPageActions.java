@@ -17,6 +17,8 @@
 package io.cdap.plugin.salesforcebatchsource.actions;
 
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.e2e.pages.locators.CdfPluginPropertiesLocators;
+import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.e2e.utils.SeleniumHelper;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
@@ -196,5 +198,10 @@ public class SalesforcePropertiesPageActions {
   }
 
   public static void verifyIfRecordCreatedInSinkForObjectIsCorrect(String expectedOutputFile) {
+  }
+
+  public static void clickOnServicenowConnection() {
+    String connectionName = PluginPropertyUtils.pluginProp("connection.name");
+    ElementHelper.clickOnElement(CdfPluginPropertiesLocators.locateElementContainingText(connectionName));
   }
 }

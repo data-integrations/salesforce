@@ -59,3 +59,18 @@ Feature: Salesforce Multi Objects Batch Source - Design time - validation scenar
     And Click on the Validate button
     Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format"
     And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format"
+
+  @MULTIBATCH-TS-SF-DSGN-ERROR-04
+  Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties with invalid values
+    Then Click on the Test Connection button
+    Then Verify the invalid connection error message: "invalid.testconnection.logmessage" on the footer

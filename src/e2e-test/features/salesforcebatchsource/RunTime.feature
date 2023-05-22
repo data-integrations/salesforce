@@ -91,3 +91,42 @@ Feature: Salesforce Batch Source - Run time Scenarios
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
     Then Validate record created in Sink application for Object is equal to expected output file "expectedOutputFile1"
+
+  @BATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST
+  Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And Enter input plugin property: "referenceName" with value: "referenceName"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties for Salesforce Admin user
+    Then Click on the Test Connection button
+    And Verify the test connection is successful
+    Then Click on the Create button
+    Then Use new connection
+    And Enter textarea plugin property: "query" with value: "opportunity.query"
+    Then Validate "Salesforce" plugin properties
+    And Capture the generated Output Schema
+    And Close the Plugin Properties page
+    And Select Sink plugin: "BigQueryTable" from the plugins list
+    And Navigate to the properties page of plugin: "BigQuery"
+    Then Replace input plugin property: "project" with value: "projectId"
+    Then Enter input plugin property: "datasetProject" with value: "projectId"
+    Then Enter input plugin property: "referenceName" with value: "BQReferenceName"
+    Then Enter input plugin property: "dataset" with value: "dataset"
+    Then Enter input plugin property: "table" with value: "bqTargetTable"
+    Then Validate "BigQuery" plugin properties
+    Then Close the Plugin Properties page
+    Then Connect plugins: "Salesforce" and "BigQuery" to establish connection
+    And Save and Deploy Pipeline
+    And Run the Pipeline in Runtime
+    And Wait till pipeline is in running state
+    And Open and capture logs
+    And Verify the pipeline status is "Succeeded"
+    Then Close the pipeline logs
+#    Then Validate record created in Sink application for Object is equal to expected output file "expectedOutputFile1"

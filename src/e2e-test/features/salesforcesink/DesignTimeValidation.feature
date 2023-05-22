@@ -59,3 +59,17 @@ Feature: Salesforce Sink - Design time - validation scenarios
     Examples:
       | SObjectName |
       | LEAD        |
+
+  @Sink-TS-SF-DSGN-ERROR-04 @CONNECTION
+  Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select Sink plugin: "Salesforce" from the plugins list
+    And Navigate to the properties page of plugin: "Salesforce"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties with invalid values
+    Then Click on the Test Connection button
+    Then Verify the invalid connection error message: "invalid.testconnection.logmessage" on the footer

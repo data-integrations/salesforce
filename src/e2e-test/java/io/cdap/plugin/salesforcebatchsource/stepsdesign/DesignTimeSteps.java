@@ -85,4 +85,9 @@ public class DesignTimeSteps {
     SalesforcePropertiesPageActions.verifyIfRecordCreatedInSinkForObjectIsCorrect(expectedOutputFile);
   }
 
+  @Then("Use new connection")
+  public void clickOnNewServiceNowConnection() {
+    SalesforcePropertiesPageActions.clickOnServicenowConnection();
+  }
+
 }

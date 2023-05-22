@@ -46,3 +46,17 @@ Feature: Salesforce Sink  - Design time scenarios
       | ACCOUNT     |  INSERT         |
       | ACCOUNT     |  UPDATE         |
       | ACCOUNT     |  UPSERT         |
+
+  @SINK-TS-SF-DSGN-02 @BQ_SOURCE_TEST @CONNECTION
+  Scenario: Verify user should be able to create the valid connection using connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select Sink plugin: "Salesforce" from the plugins list
+    And Navigate to the properties page of plugin: "Salesforce"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties for Salesforce Admin user
+    Then Click on the Test Connection button
+    And Verify the test connection is successful
