@@ -15,6 +15,7 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
+@SourceAndSink
 Feature: Salesforce Batch Source - Design time - validation scenarios
 
   @BATCH-TS-SF-DSGN-ERROR-01

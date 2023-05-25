@@ -16,6 +16,7 @@
 @SFMultiObjectsBatchSource
 @Smoke
 @Regression
+@SourceAndSink
 Feature: Salesforce Multi Objects Batch Source - Design time - validation scenarios
 
   @MULTIBATCH-TS-SF-DSGN-ERROR-01

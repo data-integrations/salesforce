@@ -15,6 +15,7 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
+@SourceAndSink
 Feature: Salesforce Batch Source - Run time Scenarios (macro)
 
   @BATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK @FILE_PATH @BQ_TEMP_CLEANUP

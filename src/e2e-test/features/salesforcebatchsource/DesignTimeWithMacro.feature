@@ -15,6 +15,7 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
+@SourceAndSink
 Feature: Salesforce Batch Source - Design time Scenarios (macro)
 
   @BATCH-TS-SF-DSGN-MACRO-01

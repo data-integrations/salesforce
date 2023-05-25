@@ -94,7 +94,6 @@ public class SalesforceMultiObjectsPropertiesPageActions {
       for (SObjects blackListedSObject : blackListedSObjects) {
         AssertionHelper.verifyElementContainsText(SalesforceMultiObjectsPropertiesPage.propertyErrorInBlackList,
           blackListedSObject.value);
-        //comment.
       }
     }
   }
