@@ -16,6 +16,7 @@
 @SFMultiObjectsBatchSource
 @Smoke
 @Regression
+@SourceAndSink
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
 
   @MULTIBATCH-TS-SF-RNTM-01 @BQ_SINK_TEST

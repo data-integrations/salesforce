@@ -16,6 +16,7 @@
 @SFBatchSource
 @Smoke
 @Regression
+@SourceAndSink
 Feature: Salesforce Batch Source - Design time Scenarios
 
   @BATCH-TS-SF-DSGN-01

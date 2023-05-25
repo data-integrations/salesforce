@@ -16,6 +16,7 @@
 @SFMultiObjectsBatchSource
 @Smoke
 @Regression
+@SourceAndSink
 Feature: Salesforce Multi Objects Batch Source - Design time Scenarios
 
   @MULTIBATCH-TS-SF-DSGN-01

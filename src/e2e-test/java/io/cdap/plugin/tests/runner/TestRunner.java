@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
     "io.cdap.plugin.salesforcemultiobjectsbatchsource.stepsdesign",
     "io.cdap.plugin.bigquery.stepsdesign",
     "io.cdap.plugin.tests.hooks", "stepsdesign"},
-  tags = {"@Regression", "@SalesforceSalesCloud"},
+  tags = {"@SourceAndSink"},
   monochrome = true,
   plugin = {"pretty", "html:target/cucumber-html-report", "json:target/cucumber-reports/cucumber.json",
     "junit:target/cucumber-reports/cucumber.xml"}
