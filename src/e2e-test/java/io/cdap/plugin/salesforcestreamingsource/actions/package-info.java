@@ -14,23 +14,8 @@
  * the License.
  */
 
-package io.cdap.plugin.utils;
-
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Schema Table.
+ * Salesforce Streaming plugin - Actions.
  */
-public class SchemaTable {
+package io.cdap.plugin.salesforcestreamingsource.actions;
 
-  private final List<SchemaFieldTypeMapping> listOfFields = new ArrayList<>();
-
-  public void addField(SchemaFieldTypeMapping fieldTypeMapping) {
-    listOfFields.add(fieldTypeMapping);
-  }
-
-  public List<SchemaFieldTypeMapping> getListOfFields() {
-    return listOfFields;
-  }
-}

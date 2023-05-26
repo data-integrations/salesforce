@@ -14,15 +14,9 @@
  * the License.
  */
 
-package io.cdap.plugin.utils;
-
 /**
- * Miscellaneous utils.
+ * Salesforce batch source - Locators.
  */
-public class MiscUtils {
-  public static String getSubStringBetweenDoubleQuotes(String stringWithDoubleQuotes) {
-    int indexOfQuoteStart = stringWithDoubleQuotes.indexOf('"');
-    int indexOfQuoteEnd = stringWithDoubleQuotes.indexOf('"', indexOfQuoteStart + 1);
-    return stringWithDoubleQuotes.substring(indexOfQuoteStart + 1, indexOfQuoteEnd);
-  }
-}
+
+package io.cdap.plugin.salesforcesink.locators;
+

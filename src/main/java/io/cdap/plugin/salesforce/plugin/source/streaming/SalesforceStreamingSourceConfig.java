@@ -317,7 +317,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
    * @param query a SOQL query
    * @return query result
    */
-  private static QueryResult runQuery(PartnerConnection partnerConnection, String query) throws ConnectionException {
+  public static QueryResult runQuery(PartnerConnection partnerConnection, String query) throws ConnectionException {
     ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
     ClassLoader classClassLoader = SalesforceStreamingSourceConfig.class.getClassLoader();
 

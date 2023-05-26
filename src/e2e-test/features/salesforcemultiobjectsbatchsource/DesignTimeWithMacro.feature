@@ -17,57 +17,57 @@
 @Smoke
 @Regression
 
-Feature: Salesforce Multi Objects Batch Source - Design time Scenarios
+Feature: Salesforce Multi Objects Batch Source - Design time Scenarios (macros)
 
-  @MULTIBATCH-TS-SF-DSGN-01
-  Scenario: Verify user should be able to successfully validate the source for valid SObject names in the White List
+  @MULTIBATCH-TS-SF-DSGN-MACRO-01
+  Scenario: Verify user should be able to validate the plugin when Authentication section is configured for macros
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
+    And fill Reference Name property
+    And Click on the Macro button of Property: "username" and set the value to: "Username"
+    And Click on the Macro button of Property: "password" and set the value to: "Password"
+    And Click on the Macro button of Property: "securityToken" and set the value to: "SecurityToken"
+    And Click on the Macro button of Property: "consumerKey" and set the value to: "ConsumerKey"
+    And Click on the Macro button of Property: "consumerSecret" and set the value to: "ConsumerSecret"
+    And Click on the Macro button of Property: "loginUrl" and set the value to: "LoginUrl"
+    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
+    Then Validate "SalesforceMultiObjects" plugin properties
+
+  @MULTIBATCH-TS-SF-DSGN-MACRO-02
+  Scenario: Verify user should be able to validate the plugin when configured for White List with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill White List with below listed SObjects:
-      | ACCOUNT | CONTACT |
+    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
     Then Validate "SalesforceMultiObjects" plugin properties
 
-  @MULTIBATCH-TS-SF-DSGN-02
-  Scenario: Verify user should be able to successfully validate the source for valid SObject names in the Black List
+  @MULTIBATCH-TS-SF-DSGN-MACRO-03
+  Scenario: Verify user should be able to validate the plugin when configured for Black List with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill Black List with below listed SObjects:
-      | ACCOUNT | CONTACT |
+    And Click on the Macro button of Property: "blackList" and set the value to: "BlackList"
     Then Validate "SalesforceMultiObjects" plugin properties
 
-  @MULTIBATCH-TS-SF-DSGN-03
-  Scenario: Verify user should be able to successfully validate the source with Incremental Load Properties
+  @MULTIBATCH-TS-SF-DSGN-MACRO-04
+  Scenario: Verify user should be able to validate the plugin when Incremental Load Properties are configured with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
-    And fill White List with below listed SObjects:
-      | ACCOUNT | CONTACT |
-    And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
-    And Enter input plugin property: "datetimeBefore" with value: "last.modified.before"
+    And Click on the Macro button of Property: "whiteList" and set the value to: "WhiteList"
+    And Click on the Macro button of Property: "datetimeAfter" and set the value to: "datetimeAfter"
+    And Click on the Macro button of Property: "datetimeBefore" and set the value to: "datetimeBefore"
+    And Click on the Macro button of Property: "duration" and set the value to: "duration"
+    And Click on the Macro button of Property: "offset" and set the value to: "offset"
     Then Validate "SalesforceMultiObjects" plugin properties
-
-  @MULTIBATCH-TS-SF-DSGN-04 @CONNECTION
-  Scenario: Verify user should be able to create the valid connection using connection manager functionality
-    When Open Datafusion Project to configure pipeline
-    And Select data pipeline type as: "Batch"
-    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
-    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
-    And Click plugin property: "switch-useConnection"
-    And Click on the Browse Connections button
-    And Click on the Add Connection button
-    And Click plugin property: "connector-Salesforce"
-    And Enter input plugin property: "name" with value: "connection.name"
-    And fill Authentication properties for Salesforce Admin user
-    Then Click on the Test Connection button
-    And Verify the test connection is successful
