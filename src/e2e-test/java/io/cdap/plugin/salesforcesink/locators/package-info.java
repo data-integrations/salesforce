@@ -14,25 +14,9 @@
  * the License.
  */
 
-package io.cdap.plugin.utils;
-
 /**
- * Schema Type - Mapping.
+ * Salesforce batch source - Locators.
  */
-public class SchemaFieldTypeMapping {
-  private final String field;
-  private final String type;
 
-  public SchemaFieldTypeMapping(String field, String type) {
-    this.field = field;
-    this.type = type;
-  }
+package io.cdap.plugin.salesforcesink.locators;
 
-  public String getField() {
-    return field;
-  }
-
-  public String getType() {
-    return type;
-  }
-}

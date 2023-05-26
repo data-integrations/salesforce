@@ -15,6 +15,7 @@
 @SalesforceSalesCloud
 @SFBatchSource
 @Regression
+
 Feature: Salesforce Batch Source - Design time - validation scenarios
 
   @BATCH-TS-SF-DSGN-ERROR-01
@@ -28,7 +29,7 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
       | referenceName |
 
   @BATCH-TS-SF-DSGN-ERROR-02
-  Scenario: Verify validation message when user leaves Authentication Properties fields blank
+  Scenario: Verify validation message when user leaves Authentication Properties blank
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
     And Select plugin: "Salesforce" from the plugins list as: "Source"
@@ -83,3 +84,32 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And fill SObject Name property with an SObject Name: "Invalidobject"
     And Click on the Validate button
     Then Verify that the Plugin is displaying an error message: "invalid.sobjectname.error" on the header
+
+  @BATCH-TS-SF-DSGN-ERROR-07
+  Scenario: Verify validation message for invalid date formats used in Last Modified After and Before properties
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And fill Authentication properties for Salesforce Admin user
+    And configure Salesforce source for an SObject Query of SObject: "ACCOUNT"
+    And Enter input plugin property: "datetimeAfter" with value: "abc"
+    And Enter input plugin property: "datetimeBefore" with value: "abc"
+    And Click on the Validate button
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format.after"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format.before"
+
+  @BATCH-TS-SF-DSGN-ERROR-08
+  Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "Salesforce"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties with invalid values
+    Then Click on the Test Connection button
+    Then Verify the invalid connection error message: "invalid.testconnection.logmessage" on the footer
