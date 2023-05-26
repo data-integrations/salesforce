@@ -50,4 +50,7 @@ public class SalesforceConstants {
   public static final String PROPERTY_PROXY_URL = "proxyUrl";
   public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";
   public static final String REGEX_PROXY_URL = "^(?i)(https?)://.*$";
+
+  public static final String PROPERTY_MAX_RETRY_TIME_IN_MINS = "cdap.streaming.maxRetryTimeInMins";
+  public static final long DEFAULT_MAX_RETRY_TIME_IN_MINS = 360L;
 }
