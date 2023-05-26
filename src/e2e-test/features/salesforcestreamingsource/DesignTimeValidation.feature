@@ -16,6 +16,7 @@
 @@SFStreamingSource
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Streaming Source - Design time - validation scenarios
 
   @STREAMING-TS-SF-DSGN-ERROR-01

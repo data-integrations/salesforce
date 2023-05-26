@@ -16,6 +16,7 @@
 @SFStreamingSource
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Streaming Source - Run time Scenarios (macros)
 
   @STREAMING-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST

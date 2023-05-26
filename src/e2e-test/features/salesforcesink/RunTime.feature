@@ -16,6 +16,7 @@
 @SFSink
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Sink - Run time Scenarios
 
   @SINK-TS-SF-RNTM-01 @BQ_SOURCE_TEST

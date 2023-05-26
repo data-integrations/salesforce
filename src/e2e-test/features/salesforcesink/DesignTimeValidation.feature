@@ -16,6 +16,7 @@
 @SFSink
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Sink - Design time - validation scenarios
 
   @SINK-TS-SF-DSGN-ERROR-01

@@ -16,6 +16,7 @@
 @SFSink
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Sink - Design time Scenarios (macro)
 
   @SINK-TS-SF-RNTM-MACRO-01 @BQ_SOURCE_TEST

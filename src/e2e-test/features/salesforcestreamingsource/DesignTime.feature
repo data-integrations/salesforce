@@ -16,6 +16,7 @@
 @@SFStreamingSource
 @Smoke
 @Regression
+@SinkAndStre
 Feature: Salesforce Streaming Source - Design time scenarios
 
   @STREAMING-TS-SF-DSGN-01
