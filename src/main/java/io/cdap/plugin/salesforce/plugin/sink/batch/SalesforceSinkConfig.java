@@ -340,6 +340,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
         break;
       case upsert:
         externalIdFieldName = getExternalIdField();
+        if (Strings.isNullOrEmpty(externalIdFieldName)) {
+          collector.addFailure(
+              String.format("External id field must be set for operation='%s'", operation), null)
+            .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+        }
         break;
       case update:
         externalIdFieldName = SALESFORCE_ID_FIELD;
@@ -349,7 +354,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
           .withConfigProperty(PROPERTY_OPERATION);
     }
 
-    if (operation == OperationEnum.upsert) {
+    if (operation == OperationEnum.upsert && externalIdFieldName != null) {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(
