@@ -57,17 +57,24 @@ public final class SalesforceBulkUtil {
   /**
    * Create a new job using the Bulk API.
    *
+   * @param bulkConnection  BulkConnection object that will connect to salesforce server using bulk APIs.
+   * @param sObject         sObject name
+   * @param operationEnum   Operation that need to be performed on sObject
+   * @param externalIdField externalIdField will be used in case of update/upsert operation.
+   * @param concurrencyMode concurrencyMode can be serial/parallel.
+   * @param contentType     contentType will be CSV for query jobs and ZIP_CSV for insert jobs.
    * @return The JobInfo for the new job.
    * @throws AsyncApiException if there is an issue creating the job
    */
+
   public static JobInfo createJob(BulkConnection bulkConnection, String sObject, OperationEnum operationEnum,
                                   @Nullable String externalIdField,
-                                  ConcurrencyMode concurrencyMode) throws AsyncApiException {
+                                  ConcurrencyMode concurrencyMode, ContentType contentType) throws AsyncApiException {
     JobInfo job = new JobInfo();
     job.setObject(sObject);
     job.setOperation(operationEnum);
     job.setConcurrencyMode(concurrencyMode);
-    job.setContentType(ContentType.CSV);
+    job.setContentType(contentType);
     if (externalIdField != null) {
       job.setExternalIdFieldName(externalIdField);
     }
