@@ -27,33 +27,6 @@ import java.util.List;
  */
 public class SalesforceMultiObjectsPropertiesPage {
 
-  // SalesforceMultiObjects Batch Source - Properties page
-  @FindBy(how = How.XPATH, using = "//div[contains(@class, 'label-input-container')]//input")
-  public static WebElement labelInput;
-
-  // SalesforceMultiObjects Batch Source - Properties page - Reference section
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='referenceName']")
-  public static WebElement referenceInput;
-
-  // SalesforceMultiObjects Batch Source - Properties page - Authentication section
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='username']")
-  public static WebElement usernameInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='password']")
-  public static WebElement passwordInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='securityToken']")
-  public static WebElement securityTokenInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerKey']")
-  public static WebElement consumerKeyInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='consumerSecret']")
-  public static WebElement consumerSecretInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='loginUrl']")
-  public static WebElement loginUrlInput;
-
   // SalesforceMultiObjects Batch Source - Properties page - SObject specification section
   @FindBy(how = How.XPATH, using = "//div[@data-cy='whiteList']//input")
   public static List<WebElement> sObjectNameInputsInWhiteList;
@@ -77,18 +50,4 @@ public class SalesforceMultiObjectsPropertiesPage {
   @FindBy(how = How.XPATH, using = "//div[@data-cy='blackList']" +
     "//following-sibling::div[contains(@class, 'propertyError')]")
   public static WebElement propertyErrorInBlackList;
-
-  @FindBy(how = How.XPATH, using = "//div[@data-cy='blackList']//button[@data-cy='remove-row']")
-  public static List<WebElement> sObjectNameRemoveRowButtonsInBlackList;
-
-  // SalesforceMultiObjects Batch Source - Properties page - Incremental Load Properties section
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='datetimeAfter']")
-  public static WebElement lastModifiedAfterInput;
-
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='datetimeBefore']")
-  public static WebElement lastModifiedBeforeInput;
-
-  // SalesforceMultiObjects Batch Source - Properties page - Advanced section
-  @FindBy(how = How.XPATH, using = "//input[@data-cy='sObjectNameField']")
-  public static WebElement sObjectNameFieldInput;
 }

@@ -16,30 +16,63 @@
 @SFMultiObjectsBatchSource
 @Smoke
 @Regression
+
+
 Feature: Salesforce Multi Objects Batch Source - Design time - validation scenarios
 
-  @MULTIBATCH-TS-SF-DSGN-14
+  @MULTIBATCH-TS-SF-DSGN-ERROR-01
   Scenario: Verify validation message for incorrect SObject names in the White List
     When Open Datafusion Project to configure pipeline
-    And Select data pipeline type as 'Data Pipeline - Batch'
-    And Select plugin: "Salesforce Multi Objects" from the plugins list
-    And Navigate to the properties page of plugin: "Salesforce MultiObjects"
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
     And fill White List with below listed SObjects:
       | ACCOUNTZZ | BLAHBLAH |
-    And click on the Validate button
+    And Click on the Validate button
     Then verify invalid SObject name validation message for White List
 
-  @MULTIBATCH-TS-SF-DSGN-15
+  @MULTIBATCH-TS-SF-DSGN-ERROR-02
   Scenario: Verify validation message for incorrect SObject names in the Black List
     When Open Datafusion Project to configure pipeline
-    And Select data pipeline type as 'Data Pipeline - Batch'
-    And Select plugin: "Salesforce Multi Objects" from the plugins list
-    And Navigate to the properties page of plugin: "Salesforce MultiObjects"
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
     And fill Black List with below listed SObjects:
       | ACCOUNTZZ | LEADSS |
-    And click on the Validate button
+    And Click on the Validate button
     Then verify invalid SObject name validation message for Black List
+
+  @MULTIBATCH-TS-SF-DSGN-ERROR-03
+  Scenario: Verify validation message for invalid date formats used in Last Modified After and Before properties
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
+    And fill Reference Name property
+    And fill Authentication properties for Salesforce Admin user
+    And fill White List with below listed SObjects:
+      | ACCOUNT | CONTACT |
+    And Enter input plugin property: "datetimeAfter" with value: "abc"
+    And Enter input plugin property: "datetimeBefore" with value: "abc"
+    And Click on the Validate button
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format.after"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format.before"
+
+  @MULTIBATCH-TS-SF-DSGN-ERROR-04
+  Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality
+    When Open Datafusion Project to configure pipeline
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
+    And Click plugin property: "switch-useConnection"
+    And Click on the Browse Connections button
+    And Click on the Add Connection button
+    And Click plugin property: "connector-Salesforce"
+    And Enter input plugin property: "name" with value: "connection.name"
+    And fill Authentication properties with invalid values
+    Then Click on the Test Connection button
+    Then Verify the invalid connection error message: "invalid.testconnection.logmessage" on the footer
