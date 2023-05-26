@@ -20,6 +20,7 @@ import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.ConcurrencyMode;
+import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
@@ -108,7 +109,7 @@ public final class SalesforceSplitUtil {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), getOperationEnum(operation),
-                                               null, ConcurrencyMode.Parallel);
+                                               null, ConcurrencyMode.Parallel, ContentType.CSV);
     BatchInfo batchInfo;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
       batchInfo = bulkConnection.createBatchFromStream(job, bout);

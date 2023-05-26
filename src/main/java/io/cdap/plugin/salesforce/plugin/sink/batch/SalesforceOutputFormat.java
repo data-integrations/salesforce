@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.BulkConnection;
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
@@ -35,10 +36,10 @@ import java.io.IOException;
  * An OutputFormat that sends the output of a Hadoop job to the Salesforce record writer, also
  * it defines the output committer.
  */
-public class SalesforceOutputFormat extends OutputFormat<NullWritable, CSVRecord> {
+public class SalesforceOutputFormat extends OutputFormat<NullWritable, StructuredRecord> {
 
   @Override
-  public RecordWriter<NullWritable, CSVRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
+  public RecordWriter<NullWritable, StructuredRecord> getRecordWriter(TaskAttemptContext taskAttemptContext)
     throws IOException {
 
     try {
