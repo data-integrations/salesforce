@@ -16,6 +16,8 @@
 
 package io.cdap.plugin.salesforce.connectorservice;
 
+import static com.google.cloud.bigquery.federation.v1alpha1.DataSource.Capability.SUPPORTS_SYNCHRONOUS_QUERIES;
+
 import com.google.cloud.connector.api.AssetName;
 import com.google.cloud.connector.api.Connector;
 import com.google.cloud.connector.api.ConnectorContext;
@@ -41,8 +43,6 @@ import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 
-import static com.google.cloud.bigquery.federation.v1alpha1.DataSource.Capability.SUPPORTS_SYNCHRONOUS_QUERIES;
-
 /** Connector to test connector loading. */
 public class ConnectorServiceSalesforce implements Connector {
 
@@ -64,8 +64,8 @@ public class ConnectorServiceSalesforce implements Connector {
         assetName.components().size() == 2,
         "Asset name should be datasources/salesforce/sobjects/{}");
     Preconditions.checkArgument(
-        assetName.components().get(1).resourceId() != null &&
-        !assetName.components().get(1).resourceId().isEmpty(),
+        assetName.components().get(1).resourceId() != null
+            && !assetName.components().get(1).resourceId().isEmpty(),
         "Asset name {} in datasources/salesforce/sobjects/{} should not be empty");
     System.out.println("Resolve schema for assertName " + assetName.name());
     SalesforceSourceConfig sourceConfig =
@@ -143,40 +143,56 @@ public class ConnectorServiceSalesforce implements Connector {
     builder.name("salesforce-schema");
     for (Schema.Field f : schema.getFields()) {
       FieldBuilder fieldBuilder = builder.field().name(f.getName());
-      switch (f.getSchema().getType()) {
-        case NULL:
-          throw new UnsupportedOperationException("Salesforce null type is unsupported");
-        case BOOLEAN:
-          fieldBuilder.typeBoolean();
+    }
+  }
+
+  private void fromCdapType(Schema schema, FieldBuilder fieldBuilder) {
+    switch (schema.getType()) {
+      case NULL:
+        throw new UnsupportedOperationException("Salesforce null type is unsupported");
+      case BOOLEAN:
+        fieldBuilder.typeBoolean();
+        break;
+      case INT:
+      case LONG:
+        fieldBuilder.typeInteger();
+        break;
+      case FLOAT:
+      case DOUBLE:
+        fieldBuilder.typeFloat();
+        break;
+      case BYTES:
+        fieldBuilder.typeBytes();
+        break;
+      case STRING:
+        fieldBuilder.typeString();
+        break;
+      case ENUM:
+        throw new UnsupportedOperationException("Salesforce enum type is unsupported");
+      case ARRAY:
+        throw new UnsupportedOperationException("Salesforce array type is unsupported");
+      case MAP:
+        throw new UnsupportedOperationException("Salesforce map type is unsupported");
+      case RECORD:
+        throw new UnsupportedOperationException("Salesforce record type is unsupported");
+      case UNION:
+        boolean set = false;
+        for (Schema unionSchema : schema.getUnionSchemas()) {
+          if (unionSchema.getType() == Schema.Type.NULL) {
+            continue;
+          }
+          if (!set) {
+            fromCdapType(unionSchema, fieldBuilder);
+            set = true;
+          } else {
+            throw new UnsupportedOperationException(
+                "Salesforce union type with multiple non-null is unsupported");
+          }
           break;
-        case INT:
-        case LONG:
-          fieldBuilder.typeInteger();
-          break;
-        case FLOAT:
-        case DOUBLE:
-          fieldBuilder.typeFloat();
-          break;
-        case BYTES:
-          fieldBuilder.typeBytes();
-          break;
-        case STRING:
-          fieldBuilder.typeString();
-          break;
-        case ENUM:
-          throw new UnsupportedOperationException("Salesforce enum type is unsupported");
-        case ARRAY:
-          throw new UnsupportedOperationException("Salesforce array type is unsupported");
-        case MAP:
-          throw new UnsupportedOperationException("Salesforce map type is unsupported");
-        case RECORD:
-          throw new UnsupportedOperationException("Salesforce record type is unsupported");
-        case UNION:
-          throw new UnsupportedOperationException("Salesforce union type is unsupported");
-        default:
-          throw new UnsupportedOperationException(
-              String.format("Salesforce type '%s' is unsupported", f.getSchema().getType()));
-      }
+        }
+      default:
+        throw new UnsupportedOperationException(
+            String.format("Salesforce type '%s' is unsupported", f.getSchema().getType()));
     }
   }
 
