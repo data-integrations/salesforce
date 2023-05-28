@@ -143,6 +143,7 @@ public class ConnectorServiceSalesforce implements Connector {
     builder.name("salesforce-schema");
     for (Schema.Field f : schema.getFields()) {
       FieldBuilder fieldBuilder = builder.field().name(f.getName());
+      fromCdapType(f.getSchema(), fieldBuilder);
     }
   }
 
@@ -192,7 +193,7 @@ public class ConnectorServiceSalesforce implements Connector {
         }
       default:
         throw new UnsupportedOperationException(
-            String.format("Salesforce type '%s' is unsupported", f.getSchema().getType()));
+            String.format("Salesforce type '%s' is unsupported", schema.getType()));
     }
   }
 
