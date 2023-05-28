@@ -14,8 +14,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
 
@@ -46,8 +46,11 @@
   </developers>
 
   <scm>
-    <connection>scm:git:https://github.com/data-integrations/salesforce.git</connection>
-    <developerConnection>scm:git:git@github.com:data-integrations/salesforce.git</developerConnection>
+    <connection>scm:git:https://github.com/data-integrations/salesforce.git
+    </connection>
+    <developerConnection>
+      scm:git:git@github.com:data-integrations/salesforce.git
+    </developerConnection>
     <url>https://github.com/data-integrations/salesforce.git</url>
     <tag>HEAD</tag>
   </scm>
@@ -102,14 +105,14 @@
   </pluginRepositories>
 
   <distributionManagement>
-      <repository>
-          <id>sonatype.release</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-      </repository>
-      <snapshotRepository>
-          <id>sonatype.snapshots</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-      </snapshotRepository>
+    <repository>
+      <id>sonatype.release</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+    </repository>
+    <snapshotRepository>
+      <id>sonatype.snapshots</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <dependencies>
@@ -532,6 +535,23 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/libs</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.7.0</version>
         <configuration>
@@ -547,7 +567,8 @@
           <argLine>-Xmx3g -Djava.awt.headless=true -XX:+UseConcMarkSweepGC
             -Djava.net.preferIPv4Stack=true
           </argLine>
-          <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}</redirectTestOutputToFile>
+          <redirectTestOutputToFile>${surefire.redirectTestOutputToFile}
+          </redirectTestOutputToFile>
           <reportFormat>plain</reportFormat>
           <systemPropertyVariables>
             <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
@@ -630,8 +651,10 @@
             <configuration>
 
               <sourceDirectories>
-                <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-                <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+                <sourceDirectory>${project.build.sourceDirectory}
+                </sourceDirectory>
+                <sourceDirectory>${project.build.testSourceDirectory}
+                </sourceDirectory>
               </sourceDirectories>
 
               <configLocation>checkstyle.xml</configLocation>
@@ -643,7 +666,8 @@
                 <testSourceDirectory>src/test/java</testSourceDirectory>
                 <testSourceDirectory>src/e2e-test/java</testSourceDirectory>
               </testSourceDirectories>
-              <excludes>**/org/apache/cassandra/**,**/org/apache/hadoop/**</excludes>
+              <excludes>**/org/apache/cassandra/**,**/org/apache/hadoop/**
+              </excludes>
             </configuration>
             <goals>
               <goal>check</goal>
@@ -714,7 +738,7 @@
             </goals>
             <configuration>
               <connectorClass>
-                io.cdap.plugin.salesforce.connectorservice.SalesforceConnector
+                io.cdap.plugin.salesforce.connectorservice.ConnectorServiceSalesforce
               </connectorClass>
               <protoFileName>
                 connector.textproto
@@ -778,15 +802,20 @@
                   <goal>generate</goal>
                 </goals>
                 <configuration>
-                  <projectName>Cucumber Reports</projectName> <!-- Replace with project name -->
-                  <outputDirectory>target/cucumber-reports/advanced-reports</outputDirectory>
+                  <projectName>Cucumber Reports
+                  </projectName> <!-- Replace with project name -->
+                  <outputDirectory>target/cucumber-reports/advanced-reports
+                  </outputDirectory>
                   <buildNumber>1</buildNumber>
                   <skip>false</skip>
-                  <inputDirectory>${project.build.directory}/cucumber-reports</inputDirectory>
+                  <inputDirectory>${project.build.directory}/cucumber-reports
+                  </inputDirectory>
                   <jsonFiles> <!-- supports wildcard or name pattern -->
                     <param>**/*.json</param>
                   </jsonFiles> <!-- optional, defaults to outputDirectory if not specified -->
-                  <classificationDirectory>${project.build.directory}/cucumber-reports</classificationDirectory>
+                  <classificationDirectory>
+                    ${project.build.directory}/cucumber-reports
+                  </classificationDirectory>
                   <checkBuildResult>true</checkBuildResult>
                 </configuration>
               </execution>
@@ -855,7 +884,9 @@
               <additionalparam>-Xdoclint:none</additionalparam>
               <failOnError>false</failOnError>
               <links>
-                <link>http://download.oracle.com/javase/${jee.version}/docs/api/</link>
+                <link>
+                  http://download.oracle.com/javase/${jee.version}/docs/api/
+                </link>
               </links>
               <doctitle>${project.name} ${project.version}</doctitle>
               <bottom>

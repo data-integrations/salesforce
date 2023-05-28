@@ -179,7 +179,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
    * @param config Salesforce Source Batch config
    * @return schema calculated from query
    */
-  private Schema getSchema(SalesforceSourceConfig config, OAuthInfo oAuthInfo) {
+  public static Schema getSchema(SalesforceSourceConfig config, OAuthInfo oAuthInfo) {
     String query = config.getQuery(System.currentTimeMillis(), oAuthInfo);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {

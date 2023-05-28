@@ -15,9 +15,11 @@
  */
 
 package io.cdap.plugin.salesforce.connectorservice;
-  public record SalesforceConnectorConfig (
+  public record ConnectorServiceSalesforceConfig(
       String consumerKey,
       String consumerSecret,
       String username,
       String password,
-      String loginUrl) {}
+      String loginUrl,
+      String securityToken,
+      int connectTimeout) {}

@@ -74,7 +74,7 @@ public class SalesforceConnector implements DirectConnector {
   private final SalesforceConnectorConfig config;
   private StructuredRecord record;
 
-  SalesforceConnector(SalesforceConnectorConfig config) {
+  public SalesforceConnector(SalesforceConnectorConfig config) {
     this.config = config;
   }
 
@@ -85,8 +85,13 @@ public class SalesforceConnector implements DirectConnector {
     config.validate(collector, oAuthInfo);
   }
 
+
   @Override
   public BrowseDetail browse(ConnectorContext connectorContext, BrowseRequest browseRequest) throws IOException {
+    return browse(config);
+  }
+
+  public BrowseDetail browse(SalesforceConnectorConfig config) throws IOException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
