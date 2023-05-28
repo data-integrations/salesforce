@@ -21,7 +21,9 @@ import com.google.cloud.connector.api.Connector;
 import com.google.cloud.connector.api.ConnectorContext;
 import com.google.cloud.connector.api.annotation.DataSource;
 import com.google.cloud.connector.api.browse.BrowseEntityListBuilder;
+import com.google.cloud.connector.api.schema.FieldBuilder;
 import com.google.cloud.connector.api.schema.SchemaBuilder;
+import com.google.common.base.Preconditions;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.cdap.etl.api.connector.BrowseDetail;
@@ -58,6 +60,9 @@ public class ConnectorServiceSalesforce implements Connector {
 
   @Override
   public void resolveSchema(AssetName assetName, ConnectorContext context) {
+    Preconditions.checkArgument(
+        assetName.components().size() == 2,
+        "Asset name should be datasources/salesforce/sobjects/{}");
     SalesforceSourceConfig sourceConfig =
         new SalesforceSourceConfig(
             "connector-service-salesforce-source-config-reference",
@@ -68,7 +73,7 @@ public class ConnectorServiceSalesforce implements Connector {
             config.loginUrl(),
             config.connectTimeout(),
             null,
-            null,
+            assetName.components().get(1).resourceId(),
             null,
             null,
             null,
@@ -129,9 +134,44 @@ public class ConnectorServiceSalesforce implements Connector {
   }
 
   private void convertSchemaToConnectorService(Schema schema, SchemaBuilder builder) {
+    System.out.println("wyzhang: cdap schema " + schema);
     builder.name("salesforce-schema");
     for (Schema.Field f : schema.getFields()) {
-      // TODO(wyzhang): build schema mapping
+      FieldBuilder fieldBuilder = builder.field().name(f.getName());
+      switch (f.getSchema().getType()) {
+        case NULL:
+          throw new UnsupportedOperationException("Salesforce null type is unsupported");
+        case BOOLEAN:
+          fieldBuilder.typeBoolean();
+          break;
+        case INT:
+        case LONG:
+          fieldBuilder.typeInteger();
+          break;
+        case FLOAT:
+        case DOUBLE:
+          fieldBuilder.typeFloat();
+          break;
+        case BYTES:
+          fieldBuilder.typeBytes();
+          break;
+        case STRING:
+          fieldBuilder.typeString();
+          break;
+        case ENUM:
+          throw new UnsupportedOperationException("Salesforce enum type is unsupported");
+        case ARRAY:
+          throw new UnsupportedOperationException("Salesforce array type is unsupported");
+        case MAP:
+          throw new UnsupportedOperationException("Salesforce map type is unsupported");
+        case RECORD:
+          throw new UnsupportedOperationException("Salesforce record type is unsupported");
+        case UNION:
+          throw new UnsupportedOperationException("Salesforce union type is unsupported");
+        default:
+          throw new UnsupportedOperationException(
+              String.format("Salesforce type '%s' is unsupported", f.getSchema().getType()));
+      }
     }
   }
 
