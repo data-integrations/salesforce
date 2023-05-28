@@ -63,6 +63,11 @@ public class ConnectorServiceSalesforce implements Connector {
     Preconditions.checkArgument(
         assetName.components().size() == 2,
         "Asset name should be datasources/salesforce/sobjects/{}");
+    Preconditions.checkArgument(
+        assetName.components().get(1).resourceId() != null &&
+        !assetName.components().get(1).resourceId().isEmpty(),
+        "Asset name {} in datasources/salesforce/sobjects/{} should not be empty");
+    System.out.println("Resolve schema for assertName " + assetName.name());
     SalesforceSourceConfig sourceConfig =
         new SalesforceSourceConfig(
             "connector-service-salesforce-source-config-reference",
