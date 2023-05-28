@@ -195,6 +195,7 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
     }
   }
 
+
   /**
    * Retrieves provided and actual schemas.
    * If both schemas are available, validates their compatibility.
