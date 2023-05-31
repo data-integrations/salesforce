@@ -153,7 +153,6 @@ public class SalesforceBatchSource extends BatchSource<Schema, Map<String, Strin
                               new SalesforceInputFormatProvider(
                                 config, ImmutableMap.of(sObjectName, schema.toString()), querySplits, null)));
   }
-
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);

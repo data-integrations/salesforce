@@ -33,6 +33,7 @@ import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.connectorservice.ConnectorServiceSalesforceConfig;
 import io.cdap.plugin.salesforce.parser.SOQLParsingException;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
@@ -339,5 +340,32 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                            null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
     }
+  }
+
+  public static SalesforceSourceConfig fromConnectorServiceConfig(
+      String sObjectName, ConnectorServiceSalesforceConfig config) {
+    return
+        new SalesforceSourceConfig(
+            "connector-service-salesforce-source-config-reference-name",
+            config.consumerKey(),
+            config.consumerSecret(),
+            config.username(),
+            config.password(),
+            config.loginUrl(),
+            config.connectTimeout(),
+            null,
+            sObjectName,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
   }
 }

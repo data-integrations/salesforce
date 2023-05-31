@@ -16,8 +16,6 @@
 
 package io.cdap.plugin.salesforce.connectorservice;
 
-import static com.google.cloud.bigquery.federation.v1alpha1.DataSource.Capability.SUPPORTS_SYNCHRONOUS_QUERIES;
-
 import com.google.cloud.connector.api.AssetName;
 import com.google.cloud.connector.api.Connector;
 import com.google.cloud.connector.api.ConnectorContext;
@@ -25,6 +23,7 @@ import com.google.cloud.connector.api.annotation.DataSource;
 import com.google.cloud.connector.api.browse.BrowseEntityListBuilder;
 import com.google.cloud.connector.api.schema.FieldBuilder;
 import com.google.cloud.connector.api.schema.SchemaBuilder;
+import com.google.cloud.datafusion.api.plugin.source.RecordReader;
 import com.google.common.base.Preconditions;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
@@ -33,15 +32,21 @@ import io.cdap.cdap.etl.api.connector.BrowseEntity;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.connector.SalesforceConnector;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
+import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSoapRecordReader;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.SoapRecordToMapTransformer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
+
+import static com.google.cloud.bigquery.federation.v1alpha1.DataSource.Capability.SUPPORTS_SYNCHRONOUS_QUERIES;
+
 
 /** Connector to test connector loading. */
 public class ConnectorServiceSalesforce implements Connector {
@@ -60,49 +65,16 @@ public class ConnectorServiceSalesforce implements Connector {
 
   @Override
   public void resolveSchema(AssetName assetName, ConnectorContext context) {
-    Preconditions.checkArgument(
-        assetName.components().size() == 2,
-        "Asset name should be datasources/salesforce/sobjects/{}");
-    Preconditions.checkArgument(
-        assetName.components().get(1).resourceId() != null
-            && !assetName.components().get(1).resourceId().isEmpty(),
-        "Asset name {} in datasources/salesforce/sobjects/{} should not be empty");
-    System.out.println("Resolve schema for assertName " + assetName.name());
-    SalesforceSourceConfig sourceConfig =
-        new SalesforceSourceConfig(
-            "connector-service-salesforce-source-config-reference",
-            config.consumerKey(),
-            config.consumerSecret(),
-            config.username(),
-            config.password(),
-            config.loginUrl(),
-            config.connectTimeout(),
-            null,
-            assetName.components().get(1).resourceId(),
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+    validateAssetName(assetName);
 
+    System.out.println("Resolve schema for assertName " + assetName.name());
+
+    String sObjectName = getsObjectName(assetName);
+
+    SalesforceSourceConfig sourceConfig =
+        SalesforceSourceConfig.fromConnectorServiceConfig(sObjectName, config);
     SalesforceConnectorConfig connectorConfig =
-        new io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig(
-            config.consumerKey(),
-            config.consumerSecret(),
-            config.username(),
-            config.password(),
-            config.loginUrl(),
-            config.securityToken(),
-            config.connectTimeout(),
-            null,
-            null);
+        SalesforceConnectorConfig.fromConnectorServiceConfig(config);
 
     FailureCollector collector = new SimpleFailureCollector();
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(connectorConfig, collector);
@@ -114,6 +86,7 @@ public class ConnectorServiceSalesforce implements Connector {
 
     convertSchemaToConnectorService(schema, schemaBuilder);
   }
+
 
   @Override
   public void browse(AssetName assetName, ConnectorContext context) throws Exception {
@@ -138,6 +111,48 @@ public class ConnectorServiceSalesforce implements Connector {
     }
   }
 
+  @Override
+  public RecordReader executeQuery(AssetName assetName, ConnectorContext context) throws Exception {
+
+    validateAssetName(assetName);
+
+    System.out.println("Execute query for asset name " + assetName.name());
+
+    String sObjectName = getsObjectName(assetName);
+
+    SalesforceSourceConfig sourceConfig =
+        SalesforceSourceConfig.fromConnectorServiceConfig(sObjectName, config);
+    SalesforceConnectorConfig connectorConfig =
+        SalesforceConnectorConfig.fromConnectorServiceConfig(config);
+
+    FailureCollector collector = new SimpleFailureCollector();
+    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(connectorConfig, collector);
+    sourceConfig.validate(collector, oAuthInfo);
+
+    Schema schema = SalesforceBatchSource.getSchema(sourceConfig, oAuthInfo);
+    // TODO(wyzhang): pass in the application time?
+    String query = sourceConfig.getQuery(System.currentTimeMillis(), oAuthInfo);
+
+    SalesforceSoapRecordReader recordReader =
+        new SalesforceSoapRecordReader(schema, query, new SoapRecordToMapTransformer());
+
+    AuthenticatorCredentials credentials =
+      new AuthenticatorCredentials(oAuthInfo, config.connectTimeout(), null);
+
+    recordReader.initialize(credentials);
+
+    return (RecordReader) new ConnectorServiceRecordReader(recordReader);
+
+  }
+
+  private String getSObjectName(AssetName assetName) {
+    Preconditions.checkArgument(assetName.components().size() == 2,
+        String.format(
+            "Salesforce asset name should have 2 components " +
+                "datasources/{}/sobjects/{}, but got '%s'", assetName));
+    return assetName.components().get(1).resourceId();
+  }
+
   private void convertSchemaToConnectorService(Schema schema, SchemaBuilder builder) {
     System.out.println("wyzhang: cdap schema " + schema);
     builder.name("salesforce-schema");
@@ -145,6 +160,22 @@ public class ConnectorServiceSalesforce implements Connector {
       FieldBuilder fieldBuilder = builder.field().name(f.getName());
       fromCdapType(f.getSchema(), fieldBuilder);
     }
+  }
+
+
+  private String getsObjectName(AssetName assetName) {
+    String sObjectName = assetName.components().get(1).resourceId();
+    return sObjectName;
+  }
+
+  private void validateAssetName(AssetName assetName) {
+    Preconditions.checkArgument(
+        assetName.components().size() == 2,
+        "Asset name should be datasources/salesforce/sobjects/{}");
+    Preconditions.checkArgument(
+        assetName.components().get(1).resourceId() != null
+            && !assetName.components().get(1).resourceId().isEmpty(),
+        "Asset name {} in datasources/salesforce/sobjects/{} should not be empty");
   }
 
   private void fromCdapType(Schema schema, FieldBuilder fieldBuilder) {
@@ -189,8 +220,8 @@ public class ConnectorServiceSalesforce implements Connector {
             throw new UnsupportedOperationException(
                 "Salesforce union type with multiple non-null is unsupported");
           }
-          break;
         }
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Salesforce type '%s' is unsupported", schema.getType()));

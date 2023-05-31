@@ -84,6 +84,23 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
     }
   }
 
+  public void initialize(AuthenticatorCredentials credentials) {
+    LOG.debug("Executing Salesforce SOAP query: '{}'", query);
+    try {
+      partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+      sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+      queryResult = partnerConnection.query(query);
+    } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+        String.format("Failed to create a Salesforce SOAP connection to execute query %s: %s",
+                      query,
+                      errorMessage),
+        e);
+    }
+  }
+
+
   /**
    * Reads single record from query results.
    * Fetches more records if available.

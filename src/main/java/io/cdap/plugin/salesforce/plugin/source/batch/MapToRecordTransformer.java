@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.google.cloud.datafusion.api.plugin.data.RecordBuilder;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
@@ -39,6 +40,11 @@ public class MapToRecordTransformer {
     return builder.build();
   }
 
+  public void transform(Schema schema, Map<String, ?> record, RecordBuilder recordBuilder) {
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    transformRecord(schema, record, builder);
+  }
+
   private void transformRecord(Schema schema, Map<String, ?> record, StructuredRecord.Builder builder) {
     for (Map.Entry<String, ?> entry : record.entrySet()) {
       String fieldName = SalesforceSchemaUtil.normalizeAvroName(entry.getKey());
@@ -48,6 +54,33 @@ public class MapToRecordTransformer {
       }
       builder.set(field.getName(), convertValue(field.getName(), entry.getValue(), field.getSchema()));
     }
+  }
+
+  private void transformRecord(Schema schema, Map<String, ?> record, RecordBuilder builder) {
+    for (Map.Entry<String, ?> entry : record.entrySet()) {
+      String fieldName = SalesforceSchemaUtil.normalizeAvroName(entry.getKey());
+      Schema.Field field = schema.getField(fieldName, true);
+      if (field == null) {
+        continue;
+      }
+      Object val = convertValue(field.getName(), entry.getValue(), field.getSchema());
+      if (val instanceof Boolean) {
+        builder.field(field.getName()).set((boolean) val);
+      } else if (val instanceof Integer) {
+        builder.field(field.getName()).set(((Integer) val).intValue());
+      } else if (val instanceof Long) {
+        builder.field(field.getName()).set(((Long) val).longValue());
+      } else if (val instanceof Float) {
+        builder.field(field.getName()).set(((Float) val).floatValue());
+      } else if (val instanceof Double) {
+        builder.field(field.getName()).set(((Double) val).doubleValue());
+      } else if (val instanceof String) {
+        builder.field(field.getName()).set((String) val);
+      } else {
+        throw new UnexpectedFormatException("Connector service unsupported");
+      }
+    }
+    builder.endStruct();
   }
 
   private Object convertValue(String fieldName, Object value, Schema fieldSchema) {

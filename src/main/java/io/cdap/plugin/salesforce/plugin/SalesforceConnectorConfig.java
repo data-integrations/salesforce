@@ -24,7 +24,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-
+import io.cdap.plugin.salesforce.connectorservice.ConnectorServiceSalesforceConfig;
 import javax.annotation.Nullable;
 
 /**
@@ -82,7 +82,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Macro
   @Nullable
   private String securityToken;
-  
+
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
@@ -223,4 +223,17 @@ public class SalesforceConnectorConfig extends PluginConfig {
     return proxyUrl;
   }
 
+  public static SalesforceConnectorConfig fromConnectorServiceConfig(
+      ConnectorServiceSalesforceConfig config) {
+    return new SalesforceConnectorConfig(
+        config.consumerKey(),
+        config.consumerSecret(),
+        config.username(),
+        config.password(),
+        config.loginUrl(),
+        config.securityToken(),
+        config.connectTimeout(),
+        null,
+        null);
+  }
 }
