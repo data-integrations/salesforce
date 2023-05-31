@@ -21,9 +21,9 @@ import com.google.cloud.connector.api.Connector;
 import com.google.cloud.connector.api.ConnectorContext;
 import com.google.cloud.connector.api.annotation.DataSource;
 import com.google.cloud.connector.api.browse.BrowseEntityListBuilder;
+import com.google.cloud.connector.api.data.RecordReader;
 import com.google.cloud.connector.api.schema.FieldBuilder;
 import com.google.cloud.connector.api.schema.SchemaBuilder;
-import com.google.cloud.connector.api.data.RecordReader;
 import com.google.common.base.Preconditions;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
@@ -87,7 +87,6 @@ public class ConnectorServiceSalesforce implements Connector {
     convertSchemaToConnectorService(schema, schemaBuilder);
   }
 
-
   @Override
   public void browse(AssetName assetName, ConnectorContext context) throws Exception {
     SalesforceConnectorConfig connectorConfig =
@@ -137,19 +136,20 @@ public class ConnectorServiceSalesforce implements Connector {
         new SalesforceSoapRecordReader(schema, query, new SoapRecordToMapTransformer());
 
     AuthenticatorCredentials credentials =
-      new AuthenticatorCredentials(oAuthInfo, config.connectTimeout(), null);
+        new AuthenticatorCredentials(oAuthInfo, config.connectTimeout(), null);
 
     recordReader.initialize(credentials);
 
     return (RecordReader) new ConnectorServiceRecordReader(recordReader);
-
   }
 
   private String getSObjectName(AssetName assetName) {
-    Preconditions.checkArgument(assetName.components().size() == 2,
+    Preconditions.checkArgument(
+        assetName.components().size() == 2,
         String.format(
-            "Salesforce asset name should have 2 components " +
-                "datasources/{}/sobjects/{}, but got '%s'", assetName));
+            "Salesforce asset name should have 2 components "
+                + "datasources/{}/sobjects/{}, but got '%s'",
+            assetName));
     return assetName.components().get(1).resourceId();
   }
 
@@ -161,7 +161,6 @@ public class ConnectorServiceSalesforce implements Connector {
       fromCdapType(f.getSchema(), fieldBuilder);
     }
   }
-
 
   private String getsObjectName(AssetName assetName) {
     String sObjectName = assetName.components().get(1).resourceId();

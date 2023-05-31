@@ -16,16 +16,14 @@
 
 package io.cdap.plugin.salesforce.connectorservice;
 
-import com.google.cloud.datafusion.api.plugin.data.RecordBuilder;
 import com.google.cloud.connector.api.data.RecordReader;
+import com.google.cloud.datafusion.api.plugin.data.RecordBuilder;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.plugin.source.batch.MapToRecordTransformer;
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * A record reader
- */
+/** A record reader */
 public class ConnectorServiceRecordReader implements RecordReader {
   private final org.apache.hadoop.mapreduce.RecordReader<Schema, Map<String, ?>> delegate;
   private final MapToRecordTransformer transformer;
