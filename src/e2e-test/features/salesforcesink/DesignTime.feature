@@ -61,3 +61,8 @@ Feature: Salesforce Sink  - Design time scenarios
     And fill Authentication properties for Salesforce Admin user
     Then Click on the Test Connection button
     And Verify the test connection is successful
+
+  @Debug
+  Scenario: Verify if sandbox is accessible
+    Given We are waiting
+    Then Test if sandbox is accessible

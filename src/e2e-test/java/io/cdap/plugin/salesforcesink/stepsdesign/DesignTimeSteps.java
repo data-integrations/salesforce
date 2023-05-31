@@ -25,6 +25,12 @@ import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import stepsdesign.BeforeActions;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Design-time steps of Salesforce plugins.
@@ -60,5 +66,20 @@ public class DesignTimeSteps {
   @And("Fill Max Bytes Per Batch as: {string}")
   public void fillMaxBytesPerBatch(String maxBytesPerBatch) {
     SalesforcePropertiesPageActions.fillMaxBytes(PluginPropertyUtils.pluginProp(maxBytesPerBatch));
+  }
+
+  @When("We are waiting")
+  public void weAreWaiting() throws InterruptedException {
+    TimeUnit time = TimeUnit.SECONDS;
+    time.sleep(30000);
+  }
+
+  @Then("Test if sandbox is accessible")
+  public void testIfSandboxIsAccessible() throws IOException {
+    URL url = new URL("http://localhost:11011/pipelines/ns/default/studio");
+    HttpURLConnection http = (HttpURLConnection)url.openConnection();
+    BeforeActions.scenario.write("Opening URL : " + url);
+    BeforeActions.scenario.write(http.getResponseCode() + " " + http.getResponseMessage());
+    http.disconnect();
   }
 }
