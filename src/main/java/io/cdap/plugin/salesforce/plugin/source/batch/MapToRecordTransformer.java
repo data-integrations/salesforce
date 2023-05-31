@@ -41,8 +41,8 @@ public class MapToRecordTransformer {
   }
 
   public void transform(Schema schema, Map<String, ?> record, RecordBuilder recordBuilder) {
-    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
-    transformRecord(schema, record, builder);
+    // StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    transformRecord(schema, record, recordBuilder);
   }
 
   private void transformRecord(Schema schema, Map<String, ?> record, StructuredRecord.Builder builder) {
