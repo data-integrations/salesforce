@@ -77,7 +77,8 @@ public class MapToRecordTransformer {
       } else if (val instanceof String) {
         builder.field(field.getName()).set((String) val);
       } else {
-        throw new UnexpectedFormatException("Connector service unsupported");
+        throw new UnexpectedFormatException(
+            "Connector service unsupported value type: " + val.getClass().getName());
       }
     }
     builder.endStruct();
