@@ -23,7 +23,7 @@ import com.google.cloud.connector.api.annotation.DataSource;
 import com.google.cloud.connector.api.browse.BrowseEntityListBuilder;
 import com.google.cloud.connector.api.schema.FieldBuilder;
 import com.google.cloud.connector.api.schema.SchemaBuilder;
-import com.google.cloud.datafusion.api.plugin.source.RecordReader;
+import com.google.cloud.connector.api.data.RecordReader;
 import com.google.common.base.Preconditions;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
