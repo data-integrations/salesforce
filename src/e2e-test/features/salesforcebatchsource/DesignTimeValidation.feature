@@ -47,7 +47,7 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And fill Reference Name property
     And fill Authentication properties with invalid values
     And Click on the Validate button
-    Then Verify that the Plugin is displaying an error message: "invalid.authentication.property" on the header
+    Then Verify that the Plugin is displaying an error message: "invalid.testconnection.logmessage" on the header
 
   @BATCH-TS-SF-DSGN-ERROR-04
   Scenario: Verify required fields missing validation for SOQL Query or SObject Name properties
@@ -96,8 +96,8 @@ Feature: Salesforce Batch Source - Design time - validation scenarios
     And Enter input plugin property: "datetimeAfter" with value: "abc"
     And Enter input plugin property: "datetimeBefore" with value: "abc"
     And Click on the Validate button
-    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format"
-    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format"
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format.after"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format.before"
 
   @BATCH-TS-SF-DSGN-ERROR-08
   Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality

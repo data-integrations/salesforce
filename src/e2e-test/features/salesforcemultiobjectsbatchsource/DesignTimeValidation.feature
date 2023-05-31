@@ -58,8 +58,8 @@ Feature: Salesforce Multi Objects Batch Source - Design time - validation scenar
     And Enter input plugin property: "datetimeAfter" with value: "abc"
     And Enter input plugin property: "datetimeBefore" with value: "abc"
     And Click on the Validate button
-    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format"
-    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format"
+    Then Verify that the Plugin Property: "datetimeAfter" is displaying an in-line error message: "invalid.date.format.after"
+    And Verify that the Plugin Property: "datetimeBefore" is displaying an in-line error message: "invalid.date.format.before"
 
   @MULTIBATCH-TS-SF-DSGN-ERROR-04
   Scenario: Verify user should be able to get invalid credentials validation message when using invalid credentials in the connection manager functionality

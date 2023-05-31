@@ -36,19 +36,15 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
     And Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
-    And Select Sink plugin: "BigQueryTable" from the plugins list
-    And Navigate to the properties page of plugin: "BigQuery"
-#    And Configure BigQuery sink plugin for Dataset and Table
+    And Select Sink plugin: "BigQueryMultiTable" from the plugins list
+    And Navigate to the properties page of plugin: "BigQuery Multi Table"
     Then Replace input plugin property: "project" with value: "projectId"
     Then Enter input plugin property: "datasetProject" with value: "projectId"
     Then Enter input plugin property: "referenceName" with value: "BQReferenceName"
     Then Enter input plugin property: "dataset" with value: "dataset"
-    Then Enter input plugin property: "table" with value: "bqTargetTable"
-    Then Click plugin property: "truncateTable"
-    Then Click plugin property: "updateTableSchema"
-    Then Validate "BigQuery" plugin properties
+    Then Validate "BigQuery Multi Table" plugin properties
     And Close the Plugin Properties page
-    And Connect plugins: "SalesforceMultiObjects" and "BigQuery" to establish connection
+    And Connect plugins: "SalesforceMultiObjects" and "BigQuery Multi Table" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
     And Enter runtime argument value from environment variable "admin.username" for key "Username"

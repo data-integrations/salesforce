@@ -57,6 +57,7 @@ public class SalesforceClient {
   private static final String GRANTTYPE = PluginPropertyUtils.pluginProp("grant.type");
   private static final String CLIENTID = System.getenv("SALESFORCE_CONSUMER_KEY");
   private static final String CLIENTSECRET = System.getenv("SALESFORCE_CONSUMER_SECRET");
+  private static final String SECURITYTOKEN = System.getenv("SALESFORCE_SECURITY_TOKEN");
   private static final String REST_ENDPOINT = PluginPropertyUtils.pluginProp("rest.api.endpoint");
   private static final String API_VERSION = PluginPropertyUtils.pluginProp("rest.api.version");
   private static final Header prettyPrintHeader = new BasicHeader("X-PrettyPrint", "1");
@@ -71,7 +72,7 @@ public class SalesforceClient {
     loginParams.add(new BasicNameValuePair("client_secret", CLIENTSECRET));
     loginParams.add(new BasicNameValuePair("grant_type", GRANTTYPE));
     loginParams.add(new BasicNameValuePair("username", USERNAME));
-    loginParams.add(new BasicNameValuePair("password", PASSWORD));
+    loginParams.add(new BasicNameValuePair("password", PASSWORD + SECURITYTOKEN));
 
     try {
       HttpPost httpPost = new HttpPost(TOKEN_URL);

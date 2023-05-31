@@ -39,17 +39,10 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Enter input plugin property: "datasetProject" with value: "projectId"
     Then Enter input plugin property: "referenceName" with value: "BQReferenceName"
     Then Enter input plugin property: "dataset" with value: "dataset"
-    Then Enter input plugin property: "table" with value: "bqTargetTable"
     Then Validate "BigQuery Multi Table" plugin properties
     And Close the Plugin Properties page
-    And Connect plugins: "SalesforceMultiObjects" and "BigQueryMultiTable" to establish connection
+    And Connect plugins: "SalesforceMultiObjects" and "BigQuery Multi Table" to establish connection
     And Save the pipeline
-#    And Preview and run the pipeline
-#    Then Wait till pipeline preview is in running state
-#    Then Open and capture pipeline preview logs
-#    Then Verify the preview run status of pipeline in the logs is "succeeded"
-#    Then Close the pipeline logs
-#    Then Close the preview
     Then Deploy the pipeline
     Then Run the Pipeline in Runtime
     Then Wait till pipeline is in running state
@@ -72,26 +65,20 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
-    And Select Sink plugin: "BigQueryTable" from the plugins list
-    And Navigate to the properties page of plugin: "BigQuery"
-#    And Configure BigQuery sink plugin for Dataset and Table
+    And Select Sink plugin: "BigQueryMultiTable" from the plugins list
+    And Navigate to the properties page of plugin: "BigQuery Multi Table"
     Then Replace input plugin property: "project" with value: "projectId"
     Then Enter input plugin property: "datasetProject" with value: "projectId"
     Then Enter input plugin property: "referenceName" with value: "BQReferenceName"
     Then Enter input plugin property: "dataset" with value: "dataset"
-    Then Enter input plugin property: "table" with value: "bqTargetTable"
-    Then Click plugin property: "truncateTable"
-    Then Click plugin property: "updateTableSchema"
-    Then Validate "BigQuery" plugin properties
+    Then Validate "BigQuery Multi Table" plugin properties
     And Close the Plugin Properties page
-    And Connect plugins: "SalesforceMultiObjects" and "BigQuery" to establish connection
+    And Connect plugins: "SalesforceMultiObjects" and "BigQuery Multi Table" to establish connection
     And Save the pipeline
     And Preview and run the pipeline
     Then Wait till pipeline preview is in running state
     Then Open and capture pipeline preview logs
-#    And Verify the preview of pipeline is "successfully"
     Then Verify the preview run status of pipeline in the logs is "succeeded"
-#    And Verify sink plugin's Preview Data for Input Records table and the Input Schema matches the Output Schema of Source plugin
     Then Close the pipeline logs
     Then Close the preview
     Then Deploy the pipeline
@@ -101,7 +88,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
 
-  @MULTIBATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST
+  @MULTIBATCH-TS-SF-RNTM-04 @CONNECTION @BQ_SINK_TEST
   Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
     When Open Datafusion Project to configure pipeline
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
