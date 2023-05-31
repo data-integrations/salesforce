@@ -110,7 +110,6 @@ public class SalesforcePropertiesPageActions {
       PluginPropertyUtils.pluginProp("admin.consumer.secret"),
       PluginPropertyUtils.pluginProp("login.url"), null, null
     );
-    //
   }
 
   private static SalesforceSourceConfig getSourceConfigWithSOQLQuery(SOQLQueryType queryType) {
