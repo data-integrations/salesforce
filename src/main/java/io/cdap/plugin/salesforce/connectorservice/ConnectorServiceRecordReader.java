@@ -43,7 +43,7 @@ public class ConnectorServiceRecordReader implements RecordReader {
       }
       return false;
     } catch (Exception e) {
-      throw new RuntimeException("Failed to read next record");
+      throw new RuntimeException("Failed to read next record", e);
     }
   }
 
