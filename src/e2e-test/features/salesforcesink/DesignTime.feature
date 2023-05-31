@@ -66,3 +66,4 @@ Feature: Salesforce Sink  - Design time scenarios
   Scenario: Verify if sandbox is accessible
     Given We are waiting
     Then Test if sandbox is accessible
+    Then Open Datafusion Project to configure pipeline

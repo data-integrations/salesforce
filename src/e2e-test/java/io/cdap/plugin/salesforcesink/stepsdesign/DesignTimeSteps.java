@@ -77,7 +77,7 @@ public class DesignTimeSteps {
   @Then("Test if sandbox is accessible")
   public void testIfSandboxIsAccessible() throws IOException {
     URL url = new URL("http://localhost:11011/pipelines/ns/default/studio");
-    HttpURLConnection http = (HttpURLConnection)url.openConnection();
+    HttpURLConnection http = (HttpURLConnection) url.openConnection();
     BeforeActions.scenario.write("Opening URL : " + url);
     BeforeActions.scenario.write(http.getResponseCode() + " " + http.getResponseMessage());
     http.disconnect();
