@@ -15,7 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
-import com.google.cloud.datafusion.api.plugin.data.RecordBuilder;
+import com.google.cloud.connector.api.data.RecordBuilder;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.format.UnexpectedFormatException;
