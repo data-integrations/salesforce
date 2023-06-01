@@ -64,7 +64,9 @@ public class MapToRecordTransformer {
         continue;
       }
       Object val = convertValue(field.getName(), entry.getValue(), field.getSchema());
-      if (val instanceof Boolean) {
+      if (val == null) {
+        builder.field(field.getName()).setNull();
+      } else if (val instanceof Boolean) {
         builder.field(field.getName()).set((boolean) val);
       } else if (val instanceof Integer) {
         builder.field(field.getName()).set(((Integer) val).intValue());
