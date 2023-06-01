@@ -58,6 +58,8 @@ public class MapToRecordTransformer {
 
   private void transformRecord(Schema schema, Map<String, ?> record, RecordBuilder builder) {
     for (Map.Entry<String, ?> entry : record.entrySet()) {
+      System.out.println("entry key " + entry.getKey());
+      System.out.println("entry val " + entry.getValue());
       String fieldName = SalesforceSchemaUtil.normalizeAvroName(entry.getKey());
       Schema.Field field = schema.getField(fieldName, true);
       if (field == null) {
