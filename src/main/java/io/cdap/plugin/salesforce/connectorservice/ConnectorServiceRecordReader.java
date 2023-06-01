@@ -16,8 +16,8 @@
 
 package io.cdap.plugin.salesforce.connectorservice;
 
-import com.google.cloud.connector.api.data.RecordReader;
 import com.google.cloud.connector.api.data.RecordBuilder;
+import com.google.cloud.connector.api.data.RecordReader;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.plugin.source.batch.MapToRecordTransformer;
 import java.io.IOException;
