@@ -90,7 +90,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private final String parent;
 
   @VisibleForTesting
-  SalesforceSourceConfig(String referenceName,
+  public SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
                          @Nullable String consumerSecret,
                          @Nullable String username,

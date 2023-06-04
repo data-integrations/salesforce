@@ -50,6 +50,7 @@ public class SalesforceQueryUtil {
       .append(SELECT).append(String.join(",", fields))
       .append(FROM).append(sObjectName);
 
+
     if (!filterDescriptor.isNoOp()) {
       query.append(WHERE).append(generateSObjectFilter(filterDescriptor));
     }

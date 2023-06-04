@@ -95,6 +95,42 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
     }
   }
 
+  public SalesforceWideRecordReader initialize(
+      InputSplit inputSplit, AuthenticatorCredentials credentials)
+      throws IOException, InterruptedException {
+    // TODO(wyzhang): how to pass a taskAttempContext here?
+    List<Map<String, ?>> fetchedIdList = fetchBulkQueryIds(inputSplit, null);
+    LOG.debug("Number of records received from batch job for wide object: '{}'", fetchedIdList.size());
+
+    try {
+      PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+
+      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+      List<String> fieldsNames = sObjectDescriptor.getFieldsNames();
+      String fields = String.join(",", fieldsNames);
+      String sObjectName = sObjectDescriptor.getName();
+
+      List<List<Map<String, ?>>> partitions =
+        Lists.partition(fetchedIdList, SalesforceSourceConstants.WIDE_QUERY_MAX_BATCH_COUNT);
+      LOG.debug("Number of partitions to be fetched for wide object: '{}'", partitions.size());
+
+      results = partitions.parallelStream()
+        .map(this::getSObjectIds)
+        .map(sObjectIds -> fetchPartition(partnerConnection, fields, sObjectName, sObjectIds))
+        .flatMap(Arrays::stream)
+        .map(sObject -> transformer.transformToMap(sObject, sObjectDescriptor))
+        .collect(Collectors.toList());
+      return this;
+    } catch (ConnectionException e) {
+      String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
+      throw new RuntimeException(
+        String.format(
+          "Failed to create a Salesforce SOAP connection during the init for reads: %s",
+          errorMessage),
+        e);
+    }
+  }
+
   @Override
   public boolean nextKeyValue() {
     if (results.size() == index) {

@@ -106,6 +106,28 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     }
   }
 
+  public SalesforceBulkRecordReader initialize(
+      InputSplit inputSplit,
+      AuthenticatorCredentials credentials)
+    throws IOException, InterruptedException {
+    SalesforceSplit salesforceSplit = (SalesforceSplit) inputSplit;
+    jobId = salesforceSplit.getJobId();
+    batchId = salesforceSplit.getBatchId();
+    LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
+
+    try {
+      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      resultIds = waitForBatchResults(bulkConnection);
+      LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
+      setupParser();
+    } catch (AsyncApiException e) {
+      throw new RuntimeException(
+        String.format("Failed to wait for the result of a batch: %s", e.getMessage()),
+        e);
+    }
+    return this;
+  }
+
   /**
    * Reads single record from csv.
    *
