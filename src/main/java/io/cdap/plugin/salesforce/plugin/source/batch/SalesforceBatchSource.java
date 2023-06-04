@@ -47,6 +47,7 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.apache.hadoop.mapreduce.RecordReader;
 
 import java.util.ArrayList;
 import java.util.HashSet;

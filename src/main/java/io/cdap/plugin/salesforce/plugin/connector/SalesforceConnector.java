@@ -91,6 +91,16 @@ public class SalesforceConnector implements DirectConnector {
 
   @Override
   public BrowseDetail browse(ConnectorContext connectorContext, BrowseRequest browseRequest) throws IOException {
+    return browse();
+  }
+
+  /**
+   * Browse functionality based on the config.
+   *
+   * @return BrowseDetail for the given config
+   * @throws IOException In case of Salesforce connection failure while browsing
+   */
+  public BrowseDetail browse() throws IOException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),

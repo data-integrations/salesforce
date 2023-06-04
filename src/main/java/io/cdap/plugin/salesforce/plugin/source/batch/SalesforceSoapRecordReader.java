@@ -66,14 +66,19 @@ public class SalesforceSoapRecordReader extends RecordReader<Schema, Map<String,
    */
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) {
+    Configuration conf = taskAttemptContext.getConfiguration();
+    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
+    initialize(credentials);
+  }
+
+  public SalesforceSoapRecordReader initialize(AuthenticatorCredentials credentials) {
     LOG.debug("Executing Salesforce SOAP query: '{}'", query);
 
-    Configuration conf = taskAttemptContext.getConfiguration();
     try {
-      AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
       sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       queryResult = partnerConnection.query(query);
+      return this;
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(

@@ -62,14 +62,19 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException,
     InterruptedException {
-    List<Map<String, ?>> fetchedIdList = fetchBulkQueryIds(inputSplit, taskAttemptContext);
+    Configuration conf = taskAttemptContext.getConfiguration();
+    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
+    initialize(inputSplit, credentials);
+  }
+
+  public SalesforceWideRecordReader initialize(
+      InputSplit inputSplit, AuthenticatorCredentials credentials)
+      throws IOException, InterruptedException {
+    List<Map<String, ?>> fetchedIdList = fetchBulkQueryIds(inputSplit, null);
     LOG.debug("Number of records received from batch job for wide object: '{}'", fetchedIdList.size());
 
-    Configuration conf = taskAttemptContext.getConfiguration();
     try {
-      AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
-
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
       List<String> fieldsNames = sObjectDescriptor.getFieldsNames();
       String fields = String.join(",", fieldsNames);
@@ -85,6 +90,7 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
         .flatMap(Arrays::stream)
         .map(sObject -> transformer.transformToMap(sObject, sObjectDescriptor))
         .collect(Collectors.toList());
+      return this;
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(

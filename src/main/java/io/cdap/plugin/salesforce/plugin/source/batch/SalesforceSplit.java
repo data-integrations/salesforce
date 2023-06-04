@@ -16,6 +16,7 @@
 
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import io.cdap.cdap.api.data.schema.Schema;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
 
@@ -41,7 +42,7 @@ public class SalesforceSplit extends InputSplit implements Writable {
     this.batchId = batchId;
     this.query = query;
   }
-
+  
   @Override
   public void readFields(DataInput dataInput) throws IOException {
     jobId = dataInput.readUTF();
