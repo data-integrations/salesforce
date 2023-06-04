@@ -88,9 +88,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Nullable
   @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
   private final String parent;
-
-  @VisibleForTesting
-  SalesforceSourceConfig(String referenceName,
+  
+  public SalesforceSourceConfig(String referenceName,
                          @Nullable String consumerKey,
                          @Nullable String consumerSecret,
                          @Nullable String username,
