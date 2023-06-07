@@ -25,7 +25,7 @@ public enum ErrorHandling {
 
   SKIP("Skip on error"),
 
-  STOP("Stop on error");
+  FAIL("Fail on error");
 
   private final String value;
 

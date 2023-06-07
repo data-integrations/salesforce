@@ -20,7 +20,9 @@ import io.cdap.cdap.api.data.schema.Schema;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -63,7 +65,8 @@ public class StructuredRecordToCSVRecordTransformer {
         case TIME_MICROS:
           // convert timestamp to HH:mm:ss,SSS
           instant = Instant.ofEpochMilli(TimeUnit.MICROSECONDS.toMillis((Long) value));
-          return instant.atZone(ZoneOffset.UTC).toLocalTime().toString();
+          DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm:ss.SSS'Z'");
+          return LocalDateTime.ofInstant(instant, ZoneOffset.UTC).format(timeFormat);
         case TIMESTAMP_MILLIS:
           // convert timestamp to ISO 8601 format
           instant = Instant.ofEpochMilli((Long) value);
