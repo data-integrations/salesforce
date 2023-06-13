@@ -34,4 +34,19 @@ public class SalesforcePropertiesPage {
 
   @FindBy(how = How.XPATH, using = "//input[@data-cy='pushTopicQuery']")
   public static WebElement topicqueryInput;
+
+  @FindBy(how = How.XPATH, using = "//*[@data-cy='pipeline-configure-modeless-btn']")
+  public static WebElement configButton;
+
+  @FindBy(how = How.XPATH, using = "//*[@data-cy='tab-content-Pipeline config']")
+  public static WebElement pipelineConfig;
+
+  @FindBy(how = How.XPATH, using = "//span[contains(text(), \"Batch interval\")]//following-sibling::div//select[1]")
+  public static WebElement batchTime;
+
+  @FindBy(how = How.XPATH, using = "//span[contains(text(), \"Batch interval\")]//following-sibling::div//select[2]")
+  public static WebElement timeSelect;
+
+  @FindBy(how = How.XPATH, using = "//button[@data-testid='config-apply-close']")
+  public static WebElement saveButton;
 }

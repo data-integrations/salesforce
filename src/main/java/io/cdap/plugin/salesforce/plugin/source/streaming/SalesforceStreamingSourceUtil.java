@@ -35,6 +35,7 @@ import scala.reflect.ClassTag$;
 
 import java.time.Instant;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
@@ -127,7 +128,7 @@ final class SalesforceStreamingSourceUtil {
         case TIMESTAMP_MICROS:
           return TimeUnit.MILLISECONDS.toMicros(Instant.parse(valueString).toEpochMilli());
         case TIME_MICROS:
-          return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(valueString).toNanoOfDay());
+          return TimeUnit.NANOSECONDS.toMicros(LocalTime.parse(valueString, DateTimeFormatter.ISO_TIME).toNanoOfDay());
         default:
           throw new UnexpectedFormatException(String.format("Field '%s' is of unsupported type '%s'",
                                                             field.getName(), logicalType.getToken()));
