@@ -19,7 +19,7 @@
 
 Feature: Salesforce Sink - Run time Scenarios
 
-  @SINK-TS-SF-RNTM-01 @BQ_SOURCE_TEST
+  @SINK-TS-SF-RNTM-01 @BQ_SOURCE_TEST @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview, deploy and run pipeline with Salesforce Sink plugin
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
@@ -37,7 +37,7 @@ Feature: Salesforce Sink - Run time Scenarios
     And fill Authentication properties for Salesforce Admin user
     Then Enter input plugin property: "referenceName" with value: "ReferenceName"
     And Select radio button plugin property: "operation" with value: "insert"
-    And Enter input plugin property: "sObject" with value: "sobject.lead"
+    And Enter input plugin property: "sObject" with value: "sobject.Automation_custom_c"
     Then Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
     And Save the pipeline
@@ -53,8 +53,10 @@ Feature: Salesforce Sink - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Salesforce is equal to the values from source BigQuery table
 
-  @SINK-TS-SF-RNTM-03 @BQ_SOURCE_TEST @S1
+
+  @SINK-TS-SF-RNTM-02 @BQ_SOURCE_TEST @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview, deploy and run pipeline when Error Handling is selected as 'Skip on error'
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
@@ -72,7 +74,7 @@ Feature: Salesforce Sink - Run time Scenarios
     And fill Authentication properties for Salesforce Admin user
     Then Enter input plugin property: "referenceName" with value: "ReferenceName"
     And Select radio button plugin property: "operation" with value: "insert"
-    And Enter input plugin property: "sObject" with value: "sobject.lead"
+    And Enter input plugin property: "sObject" with value: "sobject.Automation_custom_c"
     And Select dropdown plugin property: "errorHandling" with option value: "Skip on error"
     Then Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
@@ -89,8 +91,10 @@ Feature: Salesforce Sink - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Salesforce is equal to the values from source BigQuery table
 
-  @SINK-TS-SF-RNTM-04 @BQ_SOURCE_TEST @CONNECTION
+
+  @SINK-TS-SF-RNTM-03 @BQ_SOURCE_TEST @CONNECTION @DELETE_TEST_DATA
   Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
@@ -117,7 +121,7 @@ Feature: Salesforce Sink - Run time Scenarios
     Then Use new connection
     Then Enter input plugin property: "referenceName" with value: "ReferenceName"
     And Select radio button plugin property: "operation" with value: "insert"
-    And Enter input plugin property: "sObject" with value: "sobject.lead"
+    And Enter input plugin property: "sObject" with value: "sobject.Automation_custom_c"
     Then Validate "Salesforce" plugin properties
     And Close the Plugin Properties page
     And Save the pipeline
@@ -127,3 +131,5 @@ Feature: Salesforce Sink - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Salesforce is equal to the values from source BigQuery table
+

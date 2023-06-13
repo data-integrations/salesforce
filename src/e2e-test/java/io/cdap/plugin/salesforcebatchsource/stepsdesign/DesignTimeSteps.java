@@ -16,13 +16,25 @@
 
 package io.cdap.plugin.salesforcebatchsource.stepsdesign;
 
+import io.cdap.e2e.pages.actions.CdfPipelineRunAction;
 import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
+import io.cdap.e2e.utils.BigQueryClient;
+import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.BQValidation;
 import io.cdap.plugin.salesforcebatchsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Assert;
+import stepsdesign.BeforeActions;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.ParseException;
 
 /**
  * Design-time steps of Salesforce plugins.
@@ -76,4 +88,14 @@ public class DesignTimeSteps {
     SalesforcePropertiesPageActions.clickOnServicenowConnection();
   }
 
+  @Then("Validate the values of records transferred to target Big Query table is equal to the values from source table")
+  public void validateTheValuesOfRecordsTransferredToTargetBigQueryTableIsEqualToTheValuesFromSourceTable()
+    throws InterruptedException, IOException {
+    boolean recordsMatched = BQValidation.validateSalesforceToBQRecordValues(
+      PluginPropertyUtils.pluginProp("sobject.Automation_custom_c"),
+      PluginPropertyUtils.pluginProp("bqTargetTable")
+    );
+    Assert.assertTrue("Value of records transferred to the target table should be equal to the value " +
+                        "of the records in the source table", recordsMatched);
+  }
 }

@@ -16,16 +16,25 @@
 
 package io.cdap.plugin.salesforcestreamingsource.stepsdesign;
 
+import io.cdap.e2e.pages.actions.CdfPipelineRunAction;
+import io.cdap.e2e.utils.BigQueryClient;
+import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.BQValidation;
 import io.cdap.plugin.salesforcestreamingsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.utils.SalesforceClient;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
+import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.json.JSONObject;
+import org.junit.Assert;
+import stepsdesign.BeforeActions;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Design-time steps of Salesforce Streaming plugins.
@@ -50,7 +59,7 @@ public class DesignTimeSteps {
     lead.put("LastName", "LLname_" + uniqueId);
     lead.put("Company", uniqueId + ".com");
 
-    SalesforceClient.createLead(lead, "Lead");
+    SalesforceClient.createObject(lead, "Lead");
   }
 
   @Then("Enter unique Topic name as a Runtime argument value for key: {string}")

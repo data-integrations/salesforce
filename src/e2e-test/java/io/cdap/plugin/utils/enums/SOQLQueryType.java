@@ -27,6 +27,8 @@ public enum SOQLQueryType {
   GROUPBY(PluginPropertyUtils.pluginProp("groupby.query")),
   PARENTTOCHILD(PluginPropertyUtils.pluginProp("parenttochild.query")),
   CHILDTOPARENT(PluginPropertyUtils.pluginProp("childtoparent.query")),
+
+  TEST(PluginPropertyUtils.pluginProp("test.query")),
   STAR(PluginPropertyUtils.pluginProp("star.query"));
 
   public final String query;
