@@ -22,6 +22,7 @@ import io.cdap.e2e.utils.BigQueryClient;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.plugin.salesforcestreamingsource.actions.SalesforcePropertiesPageActions;
 import io.cdap.plugin.utils.SalesforceClient;
+import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -29,10 +30,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.junit.Assert;
 import stepsdesign.BeforeActions;
+
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -41,22 +45,43 @@ import java.util.UUID;
  */
 public class TestSetupHooks {
 
-  @Before(order = 2, value = "@BQ_SINK_TEST")
-  public void setTempTargetBQTable() {
-    String bqTargetTable = "TestSN_table" + RandomStringUtils.randomAlphanumeric(10);
-    PluginPropertyUtils.addPluginProp("bqTargetTable", bqTargetTable);
-    BeforeActions.scenario.write("BigQuery Target table name: " + bqTargetTable);
+  @Before(order = 2, value = "@CREATE_TEST_DATA")
+  public static void createTestObject() throws UnsupportedEncodingException, ParseException {
+    JSONObject testData = new JSONObject(PluginPropertyUtils.pluginProp("testData"));
+    SalesforceClient.createObject(testData, SObjects.AUTOMATION_CUSTOM__C.value);
+    BeforeActions.scenario.write("Creating new Custom Object.." + PluginPropertyUtils.pluginProp("testData")
+                                   + "created successfully");
+
   }
 
-  @Before(order = 3, value = "@LEAD")
-  public static void createLead() {
-    BeforeActions.scenario.write("Creating new Lead..");
+  @Before(order = 2, value = "@CREATE_TEST_DATA2")
+  public static void createTestObject2() throws UnsupportedEncodingException, ParseException {
+     BeforeActions.scenario.write("Creating new Custom Object..");
+    JSONObject testObjectData = new JSONObject(PluginPropertyUtils.pluginProp("testObjectData"));
+    SalesforceClient.createObject(testObjectData, SObjects.AUTOMATION_CUSTOM2__C.value);
+    BeforeActions.scenario.write("Creating new Custom Object.." + PluginPropertyUtils.pluginProp("testObjectData")
+                                   + "created successfully");
+  }
 
-    JSONObject lead = new JSONObject();
-    String uniqueId = RandomStringUtils.randomAlphanumeric(10);
-    lead.put("FirstName", "LFname_" + uniqueId);
-    lead.put("LastName", "LLname_" + uniqueId);
-    lead.put("Company", uniqueId + ".com");
+  @After(order = 2, value = "@DELETE_TEST_DATA")
+  public static void deleteTestObject() {
+    String uniqueRecordId = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM__C.value);
+    SalesforceClient.deleteId(uniqueRecordId, SObjects.AUTOMATION_CUSTOM__C.value);
+    BeforeActions.scenario.write("Record - " + uniqueRecordId + " deleted successfully");
+  }
+
+  @After(order = 2, value = "@DELETE_TEST_DATA2")
+  public static void deleteTestObject2() {
+    String uniqueRecordId = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM2__C.value);
+    SalesforceClient.deleteId(uniqueRecordId, SObjects.AUTOMATION_CUSTOM2__C.value);
+    BeforeActions.scenario.write("Record - " + uniqueRecordId + " deleted successfully");
+  }
+
+
+  @Before(order = 1, value = "@BQ_SOURCE_TEST")
+  public static void createTempSourceBQTable() throws IOException, InterruptedException {
+    createSourceBQTableWithQueries(PluginPropertyUtils.pluginProp("CreateBQTableQueryFile"),
+                                   PluginPropertyUtils.pluginProp("InsertBQDataQueryFile"));
   }
 
   @After(order = 1, value = "@BQ_TEMP_CLEANUP")
@@ -83,7 +108,7 @@ public class TestSetupHooks {
    * FirstName | LastName | Company                               |
    *     22    | 968      | 245308db-6088-4db2-a933-f0eea650846a  |
    */
-  @Before(order = 1, value = "@BQ_SOURCE_TEST")
+  @Before(order = 1, value = "@BQ_SOURCE_TEST_LEAD")
   public static void createTempSourceBQTableForLeadSObject() throws IOException, InterruptedException {
     String uniqueId = RandomStringUtils.randomAlphanumeric(7);
     String bqSourceTable = "E2E_SOURCE_" + UUID.randomUUID().toString().replaceAll("-", "_");
@@ -94,9 +119,13 @@ public class TestSetupHooks {
     String lastName = "testLeadL_" + uniqueId;
     String company = uniqueId + ".com";
 
-    BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-      "SELECT * FROM UNNEST([ STRUCT('" + firstName + "' AS FirstName, '" + lastName + "' AS LastName, '"
-      + company + "' AS Company)])");
+
+    BigQueryClient.getSoleQueryResult(
+      "create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
+        "SELECT * FROM UNNEST([ STRUCT('" + firstName + "' AS FirstName, '" +
+        lastName + "' AS LastName, '" +
+        company + "' AS Company)])"
+    );
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -159,5 +188,52 @@ public class TestSetupHooks {
   public static void deletePushTopic() {
     String pushTopicName = SalesforcePropertiesPageActions.topicName;
     SalesforceClient.deletePushTopic(pushTopicName);
+    BeforeActions.scenario.write("PushTopic - " + pushTopicName + " deleted successfully");
+  }
+
+  @After(order = 1, value = "@BQ_SINK_TEST")
+  public static void deleteTempTargetBQTable() throws IOException, InterruptedException {
+    String bqTargetTableName = PluginPropertyUtils.pluginProp("bqTargetTable");
+    try {
+      BigQueryClient.dropBqQuery(bqTargetTableName);
+      BeforeActions.scenario.write("BQ Target table - " + bqTargetTableName + " deleted successfully");
+      PluginPropertyUtils.removePluginProp("bqTargetTable");
+
+    } catch (BigQueryException e) {
+      if (e.getMessage().contains("Not found: Table")) {
+        BeforeActions.scenario.write("BQ Target Table " + bqTargetTableName + " does not exist");
+      } else {
+        Assert.fail(e.getMessage());
+      }
+    }
+  }
+
+  @Before(order = 1, value = "@BQ_SINK_TEST")
+  public void setTempTargetBQTable() {
+    String bqTargetTable = "TestSN_table" + RandomStringUtils.randomAlphanumeric(10);
+    PluginPropertyUtils.addPluginProp("bqTargetTable", bqTargetTable);
+    BeforeActions.scenario.write("BigQuery Target table name: " + bqTargetTable);
+  }
+
+  @After(order = 1, value = "@BQ_SINK_MULTI_TEST")
+  public static void deleteTempTargetMultiBQTable() throws IOException, InterruptedException {
+    String bqTargetTableName = PluginPropertyUtils.pluginProp("customTable1");
+    String bqTargetTableName2 = PluginPropertyUtils.pluginProp("customTable2");
+
+    try {
+      BigQueryClient.dropBqQuery(bqTargetTableName);
+      BeforeActions.scenario.write("BQ Target table - " + bqTargetTableName + " deleted successfully");
+      BigQueryClient.dropBqQuery(bqTargetTableName2);
+      BeforeActions.scenario.write("BQ Target table - " + bqTargetTableName2 + " deleted successfully");
+
+    } catch (BigQueryException e) {
+      if (e.getMessage().contains("Not found: Table")) {
+        BeforeActions.scenario.write("BQ Target Table " + bqTargetTableName + " does not exist");
+        BeforeActions.scenario.write("BQ Target Table " + bqTargetTableName2 + " does not exist");
+
+      } else {
+        Assert.fail(e.getMessage());
+      }
+    }
   }
 }

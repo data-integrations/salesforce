@@ -37,8 +37,7 @@ Feature: Salesforce Sink  - Design time scenarios
     Then Enter input plugin property: "referenceName" with value: "ReferenceName"
     And Select radio button plugin property: "operation" with value: "insert"
     And fill Authentication properties for Salesforce Admin user
-    And Enter input plugin property: "sObject" with value: "sobject.lead"
-    And Enter input plugin property: "referenceName" with value: "ReferenceName"
+    And Enter input plugin property: "sObject" with value: "sobject.Automation_custom_c"
     Then Validate "Salesforce" plugin properties
 
   @SINK-TS-SF-DSGN-02 @BQ_SOURCE_TEST @CONNECTION

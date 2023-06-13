@@ -19,7 +19,7 @@
 
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
 
-  @MULTIBATCH-TS-SF-RNTM-01 @BQ_SINK_TEST
+  @MULTIBATCH-TS-SF-RNTM-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to preview, deploy and run pipeline for valid White List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -28,7 +28,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Authentication properties for Salesforce Admin user
     And fill Reference Name property
     And fill White List with below listed SObjects:
-      | OPPORTUNITY | LEAD |
+      | AUTOMATION_CUSTOM__C | AUTOMATION_CUSTOM2__C |
     And Enter input plugin property: "datetimeAfter" with value: "data.modified.after"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
@@ -55,8 +55,9 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
-  @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_TEST
+  @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to preview, deploy and run pipeline for valid Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -65,7 +66,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And fill Authentication properties for Salesforce Admin user
     And fill Reference Name property
     And fill White List with below listed SObjects:
-      | LEAD |
+      | AUTOMATION_CUSTOM__C | AUTOMATION_CUSTOM2__C |
     And fill Black List with below listed SObjects:
       | ACCOUNT | CONTACT |
     And Enter input plugin property: "datetimeAfter" with value: "last.modified.after"
@@ -94,8 +95,10 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
-  @MULTIBATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST
+
+  @MULTIBATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
     When Open Datafusion Project to configure pipeline
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
@@ -112,7 +115,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Click on the Create button
     Then Use new connection
     And fill White List with below listed SObjects:
-      | OPPORTUNITY | LEAD |
+      | AUTOMATION_CUSTOM__C | AUTOMATION_CUSTOM2__C |
     And Enter input plugin property: "datetimeAfter" with value: "data.modified.after"
     Then Validate "Salesforce Multi Objects" plugin properties
     And Capture the generated Output Schema
@@ -132,3 +135,4 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table

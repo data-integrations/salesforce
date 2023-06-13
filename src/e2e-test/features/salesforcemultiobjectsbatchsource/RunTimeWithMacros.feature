@@ -19,7 +19,7 @@
 
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
 
-  @MULTIBATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST
+  @MULTIBATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to preview, deploy a pipeline when plugin is configured with macros for WhiteList
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -53,7 +53,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList"
+    And Enter runtime argument value "sfmultisource.listofsobject" for key "WhiteList"
     And Run the preview of pipeline with runtime arguments
     Then Wait till pipeline preview is in running state
     Then Open and capture pipeline preview logs
@@ -68,14 +68,16 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.listofsobjects" for key "WhiteList"
+    And Enter runtime argument value "sfmultisource.listofsobject" for key "WhiteList"
     Then Run the Pipeline in Runtime with runtime arguments
     Then Wait till pipeline is in running state
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
-  @MULTIBATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST
+
+  @MULTIBATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to preview, deploy a pipeline when plugin is configured with macros for Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -110,7 +112,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.sobject.lead" for key "WhiteList"
+    And Enter runtime argument value "sfmultisource.listofsobject" for key "WhiteList"
     And Enter runtime argument value "sfmultisource.listofsobjectsforblacklist" for key "BlackList"
     And Run the preview of pipeline with runtime arguments
     Then Wait till pipeline preview is in running state
@@ -126,10 +128,11 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sfmultisource.sobject.lead" for key "WhiteList"
+    And Enter runtime argument value "sfmultisource.listofsobject" for key "WhiteList"
     And Enter runtime argument value "sfmultisource.listofsobjectsforblacklist" for key "BlackList"
     Then Run the Pipeline in Runtime with runtime arguments
     Then Wait till pipeline is in running state
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
