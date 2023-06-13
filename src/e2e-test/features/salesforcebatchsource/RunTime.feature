@@ -1,4 +1,4 @@
-# Copyright © 2022 Cask Data, Inc.
+# Copyright © 2023 Cask Data, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not
 # use this file except in compliance with the License. You may obtain a copy of
@@ -19,7 +19,7 @@
 
 Feature: Salesforce Batch Source - Run time Scenarios
 
-  @BATCH-TS-SF-RNTM-01 @BQ_SINK_TEST
+  @BATCH-TS-SF-RNTM-01 @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview and deploy the pipeline when plugin is configured for SObject Name
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -27,7 +27,7 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
     And Enter input plugin property: "referenceName" with value: "Reference"
-    And Enter input plugin property: "sObjectName" with value: "sobject.lead"
+    And Enter input plugin property: "sObjectName" with value: "sobject.Automation_custom_c"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
@@ -53,8 +53,10 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
     And Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from source table
 
-  @BATCH-TS-SF-RNTM-02 @BQ_SINK_TEST @FILE_PATH @BQ_TEMP_CLEANUP
+
+  @BATCH-TS-SF-RNTM-02 @BQ_SINK_TEST @FILE_PATH @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview and deploy the pipeline when plugin is configured for SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -62,7 +64,7 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
     And Enter input plugin property: "referenceName" with value: "referenceName"
-    And Enter textarea plugin property: "query" with value: "opportunity.query"
+    And Enter textarea plugin property: "query" with value: "test.query"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
@@ -88,8 +90,10 @@ Feature: Salesforce Batch Source - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from source table
 
-  @BATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST
+
+  @BATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -106,7 +110,7 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Verify the test connection is successful
     Then Click on the Create button
     Then Use new connection
-    And Enter textarea plugin property: "query" with value: "opportunity.query"
+    And Enter textarea plugin property: "query" with value: "test.query"
     Then Validate "Salesforce" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
@@ -126,3 +130,6 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred to target Big Query table is equal to the values from source table
+
+

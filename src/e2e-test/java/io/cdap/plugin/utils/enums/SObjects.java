@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -26,6 +26,8 @@ public enum SObjects {
   OPPORTUNITY("Opportunity"),
   BLAHBLAH("blahblah"),
   ACCOUNTZZ("Accountzz"),
+  AUTOMATION_CUSTOM__C("Automation_custom__c"),
+  AUTOMATION_CUSTOM2__C("Automation_custom2__c"),
   LEADSS("Leadss");
 
   public final String value;

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -17,6 +17,8 @@
 package io.cdap.plugin.utils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sforce.soap.partner.DeleteResult;
 import com.sforce.soap.partner.PartnerConnection;
@@ -25,18 +27,21 @@ import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.e2e.utils.PluginPropertyUtils;
-
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.streaming.SalesforceStreamingSourceConfig;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -51,6 +56,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -71,9 +78,10 @@ public class SalesforceClient {
   private static final String REST_ENDPOINT = PluginPropertyUtils.pluginProp("rest.api.endpoint");
   private static final String API_VERSION = PluginPropertyUtils.pluginProp("rest.api.version");
   private static final Header prettyPrintHeader = new BasicHeader("X-PrettyPrint", "1");
+  public static List<JsonObject> sobjectResponse = new ArrayList<>();
+  public static String uniqueRecordId;
   private static String loginAccessToken = null;
   private static String loginInstanceUrl = null;
-  public static Map<String, Object> leadResponseInMap = new HashMap<>();
 
   public static String getAccessToken() {
     CloseableHttpClient httpClient = HttpClientBuilder.create().build();
@@ -105,14 +113,14 @@ public class SalesforceClient {
     return loginAccessToken;
   }
 
-  public static String createLead(JSONObject objectJson, String objectName) throws UnsupportedEncodingException {
+  public static String createObject(JSONObject objectJson, String objectName) throws UnsupportedEncodingException {
     getAccessToken();
     String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
     Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
     String uri = baseUri + "/sobjects/" + objectName + "/";
-    String leadId = "null";
+    uniqueRecordId = "null";
 
-    logger.info("JSON for Lead record to be inserted:\n" + objectJson.toString(1));
+    logger.info("JSON for  record to be inserted:\n" + objectJson.toString(1));
 
     HttpClient httpClient = HttpClientBuilder.create().build();
     HttpPost httpPost = new HttpPost(uri);
@@ -129,8 +137,8 @@ public class SalesforceClient {
       if (statusCode == 201) {
         String responseAsString = EntityUtils.toString(response.getEntity());
         JSONObject json = new JSONObject(responseAsString);
-        leadId = json.getString("id");
-        logger.info("New Lead id from response: " + leadId);
+        uniqueRecordId = json.getString("id");
+        logger.info("New Object id from response: " + uniqueRecordId);
       } else {
         logger.info("Insertion unsuccessful. Status code is: " + statusCode);
       }
@@ -138,14 +146,14 @@ public class SalesforceClient {
       logger.info("Error in establishing connection to Salesforce: " + ioException);
     }
 
-    return leadId;
+    return uniqueRecordId;
   }
 
-  public static void queryLeads(String leadId, String objectName) {
+  public static void queryObject(String id, String objectName) {
     getAccessToken();
     HttpClient httpClient = HttpClientBuilder.create().build();
     String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
-    String uri = baseUri + "/sobjects/" + objectName + "/" + leadId + "?fields=LastName,FirstName,Company";
+    String uri = baseUri + "/sobjects/" + objectName + "/" + id;
     HttpGet httpGet = new HttpGet(uri);
     Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
     httpGet.addHeader(oauthHeader);
@@ -158,8 +166,8 @@ public class SalesforceClient {
       if (statusCode == 200) {
         String responseString = EntityUtils.toString(response.getEntity());
         Gson gson = new Gson();
-        JsonObject leadResponseInJson = gson.fromJson(responseString, JsonObject.class);
-        leadResponseInMap = gson.fromJson(leadResponseInJson, Map.class);
+        JsonObject objectResponseInJson = gson.fromJson(responseString, JsonObject.class);
+        sobjectResponse.add(objectResponseInJson);
       }
     } catch (IOException ioException) {
       logger.info("Error in establishing connection to Salesforce: " + ioException);
@@ -175,12 +183,14 @@ public class SalesforceClient {
           System.getenv("SALESFORCE_CONSUMER_KEY"), System.getenv("SALESFORCE_CONSUMER_SECRET"),
           PluginPropertyUtils.pluginProp("login.url"), 30000, "")));
 
-      QueryResult queryResult = SalesforceStreamingSourceConfig.runQuery(partnerConnection,
-        String.format("SELECT Id FROM PushTopic WHERE Name = '%s'", pushTopicName));
+      QueryResult queryResult = SalesforceStreamingSourceConfig.runQuery(
+        partnerConnection,
+        String.format("SELECT Id FROM PushTopic WHERE Name = '%s'", pushTopicName)
+      );
 
       SObject sobject = queryResult.getRecords()[0];
       String pushTopicId = sobject.getField("Id").toString();
-      DeleteResult[] deleteResults = partnerConnection.delete(new String[] {pushTopicId});
+      DeleteResult[] deleteResults = partnerConnection.delete(new String[]{pushTopicId});
 
       // Check the result of the delete operation
       if (deleteResults != null && deleteResults.length > 0) {
@@ -191,10 +201,71 @@ public class SalesforceClient {
         }
       }
 
-    }  catch (ConnectionException e) {
+    } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new InvalidStageException(
         String.format("Cannot connect to Salesforce API with credentials specified due to error: %s", message), e);
     }
+  }
+
+  public static void deleteId(String id, String objectName) {
+    getAccessToken();
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
+    String uri = baseUri + "/sobjects/" + objectName + "/" + id;
+    HttpDelete httpDelete = new HttpDelete(uri);
+    Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
+    httpDelete.addHeader(oauthHeader);
+
+    try {
+      HttpResponse response = httpClient.execute(httpDelete);
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      if (statusCode == 204) {
+        // Deletion successful
+        logger.info("Id deleted successfully: " + id);
+      } else {
+        // Handle other status codes or error scenarios
+        logger.info("Failed to delete Id.");
+      }
+    } catch (IOException ioException) {
+      logger.info("Error in establishing connection to Salesforce: " + ioException);
+    }
+  }
+
+  public static String queryObjectId(String objectName) {
+    getAccessToken();
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
+
+    try {
+      String query = "SELECT Id FROM " + objectName;
+      String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8.toString());
+      String uri = baseUri + "/query?q=" + encodedQuery;
+
+      HttpGet httpGet = new HttpGet(uri);
+      Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
+      httpGet.addHeader(oauthHeader);
+      httpGet.addHeader(prettyPrintHeader);
+
+      HttpResponse response = httpClient.execute(httpGet);
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      if (statusCode == 200) {
+        String responseString = EntityUtils.toString(response.getEntity());
+        Gson gson = new Gson();
+        JsonObject queryResponse = gson.fromJson(responseString, JsonObject.class);
+
+        JsonArray records = queryResponse.getAsJsonArray("records");
+        for (JsonElement record : records) {
+          JsonObject recordObject = record.getAsJsonObject();
+          uniqueRecordId = recordObject.get("Id").getAsString();
+          logger.info("Queried Object id from response: " + uniqueRecordId);
+        }
+      }
+    } catch (IOException ioException) {
+      logger.info("Error in establishing connection to Salesforce: " + ioException);
+    }
+    return uniqueRecordId;
   }
 }

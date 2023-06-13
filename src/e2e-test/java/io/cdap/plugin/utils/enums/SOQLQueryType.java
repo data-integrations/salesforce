@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -27,6 +27,8 @@ public enum SOQLQueryType {
   GROUPBY(PluginPropertyUtils.pluginProp("groupby.query")),
   PARENTTOCHILD(PluginPropertyUtils.pluginProp("parenttochild.query")),
   CHILDTOPARENT(PluginPropertyUtils.pluginProp("childtoparent.query")),
+
+  TEST(PluginPropertyUtils.pluginProp("test.query")),
   STAR(PluginPropertyUtils.pluginProp("star.query"));
 
   public final String query;
