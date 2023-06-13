@@ -22,6 +22,7 @@ import io.cdap.plugin.utils.SchemaTable;
 import io.cdap.plugin.utils.enums.SOQLQueryType;
 import io.cdap.plugin.utils.enums.SObjects;
 import io.cdap.plugin.utils.enums.SalesforceBatchSourceProperty;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -113,11 +114,6 @@ public class DesignTimeSteps implements CdfHelper {
     SalesforcePropertiesPageActions.verifyValidationMessageForMissingSoqlOrSobjectNameProperty();
   }
 
-  @When("fill SOQL Query field with a Star Query")
-  public void fillSoqlQueryFieldWithStarQuery() {
-    SalesforcePropertiesPageActions.fillSOQLPropertyField(SOQLQueryType.STAR);
-  }
-
   @Then("verify validation message for invalid soql query with Star")
   public void verifyInvalidSoqlQueryErrorMessageForStarQueries() {
     SalesforcePropertiesPageActions.verifyInvalidSoqlQueryErrorMessageForStarQueries();
@@ -132,4 +128,15 @@ public class DesignTimeSteps implements CdfHelper {
   public void verifyValidationMessageForInvalidSObjectName() {
     SalesforcePropertiesPageActions.verifyValidationMessageForInvalidSObjectName(invalidSobjectName);
   }
+
+  @When("fill SOQL Query field with a Query: {string}")
+  public void fillSoqlQueryFieldWithStarQuery(String query) {
+    SalesforcePropertiesPageActions.fillSOQLPropertyField(SOQLQueryType.valueOf(query));
+  }
+
+  @When("fill SObject Name property with an SObject Name: {string}")
+  public void fillSObjectNameFieldWithInvalidValue(String sObjectName) {
+    SalesforcePropertiesPageActions.fillSObjectName(sObjectName);
+  }
+
 }
