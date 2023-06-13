@@ -56,7 +56,7 @@ public class TestSetupHooks {
 
   @Before(order = 2, value = "@CREATE_TEST_DATA2")
   public static void createTestObject2() throws UnsupportedEncodingException, ParseException {
-     BeforeActions.scenario.write("Creating new Custom Object..");
+    BeforeActions.scenario.write("Creating new Custom Object..");
     JSONObject testObjectData = new JSONObject(PluginPropertyUtils.pluginProp("testObjectData"));
     SalesforceClient.createObject(testObjectData, SObjects.AUTOMATION_CUSTOM2__C.value);
     BeforeActions.scenario.write("Creating new Custom Object.." + PluginPropertyUtils.pluginProp("testObjectData")

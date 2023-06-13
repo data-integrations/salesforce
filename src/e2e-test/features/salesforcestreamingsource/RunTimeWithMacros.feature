@@ -19,7 +19,7 @@
 
 Feature: Salesforce Streaming Source - Run time Scenarios (macros)
 
-  @STREAMING-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST @DELETE_PUSH_TOPIC
+  @STREAMING-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST @DELETE_PUSH_TOPIC @DELETE_TEST_DATA
   Scenario: Verify user should be able to deploy and run pipeline with macro for Streaming Source using SObjectName
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
@@ -48,6 +48,9 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     Then Validate "BigQuery" plugin properties
     And Close the Plugin Properties page
     And Connect plugins: "Salesforce" and "BigQuery" to establish connection
+    And Click on configure button
+    And Click on pipeline config
+    And Click on batch time and select format
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
     And Enter runtime argument value from environment variable "admin.username" for key "Username"
@@ -57,15 +60,18 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter unique Topic name as a Runtime argument value for key: "TopicName"
-    And Enter runtime argument value "sobject.lead" for key "SObjectName"
+    And Enter runtime argument value "sobject.Automation_custom_c" for key "SObjectName"
     And Run the Pipeline in Runtime with runtime arguments
-    And Create a new Lead in Salesforce using REST API
     And Wait for pipeline to be in status: "Running" with a timeout of 240 seconds
+    And Create a new Custom Record in salesforce using REST API
+    Then Validate records transferred from salesforce to big query in runtime is equal
+    Then Update existing salesforce records
+    Then Validate records transferred from salesforce to big query in runtime is equal
     And Stop the pipeline
     And Open and capture logs
     Then Verify the pipeline status is "Stopped"
 
-  @STREAMING-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST @DELETE_PUSH_TOPIC
+  @STREAMING-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST @DELETE_PUSH_TOPIC @DELETE_TEST_DATA
   Scenario: Verify user should be able to deploy and run pipeline with macro for Streaming Source using SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Realtime"
@@ -94,6 +100,9 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     Then Validate "BigQuery" plugin properties
     And Close the Plugin Properties page
     And Connect plugins: "Salesforce" and "BigQuery" to establish connection
+    And Click on configure button
+    And Click on pipeline config
+    And Click on batch time and select format
     And Save and Deploy Pipeline
     And Run the Pipeline in Runtime
     And Enter runtime argument value from environment variable "admin.username" for key "Username"
@@ -103,10 +112,13 @@ Feature: Salesforce Streaming Source - Run time Scenarios (macros)
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
     And Enter unique Topic name as a Runtime argument value for key: "TopicName"
-    And Enter runtime argument value "simple.query" for key "Query"
+    And Enter runtime argument value "test.query" for key "Query"
     And Run the Pipeline in Runtime with runtime arguments
-    And Create a new Lead in Salesforce using REST API
     And Wait for pipeline to be in status: "Running" with a timeout of 240 seconds
+    And Create a new Custom Record in salesforce using REST API
+    Then Validate records transferred from salesforce to big query in runtime is equal
+    Then Update existing salesforce records
+    Then Validate records transferred from salesforce to big query in runtime is equal
     And Stop the pipeline
     And Open and capture logs
     Then Verify the pipeline status is "Stopped"

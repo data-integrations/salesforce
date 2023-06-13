@@ -57,6 +57,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Close the pipeline logs
     Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
+
   @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
   Scenario: Verify user should be able to preview, deploy and run pipeline for valid Black List
     When Open Datafusion Project to configure pipeline

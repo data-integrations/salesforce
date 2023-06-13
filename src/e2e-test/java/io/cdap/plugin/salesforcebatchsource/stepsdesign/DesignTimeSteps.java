@@ -88,9 +88,9 @@ public class DesignTimeSteps {
     SalesforcePropertiesPageActions.clickOnServicenowConnection();
   }
 
-  @Then("Validate the values of records transferred from Salesforce to Bigquery is equal")
-  public void validateTheValuesOfRecordsTransferredFromSalesforceToBigqueryIsEqual() throws IOException,
-    InterruptedException {
+  @Then("Validate the values of records transferred from Salesforce to BigQuery is equal")
+  public void validateTheValuesOfRecordsTransferredFromSalesforceToBigQueryIsEqual()
+    throws InterruptedException, IOException {
     boolean recordsMatched = BQValidation.validateSalesforceAndBQRecordValues(
       PluginPropertyUtils.pluginProp("sobject.Automation_custom_c"),
       PluginPropertyUtils.pluginProp("bqTargetTable")

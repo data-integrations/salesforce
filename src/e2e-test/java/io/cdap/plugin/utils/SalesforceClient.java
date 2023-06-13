@@ -51,6 +51,7 @@ import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,7 +118,7 @@ public class SalesforceClient {
     String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
     Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
     String uri = baseUri + "/sobjects/" + objectName + "/";
-     uniqueRecordId = "null";
+    uniqueRecordId = "null";
 
     logger.info("JSON for  record to be inserted:\n" + objectJson.toString(1));
 
@@ -178,8 +179,9 @@ public class SalesforceClient {
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
         Authenticator.createConnectorConfig(new AuthenticatorCredentials(USERNAME, PASSWORD + SECURITYTOKEN,
-          CLIENTID, CLIENTSECRET, PluginPropertyUtils.pluginProp("login.url"),
-          30000, "")));
+                                                                         CLIENTID, CLIENTSECRET, PluginPropertyUtils.
+                                                                           pluginProp("login.url"),
+                                                                         30000, "")));
 
       QueryResult queryResult = SalesforceStreamingSourceConfig.runQuery(
         partnerConnection,
@@ -265,5 +267,52 @@ public class SalesforceClient {
       logger.info("Error in establishing connection to Salesforce: " + ioException);
     }
     return uniqueRecordId;
+  }
+
+    public static void updateObject(String id, String objectName) {
+    getAccessToken();
+    HttpClient httpClient = HttpClientBuilder.create().build();
+    String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
+    String uri = baseUri + "/sobjects/" + objectName + "/" + id;
+    HttpPatch httpPatch = new HttpPatch(uri);
+    Header oauthHeader = new BasicHeader("Authorization", "Bearer " + loginAccessToken);
+    httpPatch.addHeader(oauthHeader);
+    httpPatch.addHeader(prettyPrintHeader);
+
+    try {
+      String uniqueId = RandomStringUtils.randomAlphanumeric(7);
+      String newName = "testname" + uniqueId;
+      String newEmail = "test@gmail.com" + uniqueId;
+
+      // Create a map to hold the fields and values to update
+      Map<String, Object> fieldsToUpdate = new HashMap<>();
+      fieldsToUpdate.put("Name", newName);
+      fieldsToUpdate.put("Col_Email__c", newEmail);
+
+      // Convert the fieldsToUpdate map to a JSON string
+      Gson gson = new Gson();
+      String fieldsJson = gson.toJson(fieldsToUpdate);
+
+      // Set the request body with the fields to update
+      StringEntity requestEntity = new StringEntity(fieldsJson);
+      requestEntity.setContentType(ContentType.APPLICATION_JSON.getMimeType()); // Set content type to application/json
+      httpPatch.setEntity(requestEntity);
+
+      // Execute the update request
+      HttpResponse response = httpClient.execute(httpPatch);
+      int statusCode = response.getStatusLine().getStatusCode();
+
+      if (statusCode == 204) {
+        logger.info("Object updated Successfully");
+      } else {
+        String responseString = EntityUtils.toString(response.getEntity());
+        Assert.fail("Failed to update object. Response: " + responseString);
+        logger.info("Failed to update object. Response: " + responseString);
+      }
+    } catch (IOException ioException) {
+      logger.info("Error in establishing connection to Salesforce: " + ioException);
+      Assert.fail("Unexpected exception occurred: " + ioException.getMessage());
+
+    }
   }
 }
