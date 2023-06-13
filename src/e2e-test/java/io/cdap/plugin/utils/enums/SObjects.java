@@ -24,7 +24,7 @@ public enum SObjects {
   CONTACT("Contact"),
   LEAD("Lead"),
   OPPORTUNITY("Opportunity"),
-  BLAHBLAH("blahblah"),
+  INVALID("Invalid"),
   ACCOUNTZZ("Accountzz"),
   LEADSS("Leadss");
 

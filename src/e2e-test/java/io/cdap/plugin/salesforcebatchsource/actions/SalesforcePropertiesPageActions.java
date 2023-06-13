@@ -69,11 +69,11 @@ public class SalesforcePropertiesPageActions {
 
   public static void fillAuthenticationPropertiesForSalesforceAdminUser() {
     SalesforcePropertiesPageActions.fillAuthenticationProperties(
-      PluginPropertyUtils.pluginProp("admin.username"),
-      PluginPropertyUtils.pluginProp("admin.password"),
-      PluginPropertyUtils.pluginProp("admin.security.token"),
-      PluginPropertyUtils.pluginProp("admin.consumer.key"),
-      PluginPropertyUtils.pluginProp("admin.consumer.secret"));
+      System.getenv("SALESFORCE_USERNAME"),
+      System.getenv("SALESFORCE_PASSWORD"),
+      System.getenv("SALESFORCE_SECURITY_TOKEN"),
+      System.getenv("SALESFORCE_CONSUMER_KEY"),
+      System.getenv("SALESFORCE_CONSUMER_SECRET"));
   }
 
   public static void fillAuthenticationPropertiesWithInvalidValues() {
