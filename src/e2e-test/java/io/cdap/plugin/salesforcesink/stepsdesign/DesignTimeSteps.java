@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -17,8 +17,34 @@
 
 package io.cdap.plugin.salesforcesink.stepsdesign;
 
+import io.cdap.e2e.pages.actions.CdfPipelineRunAction;
+import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
+import io.cdap.e2e.utils.BigQueryClient;
+import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.BQValidation;
+import io.cucumber.java.en.Then;
+import org.junit.Assert;
+import stepsdesign.BeforeActions;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.ParseException;
+
 /**
  * Design-time steps of Salesforce plugins.
  */
 public class DesignTimeSteps {
+
+  @Then("Validate the values of records transferred from Bigquery to Salesforce is equal")
+  public void validateTheValuesOfRecordsTransferredFromBigqueryToSalesforceIsEqual() throws IOException,
+    InterruptedException {
+    boolean recordsMatched = BQValidation.validateSalesforceAndBQRecordValues(
+      PluginPropertyUtils.pluginProp("sobject.Automation_custom_c"),
+      PluginPropertyUtils.pluginProp("bqSourceTable")
+    );
+    Assert.assertTrue("Value of records transferred to the target table should be equal to the value " +
+                        "of the records in the source table", recordsMatched);
+  }
 }

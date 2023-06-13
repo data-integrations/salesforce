@@ -19,7 +19,7 @@
 
 Feature: Salesforce Sink - Run time Scenarios with Macro
 
-  @SINK-TS-SF-RNTM-MACRO-01 @BQ_SOURCE_TEST
+  @SINK-TS-SF-RNTM-MACRO-01 @BQ_SOURCE_TEST @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview, deploy the pipeline using macro for Sink
     When Open Datafusion Project to configure pipeline
     And Select plugin: "BigQuery" from the plugins list as: "Source"
@@ -53,7 +53,7 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sobject.lead" for key "SObjectName"
+    And Enter runtime argument value "sobject.Automation_custom_c" for key "SObjectName"
     And Run the preview of pipeline with runtime arguments
     Then Wait till pipeline preview is in running state
     Then Open and capture pipeline preview logs
@@ -68,10 +68,10 @@ Feature: Salesforce Sink - Run time Scenarios with Macro
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "sobject.lead" for key "SObjectName"
+    And Enter runtime argument value "sobject.Automation_custom_c" for key "SObjectName"
     Then Run the Pipeline in Runtime with runtime arguments
     Then Wait till pipeline is in running state
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
-
+    Then Validate the values of records transferred from Bigquery to Salesforce is equal

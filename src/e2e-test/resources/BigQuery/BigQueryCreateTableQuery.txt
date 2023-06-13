@@ -1,0 +1,3 @@
+create table `DATASET.TABLE_NAME` (Name STRING, Col_Timestamp__c TIMESTAMP, Col_Date__c DATE, Col_Currency__c FLOAT64,
+ Col_Email__c STRING, Col_Number__c FLOAT64, Col_GeoLocation__Latitude__s FLOAT64,
+Col_GeoLocation__Longitude__s FLOAT64, Col__c STRING, Col_Url__c STRING, Col_Time__c TIME, Col_Text__c STRING)

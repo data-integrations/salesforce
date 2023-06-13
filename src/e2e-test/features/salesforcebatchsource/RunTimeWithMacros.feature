@@ -18,7 +18,7 @@
 
 Feature: Salesforce Batch Source - Run time Scenarios (macro)
 
-  @BATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST @FILE_PATH @BQ_TEMP_CLEANUP
+  @BATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview and deploy the pipeline when plugin is configured for SObject Name with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -54,7 +54,7 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
+    And Enter runtime argument value "sobject.Automation_custom_c" for key "SObjectName"
     And Run the preview of pipeline with runtime arguments
     Then Wait till pipeline preview is in running state
     Then Open and capture pipeline preview logs
@@ -69,14 +69,16 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "Salesforce.sobjectName" for key "SObjectName"
+    And Enter runtime argument value "sobject.Automation_custom_c" for key "SObjectName"
     Then Run the Pipeline in Runtime with runtime arguments
     Then Wait till pipeline is in running state
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred from Salesforce to Bigquery is equal
 
-  @BATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST @BQ_TEMP_CLEANUP
+
+  @BATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview, deploy the pipeline when plugin is configured for SOQL Query with macros
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -110,7 +112,7 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "simple.query.for.leads" for key "Query"
+    And Enter runtime argument value "test.query" for key "Query"
     And Run the preview of pipeline with runtime arguments
     Then Wait till pipeline preview is in running state
     Then Open and capture pipeline preview logs
@@ -125,9 +127,10 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     And Enter runtime argument value from environment variable "admin.consumer.key" for key "ConsumerKey"
     And Enter runtime argument value from environment variable "admin.consumer.secret" for key "ConsumerSecret"
     And Enter runtime argument value "login.url" for key "LoginUrl"
-    And Enter runtime argument value "simple.query.for.leads" for key "Query"
+    And Enter runtime argument value "test.query" for key "Query"
     Then Run the Pipeline in Runtime with runtime arguments
     Then Wait till pipeline is in running state
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
+    Then Validate the values of records transferred from Salesforce to Bigquery is equal

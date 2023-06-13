@@ -1,0 +1,5 @@
+insert into `DATASET.TABLE_NAME` (Name, Col_Timestamp__c, Col_Date__c, Col_Currency__c, Col_Email__c, Col_Number__c,
+Col_GeoLocation__Latitude__s, Col_GeoLocation__Longitude__s, Col__c, Col_Url__c, Col_Time__c, Col_Text__c) values
+('adam','2019-03-10 04:50:01 UTC','2021-01-28',61.823765812,'skfdsfds@gmail.com',898365444,37.794116,-122.3432,
+'984746334','abc/123','20:26:34','find');
+
