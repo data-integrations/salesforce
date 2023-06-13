@@ -75,7 +75,7 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
-    Then Validate the values of records transferred from Salesforce to Bigquery is equal
+    Then Validate the values of records transferred from Salesforce to BigQuery is equal
 
 
   @BATCH-TS-SF-RNTM-MACRO-02 @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
@@ -133,4 +133,4 @@ Feature: Salesforce Batch Source - Run time Scenarios (macro)
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
-    Then Validate the values of records transferred from Salesforce to Bigquery is equal
+    Then Validate the values of records transferred from Salesforce to BigQuery is equal

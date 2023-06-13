@@ -18,7 +18,6 @@
 package io.cdap.plugin.salesforcesink.stepsdesign;
 
 import io.cdap.e2e.pages.actions.CdfPipelineRunAction;
-import io.cdap.e2e.pages.actions.CdfPluginPropertiesActions;
 import io.cdap.e2e.utils.BigQueryClient;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.plugin.BQValidation;
@@ -26,8 +25,6 @@ import io.cucumber.java.en.Then;
 import org.junit.Assert;
 import stepsdesign.BeforeActions;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
