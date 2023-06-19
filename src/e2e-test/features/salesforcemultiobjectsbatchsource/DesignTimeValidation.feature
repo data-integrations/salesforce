@@ -18,28 +18,28 @@
 @Regression
 Feature: Salesforce Multi Objects Batch Source - Design time - validation scenarios
 
-  @MULTIBATCH-TS-SF-DSGN-14
+  @MULTIBATCH-TS-SF-DSGN-ERROR-01
   Scenario: Verify validation message for incorrect SObject names in the White List
     When Open Datafusion Project to configure pipeline
-    And Select data pipeline type as 'Data Pipeline - Batch'
-    And Select plugin: "Salesforce Multi Objects" from the plugins list
-    And Navigate to the properties page of plugin: "Salesforce MultiObjects"
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
     And fill White List with below listed SObjects:
-      | ACCOUNTZZ | BLAHBLAH |
-    And click on the Validate button
+      | ACCOUNTZZ | INVALID |
+    And Click on the Validate button
     Then verify invalid SObject name validation message for White List
 
-  @MULTIBATCH-TS-SF-DSGN-15
+  @MULTIBATCH-TS-SF-DSGN-ERROR-02
   Scenario: Verify validation message for incorrect SObject names in the Black List
     When Open Datafusion Project to configure pipeline
-    And Select data pipeline type as 'Data Pipeline - Batch'
-    And Select plugin: "Salesforce Multi Objects" from the plugins list
-    And Navigate to the properties page of plugin: "Salesforce MultiObjects"
+    And Select data pipeline type as: "Batch"
+    And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"
+    And Navigate to the properties page of plugin: "SalesforceMultiObjects"
     And fill Reference Name property
     And fill Authentication properties for Salesforce Admin user
     And fill Black List with below listed SObjects:
       | ACCOUNTZZ | LEADSS |
-    And click on the Validate button
+    And Click on the Validate button
     Then verify invalid SObject name validation message for Black List
