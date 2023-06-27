@@ -188,7 +188,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     deployCounter++;
 
     Map<String, String> sinkProperties = new HashMap<>(getBaseProperties(REFERENCE_NAME)
-      .put(SalesforceSinkConfig.PROPERTY_ERROR_HANDLING, "Stop on Error")
+      .put(SalesforceSinkConfig.PROPERTY_ERROR_HANDLING, "Fail on Error")
       .put(SalesforceSinkConfig.PROPERTY_SOBJECT, sObject)
       .put(SalesforceSinkConfig.PROPERTY_OPERATION, "Insert")
       .put(SalesforceSinkConfig.PROPERTY_MAX_BYTES_PER_BATCH, "10000000")
@@ -229,7 +229,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
                                     BaseSalesforceETLTest.CONSUMER_KEY, BaseSalesforceETLTest.CONSUMER_SECRET,
                                     BaseSalesforceETLTest.USERNAME, BaseSalesforceETLTest.PASSWORD,
                                     BaseSalesforceETLTest.LOGIN_URL, 30000, sObject, "Insert", null,
-                                    ConcurrencyMode.Parallel.name(), "1000000", "10000", "Stop on Error",
+                                    ConcurrencyMode.Parallel.name(), "1000000", "10000", "Fail on Error",
                                     BaseSalesforceETLTest.SECURITY_TOKEN,
                                     null, null);
   }
