@@ -17,10 +17,14 @@ package io.cdap.plugin.salesforce;
 
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.FieldType;
+import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.common.MockPipelineConfigurer;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.sink.batch.CSVRecord;
+import io.cdap.plugin.salesforce.plugin.sink.batch.FileUploadSobject;
+import io.cdap.plugin.salesforce.plugin.sink.batch.StructuredRecordToCSVRecordTransformer;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchMultiSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceMultiSourceConfig;
@@ -300,5 +304,46 @@ public class SalesforceSchemaUtilTest {
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
     source.configurePipeline(mockPipelineConfigurer);
     Assert.assertNull(mockPipelineConfigurer.getOutputSchema());
+  }
+
+  @Test
+  public void testTransformWithAttachment() {
+    Schema schema = Schema.recordOf("Schema",
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("Body", Schema.of(Schema.Type.STRING)));
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    StructuredRecord record = builder.set("Id", 1)
+      .set("Name", "attachment.pdf").set("Body", "base64-encoded value").build();
+    FileUploadSobject sObjectName = FileUploadSobject.Attachment;
+    // Call the transform method
+    CSVRecord csvRecord = new StructuredRecordToCSVRecordTransformer().transform(record, sObjectName, 1);
+
+    // Verify the results
+    Assert.assertEquals(3, csvRecord.getColumnNames().size());
+    Assert.assertEquals(3, csvRecord.getValues().size());
+    Assert.assertEquals("Id", csvRecord.getColumnNames().get(0));
+    // Body Field value will be replaced with record number concatenated with file name.
+    Assert.assertEquals("#1_attachment.pdf", csvRecord.getValues().get(2));
+  }
+
+  @Test
+  public void testTransformWithoutAttachment() {
+    Schema schema = Schema.recordOf("Schema",
+                                    Schema.Field.of("Id", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("Body", Schema.of(Schema.Type.STRING)));
+    StructuredRecord.Builder builder = StructuredRecord.builder(schema);
+    StructuredRecord record = builder.set("Id", 1)
+      .set("Name", "attachment.pdf").set("Body", "normal value").build();
+    FileUploadSobject sObjectName = null;
+    // Call the transform method
+    CSVRecord csvRecord = new StructuredRecordToCSVRecordTransformer().transform(record, sObjectName, 1);
+
+    // Verify the results
+    Assert.assertEquals(3, csvRecord.getColumnNames().size());
+    Assert.assertEquals(3, csvRecord.getValues().size());
+    Assert.assertEquals("Id", csvRecord.getColumnNames().get(0));
+    Assert.assertEquals("normal value", csvRecord.getValues().get(2));
   }
 }
