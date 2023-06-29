@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
     "io.cdap.plugin.salesforcemultiobjectsbatchsource.stepsdesign", "stepsdesign"},
   tags = {"@Bug"},
   monochrome = true,
+  strict = true,
   plugin = {"pretty", "html:target/cucumber-html-report", "json:target/cucumber-reports/cucumber.json",
     "junit:target/cucumber-reports/cucumber.xml"}
 )
