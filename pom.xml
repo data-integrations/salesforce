@@ -720,6 +720,7 @@
             <version>2.18.1</version>
             <configuration>
               <skipTests>true</skipTests>
+              <testFailureIgnore>false</testFailureIgnore>
             </configuration>
           </plugin>
 
