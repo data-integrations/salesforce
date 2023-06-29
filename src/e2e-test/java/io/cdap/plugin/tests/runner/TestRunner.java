@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
   features = {"src/e2e-test/features"},
   glue = {"io.cdap.plugin.salesforcebatchsource.stepsdesign",
     "io.cdap.plugin.salesforcemultiobjectsbatchsource.stepsdesign", "stepsdesign"},
-  tags = {"@Regression", "@SalesforceSalesCloud"},
+  tags = {"@Bug"},
   monochrome = true,
   plugin = {"pretty", "html:target/cucumber-html-report", "json:target/cucumber-reports/cucumber.json",
     "junit:target/cucumber-reports/cucumber.xml"}

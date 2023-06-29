@@ -47,3 +47,9 @@ Feature: Salesforce Batch Source - Design time scenarios
       | SObjectName | ExpectedScehma |
       | LEAD        | lead.schema    |
       | ACCOUNT     | account.schema |
+
+
+  @Bug
+  Scenario: Fail the Build if the step is undefined
+    When Open Datafusion Project to configure pipeline
+    Then I will fail the build because I am undefined
