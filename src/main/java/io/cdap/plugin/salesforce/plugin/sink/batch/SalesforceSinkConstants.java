@@ -27,4 +27,6 @@ public class SalesforceSinkConstants {
   public static final String CONFIG_JOB_ID = "mapred.salesforce.job.id";
   public static final String CONFIG_MAX_BYTES_PER_BATCH = "mapred.salesforce.max.bytes.per.batch";
   public static final String CONFIG_MAX_RECORDS_PER_BATCH = "mapred.salesforce.max.records.per.batch";
+  public static final String DATA_FIELD_PREFIX = "#";
+  public static final String ATTACHMENT_MAP_KEY = "%s_%s";
 }

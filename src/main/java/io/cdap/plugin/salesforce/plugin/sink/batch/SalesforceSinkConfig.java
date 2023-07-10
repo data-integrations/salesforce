@@ -26,7 +26,6 @@ import io.cdap.cdap.api.annotation.Macro;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.api.FailureCollector;
-import io.cdap.cdap.etl.api.validation.InvalidStageException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
@@ -39,7 +38,6 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -117,7 +115,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Name(PROPERTY_ERROR_HANDLING)
   @Description("Strategy used to handle erroneous records.\n" +
     "Skip on error - Ignores erroneous records.\n" +
-    "Stop on error - Fails pipeline due to erroneous record.")
+    "Fail on error - Fails pipeline due to erroneous record.")
   @Macro
   private String errorHandling;
 
@@ -292,6 +290,11 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
         break;
       case upsert:
         externalIdFieldName = getExternalIdField();
+        if (Strings.isNullOrEmpty(externalIdFieldName)) {
+          collector.addFailure(
+              String.format("External id field must be set for operation='%s'", operation), null)
+            .withConfigProperty(SalesforceSinkConfig.PROPERTY_EXTERNAL_ID_FIELD);
+        }
         break;
       case update:
         externalIdFieldName = SALESFORCE_ID_FIELD;
@@ -301,7 +304,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
           .withConfigProperty(PROPERTY_OPERATION);
     }
 
-    if (operation == OperationEnum.upsert) {
+    if (operation == OperationEnum.upsert && externalIdFieldName != null) {
       Field externalIdField = describeResult.getField(sObject, externalIdFieldName);
       if (externalIdField == null) {
         collector.addFailure(

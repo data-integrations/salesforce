@@ -43,11 +43,10 @@ import java.util.stream.Collectors;
 @Plugin(type = BatchSink.PLUGIN_TYPE)
 @Name(SalesforceBatchSink.PLUGIN_NAME)
 @Description("Writes records to Salesforce")
-public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritable, CSVRecord> {
+public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritable, StructuredRecord> {
 
   public static final String PLUGIN_NAME = "Salesforce";
   private final SalesforceSinkConfig config;
-  private StructuredRecordToCSVRecordTransformer transformer;
 
   public SalesforceBatchSink(SalesforceSinkConfig config) throws ConnectionException {
     this.config = config;
@@ -87,12 +86,10 @@ public class SalesforceBatchSink extends BatchSink<StructuredRecord, NullWritabl
   @Override
   public void initialize(BatchRuntimeContext context) throws Exception {
     super.initialize(context);
-    this.transformer = new StructuredRecordToCSVRecordTransformer();
   }
 
   @Override
-  public void transform(StructuredRecord record, Emitter<KeyValue<NullWritable, CSVRecord>> emitter) {
-    CSVRecord csvRecord = transformer.transform(record);
-    emitter.emit(new KeyValue<>(null, csvRecord));
+  public void transform(StructuredRecord record, Emitter<KeyValue<NullWritable, StructuredRecord>> emitter) {
+    emitter.emit(new KeyValue<>(null, record));
   }
 }
