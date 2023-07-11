@@ -14,8 +14,17 @@
  * the License.
  */
 
+package io.cdap.plugin.salesforcesink.actions;
+
+import io.cdap.e2e.utils.SeleniumHelper;
+import io.cdap.plugin.salesforcesink.locators.SalesforcePropertiesPage;
+
 /**
- * Test Runner to execute Salesforce plugin's test scenarios.
+ * Salesforce sink plugins - Actions.
  */
 
-package io.cdap.plugin.tests.runner;
+public class SalesforcePropertiesPageActions {
+  static {
+    SeleniumHelper.getPropertiesLocators(SalesforcePropertiesPage.class);
+  }
+}

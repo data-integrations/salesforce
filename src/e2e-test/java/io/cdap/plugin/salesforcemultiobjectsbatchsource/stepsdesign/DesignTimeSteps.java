@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -21,7 +21,6 @@ import io.cdap.plugin.utils.enums.SObjects;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +38,6 @@ public class DesignTimeSteps {
     for (String sObject : list) {
       whiteListedSObjects.add(SObjects.valueOf(sObject));
     }
-
     SalesforceMultiObjectsPropertiesPageActions.fillWhiteListWithSObjectNames(whiteListedSObjects);
   }
 
@@ -50,7 +48,6 @@ public class DesignTimeSteps {
     for (String sObject : list) {
       blackListedSObjects.add(SObjects.valueOf(sObject));
     }
-
     SalesforceMultiObjectsPropertiesPageActions.fillBlackListWithSObjectNames(blackListedSObjects);
   }
 

@@ -15,7 +15,6 @@
  */
 
 /**
- * Test Runner to execute Salesforce plugin's test scenarios.
+ * Design-time steps of Salesforce plugins.
  */
-
-package io.cdap.plugin.tests.runner;
+package io.cdap.plugin.salesforcestreamingsource.stepsdesign;

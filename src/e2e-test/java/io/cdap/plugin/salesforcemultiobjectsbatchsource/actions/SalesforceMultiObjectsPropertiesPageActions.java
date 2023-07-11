@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -17,21 +17,17 @@
 package io.cdap.plugin.salesforcemultiobjectsbatchsource.actions;
 
 import io.cdap.e2e.utils.AssertionHelper;
+import io.cdap.e2e.utils.ElementHelper;
 import io.cdap.e2e.utils.PluginPropertyUtils;
 import io.cdap.e2e.utils.SeleniumHelper;
 import io.cdap.plugin.salesforcemultiobjectsbatchsource.locators.SalesforceMultiObjectsPropertiesPage;
 import io.cdap.plugin.utils.enums.SObjects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.List;
 
 /**
  * Salesforce MultiObjects batch source plugin - Actions.
  */
 public class SalesforceMultiObjectsPropertiesPageActions {
-  private static final Logger logger = LoggerFactory.getLogger(SalesforceMultiObjectsPropertiesPageActions.class);
-
   static {
     SeleniumHelper.getPropertiesLocators(SalesforceMultiObjectsPropertiesPage.class);
   }
@@ -44,7 +40,8 @@ public class SalesforceMultiObjectsPropertiesPageActions {
     }
 
     for (int i = 0; i < totalSObjects; i++) {
-      SalesforceMultiObjectsPropertiesPage.sObjectNameInputsInWhiteList.get(i).sendKeys(sObjectNames.get(i).value);
+      ElementHelper.sendKeys(SalesforceMultiObjectsPropertiesPage.sObjectNameInputsInWhiteList.get(i),
+              sObjectNames.get(i).value);
     }
   }
 
@@ -56,7 +53,8 @@ public class SalesforceMultiObjectsPropertiesPageActions {
     }
 
     for (int i = 0; i < totalSObjects; i++) {
-      SalesforceMultiObjectsPropertiesPage.sObjectNameInputsInBlackList.get(i).sendKeys(sObjectNames.get(i).value);
+      ElementHelper.sendKeys(SalesforceMultiObjectsPropertiesPage.sObjectNameInputsInBlackList.get(i),
+              sObjectNames.get(i).value);
     }
   }
 

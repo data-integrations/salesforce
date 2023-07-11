@@ -15,7 +15,6 @@
  */
 
 /**
- * Test Runner to execute Salesforce plugin's test scenarios.
+ * Salesforce streaming source - Locators.
  */
-
-package io.cdap.plugin.tests.runner;
+package io.cdap.plugin.salesforcestreamingsource.locators;

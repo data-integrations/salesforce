@@ -15,7 +15,8 @@
  */
 
 /**
- * Test Runner to execute Salesforce plugin's test scenarios.
+ * Salesforce batch source - Locators.
  */
 
-package io.cdap.plugin.tests.runner;
+package io.cdap.plugin.salesforcesink.locators;
+

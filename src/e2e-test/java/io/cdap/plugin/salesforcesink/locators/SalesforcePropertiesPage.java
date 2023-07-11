@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,15 +14,11 @@
  * the License.
  */
 
-package io.cdap.plugin.utils;
+package io.cdap.plugin.salesforcesink.locators;
 
 /**
- * Miscellaneous utils.
+ * Salesforce batch sink - Locators.
  */
-public class MiscUtils {
-  public static String getSubStringBetweenDoubleQuotes(String stringWithDoubleQuotes) {
-    int indexOfQuoteStart = stringWithDoubleQuotes.indexOf('"');
-    int indexOfQuoteEnd = stringWithDoubleQuotes.indexOf('"', indexOfQuoteStart + 1);
-    return stringWithDoubleQuotes.substring(indexOfQuoteStart + 1, indexOfQuoteEnd);
-  }
+
+public class SalesforcePropertiesPage {
 }

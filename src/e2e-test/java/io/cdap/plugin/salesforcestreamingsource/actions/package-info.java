@@ -1,5 +1,5 @@
 /*
- * Copyright © 2022 Cask Data, Inc.
+ * Copyright © 2023 Cask Data, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,25 +14,8 @@
  * the License.
  */
 
-package io.cdap.plugin.utils;
-
 /**
- * Schema Type - Mapping.
+ * Salesforce Streaming plugin - Actions.
  */
-public class SchemaFieldTypeMapping {
-  private final String field;
-  private final String type;
+package io.cdap.plugin.salesforcestreamingsource.actions;
 
-  public SchemaFieldTypeMapping(String field, String type) {
-    this.field = field;
-    this.type = type;
-  }
-
-  public String getField() {
-    return field;
-  }
-
-  public String getType() {
-    return type;
-  }
-}
