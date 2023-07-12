@@ -6,8 +6,6 @@ Description
 A batch sink that inserts sObjects into Salesforce.
 Examples of sObjects are opportunities, contacts, accounts, leads, any custom objects, etc.
 
-Currently, only inserts are supported. Upserts are not supported.
-
 Configuration
 -------------
 
