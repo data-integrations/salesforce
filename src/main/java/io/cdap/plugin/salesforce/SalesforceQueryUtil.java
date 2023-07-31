@@ -32,7 +32,6 @@ public class SalesforceQueryUtil {
   private static final String WHERE = " WHERE ";
   private static final String AND = " AND ";
 
-
   private static final String FIELD_LAST_MODIFIED_DATE = "LastModifiedDate";
   private static final String FIELD_ID = "Id";
 

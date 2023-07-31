@@ -86,15 +86,21 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   @Override
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
     throws IOException, InterruptedException {
+    Configuration conf = taskAttemptContext.getConfiguration();
+    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
+    initialize(inputSplit, credentials);
+  }
 
+  public SalesforceBulkRecordReader initialize(
+      InputSplit inputSplit,
+      AuthenticatorCredentials credentials)
+    throws IOException, InterruptedException {
     SalesforceSplit salesforceSplit = (SalesforceSplit) inputSplit;
     jobId = salesforceSplit.getJobId();
     batchId = salesforceSplit.getBatchId();
     LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
 
-    Configuration conf = taskAttemptContext.getConfiguration();
     try {
-      AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
       resultIds = waitForBatchResults(bulkConnection);
       LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
@@ -104,6 +110,7 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
         String.format("Failed to wait for the result of a batch: %s", e.getMessage()),
         e);
     }
+    return this;
   }
 
   /**

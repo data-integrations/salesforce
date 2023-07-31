@@ -20,6 +20,7 @@ import com.google.gson.reflect.TypeToken;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.hadoop.conf.Configuration;
@@ -74,7 +75,30 @@ public class SalesforceInputFormat extends InputFormat {
     return new SalesforceRecordReaderWrapper(sObjectName, sObjectNameField, getDelegateRecordReader(query, schema));
   }
 
-  private RecordReader<Schema, Map<String, ?>> getDelegateRecordReader(String query, Schema schema) {
+  /**
+   * Create a new the RecordReader for a given split.
+   *
+   * @param salesforceSplit Given Salesforce Split
+   * @param schemaJsonString Schema JSON
+   * @param credentials Credential object
+   * @return RecordReader for the given split
+   */
+  public static RecordReader createRecordReader(SalesforceSplit salesforceSplit,
+                                                String schemaJsonString,
+                                                String sObjectNameField,
+                                                AuthenticatorCredentials credentials)
+      throws IOException, InterruptedException {
+    String query = salesforceSplit.getQuery();
+    SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+    String sObjectName = sObjectDescriptor.getName();
+    Schema schema = Schema.parseJson(schemaJsonString);
+    SalesforceRecordReaderWrapper readerWrapper = new SalesforceRecordReaderWrapper(
+        sObjectName, sObjectNameField, getDelegateRecordReader(query, schema, salesforceSplit, credentials));
+    return readerWrapper;
+  }
+
+  private static RecordReader<Schema, Map<String, ?>> getDelegateRecordReader(String query,
+                                                                              Schema schema) {
     if (SalesforceQueryParser.isRestrictedQuery(query)) {
       LOG.info("The SOQL query uses an aggregate function call or offset. "
                  + "Reads will be performed serially and not in parallel.");
@@ -88,4 +112,17 @@ public class SalesforceInputFormat extends InputFormat {
     return new SalesforceWideRecordReader(schema, query, new SoapRecordToMapTransformer());
   }
 
+  private static RecordReader<Schema, Map<String, ?>> getDelegateRecordReader(
+      String query, Schema schema, SalesforceSplit split, AuthenticatorCredentials credentials)
+      throws IOException, InterruptedException {
+    RecordReader<Schema, Map<String, ?>> recordReader = getDelegateRecordReader(query, schema);
+    if (recordReader instanceof SalesforceSoapRecordReader) {
+      ((SalesforceSoapRecordReader) recordReader).initialize(credentials);
+    } else if (recordReader instanceof SalesforceWideRecordReader) {
+      ((SalesforceWideRecordReader) recordReader).initialize(split, credentials);
+    } else if (recordReader instanceof  SalesforceBulkRecordReader) {
+      ((SalesforceBulkRecordReader) recordReader).initialize(split, credentials);
+    }
+    return recordReader;
+  }
 }
