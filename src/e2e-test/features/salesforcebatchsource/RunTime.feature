@@ -53,10 +53,10 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
     And Close the pipeline logs
-    Then Validate the values of records transferred from Salesforce to Bigquery is equal
+    Then Validate the values of records transferred from Salesforce to BigQuery is equal
 
 
-  @BATCH-TS-SF-RNTM-02 @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
+  @BATCH-TS-SF-RNTM-02 @BQ_SINK_TEST @FILE_PATH @CREATE_TEST_DATA @DELETE_TEST_DATA
   Scenario: Verify user should be able to preview and deploy the pipeline when plugin is configured for SOQL Query
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -90,7 +90,7 @@ Feature: Salesforce Batch Source - Run time Scenarios
     Then Open and capture logs
     Then Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
-    Then Validate the values of records transferred from Salesforce to Bigquery is equal
+    Then Validate the values of records transferred from Salesforce to BigQuery is equal
 
 
   @BATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_TEST @CREATE_TEST_DATA @DELETE_TEST_DATA
@@ -130,4 +130,5 @@ Feature: Salesforce Batch Source - Run time Scenarios
     And Open and capture logs
     And Verify the pipeline status is "Succeeded"
     Then Close the pipeline logs
-    Then Validate the values of records transferred from Salesforce to Bigquery is equal
+    Then Validate the values of records transferred from Salesforce to BigQuery is equal
+
