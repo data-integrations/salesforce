@@ -178,8 +178,8 @@ public class SalesforceSchemaUtil {
       if (!actualFieldSchema.equals(providedFieldSchema)
         || !Objects.equals(actualFieldSchema.getLogicalType(), providedFieldSchema.getLogicalType())) {
         throw new IllegalArgumentException(
-          String.format("Expected field '%s' to be of '%s', but it is of '%s'",
-            providedField.getName(), providedFieldSchema, actualFieldSchema));
+          String.format("Expected field '%s' to be of %s, but it is of %s",
+                        providedField.getName(), providedFieldSchema, actualFieldSchema));
       }
 
       if (checkNullable && isActualFieldNullable && !isProvidedFieldNullable) {

@@ -58,6 +58,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   public static final String PROPERTY_OPERATION = "operation";
   public static final String PROPERTY_EXTERNAL_ID_FIELD = "externalIdField";
   public static final String PROPERTY_CONCURRENCY_MODE = "concurrencyMode";
+  public static final String PROPERTY_DATATYPE_VALIDATION = "datatypeValidation";
 
   private static final String SALESFORCE_ID_FIELD = "Id";
 
@@ -133,6 +134,12 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Description("The existing connection to use.")
   private SalesforceConnectorConfig connection;
 
+  @Name(PROPERTY_DATATYPE_VALIDATION)
+  @Nullable
+  @Macro
+  @Description("Whether to validate the field data types of the input schema as per Salesforce specific data types")
+  private final Boolean datatypeValidation;
+
   public SalesforceSinkConfig(String referenceName,
                               @Nullable String clientId,
                               @Nullable String clientSecret,
@@ -146,7 +153,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               String errorHandling,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo,
-                              @Nullable String proxyUrl) {
+                              @Nullable String proxyUrl,
+                              @Nullable Boolean datatypeValidation) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
                                                securityToken, connectTimeout, oAuthInfo, proxyUrl);
@@ -157,6 +165,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
+    this.datatypeValidation = datatypeValidation;
   }
 
   private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
@@ -188,7 +197,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   }
 
   public String getConcurrencyMode() {
-    return concurrencyMode;
+    return concurrencyMode == null ? ConcurrencyMode.Parallel.name() : concurrencyMode;
   }
 
   public ConcurrencyMode getConcurrencyModeEnum() {
@@ -220,8 +229,11 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   public ErrorHandling getErrorHandling() {
     return ErrorHandling.fromValue(errorHandling)
-      .orElseThrow(() -> new InvalidConfigException("Unsupported error handling value: " + errorHandling,
-                                                    SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
+      .orElse(ErrorHandling.FAIL);
+  }
+
+  public boolean isDatatypeValidation() {
+    return datatypeValidation != null && datatypeValidation;
   }
 
   public String getReferenceNameOrNormalizedFQN(String orgId, String sObject) {
@@ -385,7 +397,9 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
           .withInputSchemaField(inputField);
       }
     }
-    validateInputSchema(schema, collector);
+    if (!this.containsMacro(PROPERTY_DATATYPE_VALIDATION) && isDatatypeValidation()) {
+      validateInputSchema(schema, collector);
+    }
   }
 
   private Set<String> getCreatableSObjectFields(SObjectsDescribeResult describeResult) {

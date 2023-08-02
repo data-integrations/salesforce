@@ -190,7 +190,7 @@ public class SObjectsDescribeResult {
     return result == null
       ? null
       : Stream.of(result.getFields())
-      .filter(field -> name.equals(field.getRelationshipName()))
+      .filter(field -> name.equalsIgnoreCase(field.getRelationshipName()))
       .findAny()
       .map(field -> field.getReferenceTo()[0]) // only first reference name will be used
       .orElse(null);
@@ -200,7 +200,7 @@ public class SObjectsDescribeResult {
     return result == null
       ? null
       : Stream.of(result.getChildRelationships())
-      .filter(childRelationship -> name.equals(childRelationship.getRelationshipName()))
+      .filter(childRelationship -> name.equalsIgnoreCase(childRelationship.getRelationshipName()))
       .findAny()
       .map(ChildRelationship::getChildSObject)
       .orElse(null);
