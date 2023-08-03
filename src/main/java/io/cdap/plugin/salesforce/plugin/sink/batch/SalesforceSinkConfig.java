@@ -55,6 +55,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   public static final String PROPERTY_OPERATION = "operation";
   public static final String PROPERTY_EXTERNAL_ID_FIELD = "externalIdField";
   public static final String PROPERTY_CONCURRENCY_MODE = "concurrencyMode";
+  public static final String PROPERTY_DATATYPE_VALIDATION = "datatypeValidation";
 
   private static final String SALESFORCE_ID_FIELD = "Id";
 
@@ -119,6 +120,12 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   @Macro
   private String errorHandling;
 
+  @Name(PROPERTY_DATATYPE_VALIDATION)
+  @Nullable
+  @Macro
+  @Description("Whether to validate the field data types of the input schema as per Salesforce specific data types")
+  private final Boolean datatypeValidation;
+
   public SalesforceSinkConfig(String referenceName,
                               @Nullable String clientId,
                               @Nullable String clientSecret,
@@ -132,7 +139,8 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
                               String errorHandling,
                               @Nullable String securityToken,
                               @Nullable OAuthInfo oAuthInfo,
-                              @Nullable String proxyUrl) {
+                              @Nullable String proxyUrl,
+                              @Nullable Boolean datatypeValidation) {
     super(referenceName, clientId, clientSecret, username, password, loginUrl, securityToken, connectTimeout,
           oAuthInfo, proxyUrl);
     this.sObject = sObject;
@@ -142,6 +150,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
     this.maxBytesPerBatch = maxBytesPerBatch;
     this.maxRecordsPerBatch = maxRecordsPerBatch;
     this.errorHandling = errorHandling;
+    this.datatypeValidation = datatypeValidation;
   }
 
   public String getSObject() {
@@ -166,7 +175,7 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
   }
 
   public String getConcurrencyMode() {
-    return concurrencyMode;
+    return concurrencyMode == null ? ConcurrencyMode.Parallel.name() : concurrencyMode;
   }
 
   public ConcurrencyMode getConcurrencyModeEnum() {
@@ -198,8 +207,11 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
 
   public ErrorHandling getErrorHandling() {
     return ErrorHandling.fromValue(errorHandling)
-      .orElseThrow(() -> new InvalidConfigException("Unsupported error handling value: " + errorHandling,
-                                                    SalesforceSinkConfig.PROPERTY_ERROR_HANDLING));
+      .orElse(ErrorHandling.FAIL);
+  }
+
+  public boolean isDatatypeValidation() {
+    return datatypeValidation != null && datatypeValidation;
   }
 
   public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
@@ -335,7 +347,9 @@ public class SalesforceSinkConfig extends BaseSalesforceConfig {
           .withInputSchemaField(inputField);
       }
     }
-    validateInputSchema(schema, collector);
+    if (!this.containsMacro(PROPERTY_DATATYPE_VALIDATION) && isDatatypeValidation()) {
+      validateInputSchema(schema, collector);
+    }
   }
 
   private Set<String> getCreatableSObjectFields(SObjectsDescribeResult describeResult) {
