@@ -106,6 +106,9 @@ This value cannot be greater than 10,000,000.
 Skip on error - Ignores erroneous records.  
 Fail on error - Fails pipeline due to erroneous record.
 
+**Data type Validation:** Whether to validate the field data types of the input schema as per Salesforce specific
+data types.
+
 Ingesting File and Attachment Data
 -----------
 The Salesforce Sink Plugin enables users to ingest file and attachment data, such as PDF and DOC files, into Salesforce

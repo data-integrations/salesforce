@@ -193,6 +193,22 @@
             ],
             "default": "Skip on error"
           }
+        },
+        {
+          "widget-type": "toggle",
+          "label": "Data type Validation",
+          "name": "datatypeValidation",
+          "widget-attributes": {
+            "on": {
+              "value": "true",
+              "label": "YES"
+            },
+            "off": {
+              "value": "false",
+              "label": "NO"
+            },
+            "default": "true"
+          }
         }
       ]
     }

@@ -96,6 +96,6 @@ public class SalesforceConnectorTest {
       "\"null\"]},{\"name\":\"userId\",\"type\":\"string\"}]}";
 
     return Schema.parseJson(schemaString);
-
   }
+
 }
