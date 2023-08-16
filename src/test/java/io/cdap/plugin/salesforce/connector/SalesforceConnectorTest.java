@@ -28,7 +28,9 @@ import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.common.ConfigUtil;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnector;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBatchSource;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSourceConfigBuilder;
@@ -57,8 +59,8 @@ public class SalesforceConnectorTest {
       .setChunkSize(SalesforceSourceConstants.MIN_PK_CHUNK_SIZE)
       .setReferenceName("Source").setSObjectName("object").build();
     SalesforceConnectorConfig connectorConfig = Mockito.mock(SalesforceConnectorConfig.class);
+    Mockito.when(connectorConfig.getOAuthInfo()).thenReturn(new OAuthInfo("accessToken", "instanceURL"));
     MockFailureCollector collector = new MockFailureCollector();
-    Mockito.when(connectorConfig.canAttemptToEstablishConnection()).thenReturn(false);
     ConnectorContext context = new MockConnectorContext(new MockConnectorConfigurer());
     SalesforceConnector connector = new SalesforceConnector(connectorConfig);
     try {
