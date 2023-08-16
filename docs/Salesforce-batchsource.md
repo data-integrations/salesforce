@@ -35,10 +35,11 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
 
+**Read Timeout:** Maximum time in seconds to wait for reading data from the server before it times out.
+
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.
 
 **SOQL Query:** A SOQL query to fetch data into source.
-
 
 Examples:
 
@@ -270,3 +271,4 @@ Support also includes custom objects, and any Sharing and History tables that su
 **Query Operation:**
 Specify the query operation to run on the table. If query is selected, only current records will be returned.
 If queryAll is selected, all current and deleted records will be returned. Default operation is query.
+

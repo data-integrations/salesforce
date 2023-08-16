@@ -86,6 +86,15 @@
             "min": "0",
             "default": "30000"
           }
+        },
+        {
+          "widget-type": "number",
+          "label": "Read Timeout(In Sec)",
+          "name": "readTimeout",
+          "widget-attributes": {
+            "min": "0",
+            "default": "3600"
+          }
         }
       ]
     },
@@ -213,6 +222,49 @@
           "widget-attributes": {
             "placeholder": "Field used to indicate from which SObject data comes from"
           }
+        },
+        {
+          "widget-type": "hidden",
+          "label": "Initial Retry Duration",
+          "name": "initialRetryDuration",
+          "widget-attributes": {
+            "min": "1",
+            "default": "5"
+          }
+        },
+        {
+          "widget-type": "hidden",
+          "label": "Max Retry Duration",
+          "name": "maxRetryDuration",
+          "widget-attributes": {
+            "min": "6",
+            "default": "80"
+          }
+        },
+        {
+          "widget-type": "hidden",
+          "label": "Max Retry Count",
+          "name": "maxRetryCount",
+          "widget-attributes": {
+            "min": "1",
+            "default": "5"
+          }
+        },
+        {
+          "widget-type": "hidden",
+          "label": "Retry On Backend Error",
+          "name": "retryOnBackendError",
+          "widget-attributes": {
+            "on": {
+              "value": "true",
+              "label": "YES"
+            },
+            "off": {
+              "value": "false",
+              "label": "NO"
+            },
+            "default": "true"
+          }
         }
       ]
     }
@@ -251,6 +303,10 @@
         {
           "type": "property",
           "name": "connectTimeout"
+        },
+        {
+          "type": "property",
+          "name": "readTimeout"
         },
         {
           "type": "property",

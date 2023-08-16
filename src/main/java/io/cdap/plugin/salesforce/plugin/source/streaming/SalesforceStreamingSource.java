@@ -93,6 +93,8 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
                                                                                     config.getConnection()
                                                                                       .getConnectTimeout(),
                                                                                     config.getConnection()
+                                                                                      .getReadTimeout(),
+                                                                                    config.getConnection()
                                                                                       .getProxyUrl()),
                                                        SObjectDescriptor.fromQuery(query));
         pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);

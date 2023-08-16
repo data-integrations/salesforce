@@ -75,6 +75,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String password,
                                      @Nullable String loginUrl,
                                      @Nullable Integer connectTimeout,
+                                     @Nullable Integer readTimeout,
                                      @Nullable String datetimeAfter,
                                      @Nullable String datetimeBefore,
                                      @Nullable String duration,
@@ -85,9 +86,14 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String securityToken,
                                      @Nullable OAuthInfo oAuthInfo,
                                      @Nullable String operation,
+                                     @Nullable Long initialRetryDuration,
+                                     @Nullable Long maxRetryDuration,
+                                     @Nullable Integer maxRetryCount,
+                                     Boolean retryOnBackendError,
                                      @Nullable String proxyUrl) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
+          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, initialRetryDuration,
+          maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;
@@ -172,6 +178,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                           getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getReadTimeout(),
                                                                           this.getConnection().getProxyUrl());
       PartnerConnection partnerConnection =
         SalesforceConnectionUtil.getPartnerConnection(credentials);

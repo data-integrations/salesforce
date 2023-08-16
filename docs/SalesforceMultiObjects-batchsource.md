@@ -33,19 +33,19 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Login URL:** Salesforce OAuth2 login URL.
 
-**Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
-
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before time out.
+
+**Read Timeout:** Maximum time in seconds to wait for reading data from the server before it times out.
 
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.
 
-**White List**: List of SObjects to read from. By default all SObjects will be white listed. 
+**White List**: List of SObjects to read from. By default all SObjects will be white listed.
 For each white listed SObject, a SOQL query will be generated of the form:
 `select <FIELD_1, FIELD_2, ..., FIELD_N> from ${sObjectName}`.
 
 **Black List**: List of SObjects to avoid reading from. By default NONE of SObjects will be black listed.
 
-**Last Modified After:** Filter data to only include records where the system field `LastModifiedDate` is greater than 
+**Last Modified After:** Filter data to only include records where the system field `LastModifiedDate` is greater than
 or equal to the specified date. The date must be provided in the Salesforce date format:
 
 |              Format              |       Format Syntax       |          Example          |
@@ -212,3 +212,4 @@ Below is a non-comprehensive list of **sObjects** that are not currently availab
 - UserRecordAccess
 - WorkOrderLineItemStatus
 - WorkOrderStatus
+
