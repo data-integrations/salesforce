@@ -16,10 +16,12 @@
 
 package io.cdap.plugin.salesforce.plugin;
 
+import java.io.Serializable;
+
 /**
  * Class to carry OAuth information returned by the {@code ${oauth}} macro function.
  */
-public final class OAuthInfo {
+public final class OAuthInfo implements Serializable {
 
   private final String accessToken;
   private final String instanceURL;

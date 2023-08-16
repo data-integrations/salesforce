@@ -21,7 +21,8 @@ import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -228,9 +229,9 @@ public class SalesforceSourceConfigTest {
     testValidPKChunkConfiguration(config.getConnection());
   }
 
-  private void testValidPKChunkConfiguration(SalesforceConnectorConfig config) {
+  private void testValidPKChunkConfiguration(SalesforceConnectorInfo config) {
     MockFailureCollector collector = new MockFailureCollector();
-    SalesforceConnectorConfig mock = Mockito.spy(config);
+    SalesforceConnectorInfo mock = Mockito.spy(config);
     Mockito.when(mock.canAttemptToEstablishConnection()).thenReturn(false);
     mock.validate(collector, null);
     Assert.assertEquals(0, collector.getValidationFailures().size());
@@ -276,8 +277,9 @@ public class SalesforceSourceConfigTest {
                                                                         Mockito.any(), Mockito.any(),
                                                                         Mockito.anyString())
       .thenReturn(connectorConfig);
-    Mockito.when(mock.getConnection()).thenReturn(connectorConfig);
-    PowerMockito.when(connectorConfig.canAttemptToEstablishConnection()).thenReturn(false);
+    SalesforceConnectorInfo salesforceConnectorInfo = new SalesforceConnectorInfo(null, connectorConfig);
+    Mockito.when(mock.getConnection()).thenReturn(salesforceConnectorInfo);
+    PowerMockito.when(salesforceConnectorInfo.canAttemptToEstablishConnection()).thenReturn(false);
     ValidationFailure failure;
     try {
       mock.validate(collector, null);

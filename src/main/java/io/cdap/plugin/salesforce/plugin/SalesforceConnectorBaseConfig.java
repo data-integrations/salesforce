@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 /**
  * Base configuration for Salesforce Streaming and Batch plugins
  */
-public class SalesforceConnectorConfig extends PluginConfig {
+public class SalesforceConnectorBaseConfig extends PluginConfig {
 
   @Nullable
   @Name(SalesforceConstants.PROPERTY_PROXY_URL)
@@ -44,60 +44,50 @@ public class SalesforceConnectorConfig extends PluginConfig {
   @Nullable
   private final Integer connectTimeout;
 
-  @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
-  @Description("OAuth information for connecting to Salesforce. " +
-    "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
-    "which carry the OAuth access token and the URL to connect to respectively. " +
-    "Use the ${oauth(provider, credentialId)} macro function for acquiring OAuth information dynamically. ")
-  @Macro
-  @Nullable
-  private OAuthInfo oAuthInfo;
-
   @Name(SalesforceConstants.PROPERTY_CONSUMER_KEY)
   @Description("Salesforce connected app's consumer key")
   @Macro
   @Nullable
-  private String consumerKey;
+  private final String consumerKey;
 
   @Name(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
   @Description("Salesforce connected app's client secret key")
   @Macro
   @Nullable
-  private String consumerSecret;
+  private final String consumerSecret;
 
   @Name(SalesforceConstants.PROPERTY_USERNAME)
   @Description("Salesforce username")
   @Macro
   @Nullable
-  private String username;
+  private final String username;
 
   @Name(SalesforceConstants.PROPERTY_PASSWORD)
   @Description("Salesforce password")
   @Macro
   @Nullable
-  private String password;
+  private final String password;
 
   @Name(SalesforceConstants.PROPERTY_SECURITY_TOKEN)
   @Description("Salesforce security token")
   @Macro
   @Nullable
-  private String securityToken;
-  
+  private final String securityToken;
+
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
   @Description("Endpoint to authenticate to")
   @Macro
   @Nullable
-  private String loginUrl;
+  private final String loginUrl;
 
-  public SalesforceConnectorConfig(@Nullable String consumerKey,
-                                   @Nullable String consumerSecret,
-                                   @Nullable String username,
-                                   @Nullable String password,
-                                   @Nullable String loginUrl,
-                                   @Nullable String securityToken,
-                                   @Nullable Integer connectTimeout,
-                                   @Nullable OAuthInfo oAuthInfo,
-                                   @Nullable String proxyUrl) {
+  public SalesforceConnectorBaseConfig(@Nullable String consumerKey,
+                                       @Nullable String consumerSecret,
+                                       @Nullable String username,
+                                       @Nullable String password,
+                                       @Nullable String loginUrl,
+                                       @Nullable String securityToken,
+                                       @Nullable Integer connectTimeout,
+                                       @Nullable String proxyUrl) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -105,13 +95,7 @@ public class SalesforceConnectorConfig extends PluginConfig {
     this.loginUrl = loginUrl;
     this.securityToken = securityToken;
     this.connectTimeout = connectTimeout;
-    this.oAuthInfo = oAuthInfo;
     this.proxyUrl = proxyUrl;
-  }
-
-  @Nullable
-  public OAuthInfo getOAuthInfo() {
-    return oAuthInfo;
   }
 
   @Nullable
@@ -156,43 +140,6 @@ public class SalesforceConnectorConfig extends PluginConfig {
         .withStacktrace(e.getStackTrace());
     }
     collector.getOrThrowException();
-  }
-
-  public AuthenticatorCredentials getAuthenticatorCredentials() {
-    OAuthInfo oAuthInfo = getOAuthInfo();
-    if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo, getConnectTimeout(),
-                                          getProxyUrl());
-    }
-    return new AuthenticatorCredentials(getUsername(), getPassword(), getConsumerKey(),
-                                        getConsumerSecret(), getLoginUrl(), getConnectTimeout(),
-                                        getProxyUrl());
-  }
-
-  /**
-   * Checks if current config does not contain macro for properties which are used
-   * to establish connection to Salesforce.
-   *
-   * @return true if none of the connection properties contains macro, false otherwise
-   */
-  public boolean canAttemptToEstablishConnection() {
-    // If OAuth token is configured, use it to establish connection
-    if (getOAuthInfo() != null) {
-      return true;
-    }
-
-    // At configurePipeline time, macro is not resolved, hence the OAuth field will be null.
-    if (containsMacro(SalesforceConstants.PROPERTY_OAUTH_INFO)) {
-      return false;
-    }
-
-    return !(containsMacro(SalesforceConstants.PROPERTY_CONSUMER_KEY)
-      || containsMacro(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
-      || containsMacro(SalesforceConstants.PROPERTY_USERNAME)
-      || containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
-      || containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)
-      || containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN)
-      || containsMacro(SalesforceConstants.PROPERTY_CONNECT_TIMEOUT));
   }
 
   private void validateConnection(@Nullable OAuthInfo oAuthInfo) {

@@ -23,7 +23,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -88,7 +88,7 @@ public class SalesforceConnectionUtil {
    * @param collector  FailureCollector
    * @return           OAuthInfo which contains Access Token and login URL.
    */
-  public static OAuthInfo getOAuthInfo(SalesforceConnectorConfig config, FailureCollector collector) {
+  public static OAuthInfo getOAuthInfo(SalesforceConnectorInfo config, FailureCollector collector) {
     if (!config.canAttemptToEstablishConnection()) {
       return null;
     }
