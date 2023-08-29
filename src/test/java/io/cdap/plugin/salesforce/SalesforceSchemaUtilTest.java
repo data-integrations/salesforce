@@ -21,7 +21,8 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.common.MockPipelineConfigurer;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.sink.batch.CSVRecord;
 import io.cdap.plugin.salesforce.plugin.sink.batch.FileUploadSobject;
 import io.cdap.plugin.salesforce.plugin.sink.batch.StructuredRecordToCSVRecordTransformer;
@@ -266,7 +267,7 @@ public class SalesforceSchemaUtilTest {
     SalesforceSourceConfig mockConfig = Mockito.mock(SalesforceSourceConfig.class);
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceBatchSource source = new SalesforceBatchSource(mockConfig);
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
     Mockito.when(mockConfig.getSchema()).thenReturn(schema);
@@ -283,7 +284,7 @@ public class SalesforceSchemaUtilTest {
     SalesforceStreamingSourceConfig mockConfig = Mockito.mock(SalesforceStreamingSourceConfig.class);
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceStreamingSource source = new SalesforceStreamingSource(mockConfig);
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     mockConfig.referenceName = "TestStreaming";
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
@@ -299,7 +300,7 @@ public class SalesforceSchemaUtilTest {
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceBatchMultiSource source = new SalesforceBatchMultiSource(mockConfig);
     mockConfig.referenceName = "TestStreaming";
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
     source.configurePipeline(mockPipelineConfigurer);
