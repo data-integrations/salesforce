@@ -1,5 +1,5 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Join CDAP community](https://cdap-users.herokuapp.com/badge.svg?t=salesforce-plugins)](https://cdap-users.herokuapp.com?t=1)
+| [Join CDAP community](https://groups.google.com/g/cdap-user)
 
 # Overview
 
@@ -36,14 +36,15 @@ applications or building plugins for appplications. You can expect questions fro
 users, release announcements, and any other discussions that we think will be helpful
 to the users.
 
-## Slack Team
+## IRC Channel
 
-CDAP Users on Slack: [cdap-users team](https://cdap-users.herokuapp.com)
-
+CDAP Users on IRC: [#cdap-users channel](https://web.libera.chat/#cdap-users)
 
 # License and Trademarks
 
 Copyright © 2019 Cask Data, Inc.
+
+Copyright © 2023 Google, LLC
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 in compliance with the License. You may obtain a copy of the License at
