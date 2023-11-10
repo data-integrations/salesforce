@@ -19,6 +19,7 @@
 
 Feature: Salesforce Sink - Design time - validation scenarios
 
+
   @SINK-TS-SF-DSGN-ERROR-01
   Scenario: Verify validation message for providing an invalid SObject Name
     When Open Datafusion Project to configure pipeline
