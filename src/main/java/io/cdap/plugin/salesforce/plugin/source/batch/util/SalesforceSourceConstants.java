@@ -32,6 +32,10 @@ public class SalesforceSourceConstants {
   public static final String PROPERTY_QUERY = "query";
   public static final String PROPERTY_SOBJECT_NAME = "sObjectName";
   public static final String PROPERTY_OPERATION = "operation";
+  public static final String PROPERTY_INITIAL_RETRY_DURATION = "initialRetryDuration";
+  public static final String PROPERTY_MAX_RETRY_DURATION = "maxRetryDuration";
+  public static final String PROPERTY_MAX_RETRY_COUNT = "maxRetryCount";
+  public static final String PROPERTY_RETRY_REQUIRED = "retryOnBackendError";
 
   public static final String PROPERTY_PK_CHUNK_ENABLE_NAME = "enablePKChunk";
   public static final String PROPERTY_CHUNK_SIZE_NAME = "chunkSize";
@@ -49,6 +53,10 @@ public class SalesforceSourceConstants {
   public static final String HEADER_PK_CHUNK_PARENT = "parent=%s";
 
   public static final String CONFIG_SOBJECT_NAME_FIELD = "mapred.salesforce.input.sObjectNameField";
+  public static final String CONFIG_INITIAL_RETRY_DURATION = "mapred.salesforce.initialRetryDuration";
+  public static final String CONFIG_MAX_RETRY_DURATION = "mapred.salesforce.maxRetryDuration";
+  public static final String CONFIG_MAX_RETRY_COUNT = "mapred.salesforce.maxRetryCount";
+  public static final String CONFIG_RETRY_REQUIRED = "mapred.salesforce.retryOnBackendError";
 
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
   // https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/
@@ -156,4 +164,11 @@ public class SalesforceSourceConstants {
   public static final long GET_BATCH_WAIT_TIME_SECONDS_SERIAL_MODE = 600000;
 
   public static final long MAX_RETRIES_ON_API_FAILURE = 10;
+
+  public static final long DEFAULT_INITIAL_RETRY_DURATION_SECONDS = 5L;
+
+  public static final long DEFULT_MAX_RETRY_DURATION_SECONDS = 80L;
+
+  public static final int DEFAULT_MAX_RETRY_COUNT = 5;
+
 }

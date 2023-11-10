@@ -104,7 +104,9 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
     List<SalesforceSplit> querySplits = queries.parallelStream()
-      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation()))
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation(),
+                                                       config.getInitialRetryDuration(), config.getMaxRetryDuration(),
+                                                       config.getMaxRetryCount(), config.isRetryRequired()))
       .flatMap(Collection::stream).collect(Collectors.toList());
     // store the jobIds so be used in onRunFinish() to close the connections
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));

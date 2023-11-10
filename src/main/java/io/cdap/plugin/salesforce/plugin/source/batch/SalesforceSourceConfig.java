@@ -87,7 +87,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   @Nullable
   @Description("Parent of the Salesforce Object. This is used to enable chunking for history tables or shared objects.")
   private final String parent;
-  
+
   public SalesforceSourceConfig(String referenceName,
                                 @Nullable String consumerKey,
                                 @Nullable String consumerSecret,
@@ -105,13 +105,18 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                 @Nullable String schema,
                                 @Nullable String securityToken,
                                 @Nullable String operation,
+                                @Nullable Long initialRetryDuration,
+                                @Nullable Long maxRetryDuration,
+                                @Nullable Integer maxRetryCount,
+                                Boolean retryOnBackendError,
                                 @Nullable OAuthInfo oAuthInfo,
                                 @Nullable Boolean enablePKChunk,
                                 @Nullable Integer chunkSize,
                                 @Nullable String parent,
                                 @Nullable String proxyUrl) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
-          datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
+      datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, initialRetryDuration,
+      maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;

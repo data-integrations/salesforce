@@ -164,7 +164,8 @@ public class SalesforceBatchSource extends
           String.join(";", chunkHeaderValues));
     }
     List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnection,
-        enablePKChunk, config.getOperation());
+        enablePKChunk, config.getOperation(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
+          config.getMaxRetryCount(), config.isRetryRequired());
     return querySplits;
   }
 
