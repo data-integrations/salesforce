@@ -39,6 +39,7 @@ public class SalesforceSourceConfigBuilder {
   private String parent;
   private String operation;
   private Integer connectTimeout;
+  private Integer readTimeout;
   private String proxyUrl;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
@@ -136,6 +137,11 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setReadTimeout(Integer readTimeout) {
+    this.readTimeout = readTimeout;
+    return this;
+  }
+
   public SalesforceSourceConfigBuilder setProxyUrl(String proxyUrl) {
     this.proxyUrl = proxyUrl;
     return this;
@@ -143,8 +149,8 @@ public class SalesforceSourceConfigBuilder {
 
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      connectTimeout, query, sObjectName, datetimeAfter, datetimeBefore, duration,
-                                      offset, schema, securityToken, operation, null, enablePKChunk,
+                                      connectTimeout, readTimeout, query, sObjectName, datetimeAfter, datetimeBefore,
+                                      duration, offset, schema, securityToken, operation, null, enablePKChunk,
                                       chunkSize, parent, proxyUrl);
   }
 }

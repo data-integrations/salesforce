@@ -75,6 +75,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable String password,
                                      @Nullable String loginUrl,
                                      @Nullable Integer connectTimeout,
+                                     @Nullable Integer readTimeout,
                                      @Nullable String datetimeAfter,
                                      @Nullable String datetimeBefore,
                                      @Nullable String duration,
@@ -86,7 +87,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable OAuthInfo oAuthInfo,
                                      @Nullable String operation,
                                      @Nullable String proxyUrl) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.whiteList = whiteList;
     this.blackList = blackList;
@@ -172,6 +173,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                           getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getReadTimeout(),
                                                                           this.getConnection().getProxyUrl());
       PartnerConnection partnerConnection =
         SalesforceConnectionUtil.getPartnerConnection(credentials);

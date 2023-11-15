@@ -33,11 +33,13 @@ import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SObjectsDescribeResult;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,7 +134,16 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Macro
   @Nullable
   @Description("The existing connection to use.")
-  private SalesforceConnectorConfig connection;
+  private SalesforceConnectorBaseConfig connection;
+
+  @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
+  @Description("OAuth information for connecting to Salesforce. " +
+    "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
+    "which carry the OAuth access token and the URL to connect to respectively. " +
+    "Use the ${oauth(provider, credentialId)} macro function for acquiring OAuth information dynamically. ")
+  @Macro
+  @Nullable
+  private OAuthInfo oAuthInfo;
 
   @Name(PROPERTY_DATATYPE_VALIDATION)
   @Nullable
@@ -147,6 +158,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable String password,
                               @Nullable String loginUrl,
                               @Nullable Integer connectTimeout,
+                              @Nullable Integer readTimeout,
                               String sObject,
                               String operation, String externalIdField, String concurrencyMode,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
@@ -157,7 +169,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable Boolean datatypeValidation) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
-                                               securityToken, connectTimeout, oAuthInfo, proxyUrl);
+                                               securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -171,8 +183,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   private static final String DEFAULT_LOGIN_URL = "https://login.salesforce.com/services/oauth2/token";
 
   @Nullable
-  public SalesforceConnectorConfig getConnection() {
-    return connection;
+  public SalesforceConnectorInfo getConnection() {
+    return connection == null ? null : new SalesforceConnectorInfo(oAuthInfo, connection);
   }
 
   public String getSObject() {
@@ -255,6 +267,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
       (credentials);
@@ -263,7 +276,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
 
   public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (connection != null) {
-      connection.validate(collector, oAuthInfo);
+      getConnection().validate(collector, oAuthInfo);
     }
     validateSinkProperties(collector);
     validateSchema(schema, collector, oAuthInfo);
@@ -416,6 +429,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
@@ -438,7 +452,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
    * @param schema input schema to check
    */
   private void validateInputSchema(Schema schema, FailureCollector collector) {
-    AuthenticatorCredentials authenticatorCredentials = connection.getAuthenticatorCredentials();
+    AuthenticatorCredentials authenticatorCredentials = getConnection().getAuthenticatorCredentials();
     try {
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObject, authenticatorCredentials);
       Schema sObjectActualSchema = SalesforceSchemaUtil.getSchema(authenticatorCredentials, sObjectDescriptor);

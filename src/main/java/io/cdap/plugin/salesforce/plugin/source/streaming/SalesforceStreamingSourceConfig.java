@@ -38,7 +38,9 @@ import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.soap.SObjectBuilder;
 import io.cdap.plugin.salesforce.soap.SObjectUtil;
@@ -105,7 +107,16 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
   @Macro
   @Nullable
   @Description("The existing connection to use.")
-  private SalesforceConnectorConfig connection;
+  private SalesforceConnectorBaseConfig connection;
+
+  @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
+  @Description("OAuth information for connecting to Salesforce. " +
+    "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
+    "which carry the OAuth access token and the URL to connect to respectively. " +
+    "Use the ${oauth(provider, credentialId)} macro function for acquiring OAuth information dynamically. ")
+  @Macro
+  @Nullable
+  private OAuthInfo oAuthInfo;
 
   @Description("Push topic property, which specifies how the record is evaluated against the PushTopic query.\n" +
     "The NotifyForFields values are:\n" +
@@ -136,6 +147,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          String pushTopicName, String sObjectName,
                                          @Nullable String securityToken,
                                          @Nullable Integer connectTimeout,
+                                         @Nullable Integer readTimeout,
                                          @Nullable OAuthInfo oAuthInfo,
                                          @Nullable String proxyUrl,
                                          @Nullable String schema) {
@@ -143,13 +155,13 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, oAuthInfo, proxyUrl);
+                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
     this.schema = schema;
   }
 
   @Nullable
-  public SalesforceConnectorConfig getConnection() {
-    return connection;
+  public SalesforceConnectorInfo getConnection() {
+    return connection == null ? null : new SalesforceConnectorInfo(oAuthInfo, connection);
   }
 
   public String getPushTopicName() {
@@ -221,6 +233,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
       PartnerConnection partnerConnection = new PartnerConnection(
         Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,
                                                                          this.getConnection().getConnectTimeout(),
+                                                                         this.getConnection().getReadTimeout(),
                                                                          this.connection.getProxyUrl())));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
@@ -317,7 +330,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
    * @param query a SOQL query
    * @return query result
    */
-  private static QueryResult runQuery(PartnerConnection partnerConnection, String query) throws ConnectionException {
+  public static QueryResult runQuery(PartnerConnection partnerConnection, String query) throws ConnectionException {
     ClassLoader threadClassLoader = Thread.currentThread().getContextClassLoader();
     ClassLoader classClassLoader = SalesforceStreamingSourceConfig.class.getClassLoader();
 
@@ -359,6 +372,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
 
   @Nullable
   private String getSObjectQuery() {
+    SalesforceConnectorInfo connection = getConnection();
     if (!connection.canAttemptToEstablishConnection()) {
       return null;
     }

@@ -36,7 +36,9 @@ import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -100,7 +102,16 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   @Macro
   @Nullable
   @Description("The existing connection to use.")
-  private SalesforceConnectorConfig connection;
+  private SalesforceConnectorBaseConfig connection;
+
+  @Name(SalesforceConstants.PROPERTY_OAUTH_INFO)
+  @Description("OAuth information for connecting to Salesforce. " +
+    "It is expected to be an json string containing two properties, \"accessToken\" and \"instanceURL\", " +
+    "which carry the OAuth access token and the URL to connect to respectively. " +
+    "Use the ${oauth(provider, credentialId)} macro function for acquiring OAuth information dynamically. ")
+  @Macro
+  @Nullable
+  private OAuthInfo oAuthInfo;
 
   protected SalesforceBaseSourceConfig(String referenceName,
                                        @Nullable String consumerKey,
@@ -109,6 +120,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String password,
                                        @Nullable String loginUrl,
                                        @Nullable Integer connectTimeout,
+                                       @Nullable Integer readTimeout,
                                        @Nullable String datetimeAfter,
                                        @Nullable String datetimeBefore,
                                        @Nullable String duration,
@@ -119,7 +131,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String proxyUrl) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, oAuthInfo, proxyUrl);
+                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
@@ -137,8 +149,8 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   }
 
   @Nullable
-  public SalesforceConnectorConfig getConnection() {
-    return connection;
+  public SalesforceConnectorInfo getConnection() {
+    return connection == null ? null : new SalesforceConnectorInfo(oAuthInfo, connection);
   }
 
   @Nullable
@@ -170,6 +182,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
@@ -219,6 +232,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                           this.getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getReadTimeout(),
                                                                           this.connection.getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
                                                                        credentials,
