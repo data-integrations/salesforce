@@ -214,7 +214,7 @@ public class SalesforceSchemaUtil {
               fieldDescriptor.getFullName(), parentsPath));
         }
 
-        fieldSchema = createFieldSchema(field);
+        fieldSchema = createFieldSchema(field, fieldDescriptor.hasParents());
       }
 
       Schema queryFieldSchema = functionType.getSchema(fieldSchema);
@@ -250,19 +250,22 @@ public class SalesforceSchemaUtil {
      */
     for (SObjectDescriptor childSObject : sObjectDescriptor.getChildSObjects()) {
       Schema childSchema = getSchemaWithFields(childSObject, describeResult,
-        Collections.singletonList(sObjectDescriptor.getName()));
+                                               Collections.singletonList(sObjectDescriptor.getName()));
 
       String childName = normalizeAvroName(childSObject.getName());
       Schema.Field childField = Schema.Field.of(childName,
-        Schema.arrayOf(Schema.recordOf(childName, Objects.requireNonNull(childSchema.getFields()))));
+                                                Schema.arrayOf(Schema.recordOf(childName, Objects.requireNonNull(
+                                                  childSchema.getFields()))));
       schemaFields.add(childField);
     }
 
     return Schema.recordOf("output", schemaFields);
   }
 
-  private static Schema createFieldSchema(Field field) {
+  // Setting all the child columns as Nullable as in child object these fields can be mandatory but its reference
+  // object in parent class can be null.
+  private static Schema createFieldSchema(Field field, boolean isChild) {
     Schema fieldSchema = SALESFORCE_TYPE_TO_CDAP_SCHEMA.getOrDefault(field.getType(), DEFAULT_SCHEMA);
-    return field.isNillable() ? Schema.nullableOf(fieldSchema) : fieldSchema;
+    return field.isNillable() || isChild ? Schema.nullableOf(fieldSchema) : fieldSchema;
   }
 }
