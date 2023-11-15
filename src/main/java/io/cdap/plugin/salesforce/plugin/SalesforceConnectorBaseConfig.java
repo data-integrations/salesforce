@@ -44,6 +44,12 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   @Nullable
   private final Integer connectTimeout;
 
+  @Name(SalesforceConstants.PROPERTY_READ_TIMEOUT)
+  @Description("Maximum time in seconds to wait for reading data from the server before it times out.")
+  @Macro
+  @Nullable
+  private final Integer readTimeout;
+
   @Name(SalesforceConstants.PROPERTY_CONSUMER_KEY)
   @Description("Salesforce connected app's consumer key")
   @Macro
@@ -87,6 +93,7 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
                                        @Nullable String loginUrl,
                                        @Nullable String securityToken,
                                        @Nullable Integer connectTimeout,
+                                       @Nullable Integer readTimeout,
                                        @Nullable String proxyUrl) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
@@ -95,6 +102,7 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     this.loginUrl = loginUrl;
     this.securityToken = securityToken;
     this.connectTimeout = connectTimeout;
+    this.readTimeout = readTimeout;
     this.proxyUrl = proxyUrl;
   }
 
@@ -131,6 +139,14 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     return connectTimeout;
   }
 
+  @Nullable
+  public Integer getReadTimeoutInMillis() {
+    if (readTimeout == null) {
+      return SalesforceConstants.DEFAULT_READ_TIMEOUT_SEC * 1000;
+    }
+    return readTimeout * 1000;
+  }
+
   public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     try {
       validateConnection(oAuthInfo);
@@ -149,6 +165,7 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
 
     try {
       SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout(),
+                                                                                 this.getReadTimeoutInMillis(),
                                                                                  getProxyUrl()));
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

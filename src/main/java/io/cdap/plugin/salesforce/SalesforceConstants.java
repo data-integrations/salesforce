@@ -44,8 +44,11 @@ public class SalesforceConstants {
   public static final int SOQL_MAX_LENGTH = 20000;
 
   public static final int DEFAULT_CONNECTION_TIMEOUT_MS = 30000;
+  public static final int DEFAULT_READ_TIMEOUT_SEC = 18000;
   public static final String PROPERTY_CONNECT_TIMEOUT = "connectTimeout";
+  public static final String PROPERTY_READ_TIMEOUT = "readTimeout";
   public static final String CONFIG_CONNECT_TIMEOUT = "mapred.salesforce.connectTimeout";
+  public static final String CONFIG_READ_TIMEOUT = "mapred.salesforce.readTimeout";
 
   public static final String PROPERTY_PROXY_URL = "proxyUrl";
   public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";

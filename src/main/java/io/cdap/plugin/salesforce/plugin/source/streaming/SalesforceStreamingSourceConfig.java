@@ -147,6 +147,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          String pushTopicName, String sObjectName,
                                          @Nullable String securityToken,
                                          @Nullable Integer connectTimeout,
+                                         @Nullable Integer readTimeout,
                                          @Nullable OAuthInfo oAuthInfo,
                                          @Nullable String proxyUrl,
                                          @Nullable String schema) {
@@ -154,7 +155,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, oAuthInfo, proxyUrl);
+                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
     this.schema = schema;
   }
 
@@ -232,6 +233,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
       PartnerConnection partnerConnection = new PartnerConnection(
         Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,
                                                                          this.getConnection().getConnectTimeout(),
+                                                                         this.getConnection().getReadTimeout(),
                                                                          this.connection.getProxyUrl())));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);

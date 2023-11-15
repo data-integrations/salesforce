@@ -45,9 +45,11 @@ public class SalesforceConnectorConfig extends SalesforceConnectorBaseConfig {
                                    @Nullable String loginUrl,
                                    @Nullable String securityToken,
                                    @Nullable Integer connectTimeout,
+                                   @Nullable Integer readTimeout,
                                    @Nullable OAuthInfo oAuthInfo,
                                    @Nullable String proxyUrl) {
-    super(consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout, proxyUrl);
+    super(consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout, readTimeout,
+          proxyUrl);
     this.oAuthInfo = oAuthInfo;
   }
 

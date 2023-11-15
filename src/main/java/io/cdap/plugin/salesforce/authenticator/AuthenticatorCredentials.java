@@ -34,18 +34,19 @@ public class AuthenticatorCredentials implements Serializable {
   private final String consumerSecret;
   private final String loginUrl;
   private final Integer connectTimeout;
+  private final Integer readTimeout;
   private final String proxyUrl;
 
-  public AuthenticatorCredentials(OAuthInfo oAuthInfo, Integer connectTimeout, String proxyUrl) {
-    this(Objects.requireNonNull(oAuthInfo), null, null, null, null, null, connectTimeout, proxyUrl);
+  public AuthenticatorCredentials(OAuthInfo oAuthInfo, Integer connectTimeout, Integer readTimeout, String proxyUrl) {
+    this(Objects.requireNonNull(oAuthInfo), null, null, null, null, null, connectTimeout, readTimeout, proxyUrl);
   }
 
   public AuthenticatorCredentials(String username, String password,
                                   String consumerKey, String consumerSecret, String loginUrl,
-                                  Integer connectTimeout, String proxyUrl) {
+                                  Integer connectTimeout, Integer readTimeout, String proxyUrl) {
     this(null, Objects.requireNonNull(username), Objects.requireNonNull(password), Objects.requireNonNull(consumerKey),
          Objects.requireNonNull(consumerSecret), Objects.requireNonNull(loginUrl),
-         Objects.requireNonNull(connectTimeout), proxyUrl);
+         Objects.requireNonNull(connectTimeout), Objects.requireNonNull(readTimeout), proxyUrl);
   }
 
   private AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
@@ -55,6 +56,7 @@ public class AuthenticatorCredentials implements Serializable {
                                    @Nullable String consumerSecret,
                                    @Nullable String loginUrl,
                                    @Nullable Integer connectTimeout,
+                                   @Nullable Integer readTimeout,
                                    @Nullable String proxyUrl) {
     this.oAuthInfo = oAuthInfo;
     this.username = username;
@@ -63,6 +65,7 @@ public class AuthenticatorCredentials implements Serializable {
     this.consumerSecret = consumerSecret;
     this.loginUrl = loginUrl;
     this.connectTimeout = connectTimeout;
+    this.readTimeout = readTimeout;
     this.proxyUrl = proxyUrl;
   }
 
@@ -101,6 +104,10 @@ public class AuthenticatorCredentials implements Serializable {
     return connectTimeout;
   }
 
+  public Integer getReadTimeout() {
+    return readTimeout;
+  }
+
   @Nullable
   public String getProxyUrl() {
     return proxyUrl;
@@ -123,11 +130,13 @@ public class AuthenticatorCredentials implements Serializable {
       Objects.equals(consumerSecret, that.consumerSecret) &&
       Objects.equals(loginUrl, that.loginUrl) &&
       Objects.equals(connectTimeout, that.connectTimeout) &&
+      Objects.equals(readTimeout, that.readTimeout) &&
       Objects.equals(proxyUrl, that.proxyUrl);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl, connectTimeout, proxyUrl);
+    return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl, connectTimeout, readTimeout,
+                        proxyUrl);
   }
 }
