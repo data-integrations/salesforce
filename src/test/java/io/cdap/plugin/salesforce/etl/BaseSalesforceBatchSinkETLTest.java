@@ -228,7 +228,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
     return new SalesforceSinkConfig(REFERENCE_NAME,
                                     BaseSalesforceETLTest.CONSUMER_KEY, BaseSalesforceETLTest.CONSUMER_SECRET,
                                     BaseSalesforceETLTest.USERNAME, BaseSalesforceETLTest.PASSWORD,
-                                    BaseSalesforceETLTest.LOGIN_URL, 30000, sObject, "Insert", null,
+                                    BaseSalesforceETLTest.LOGIN_URL, 30000, 3600, sObject, "Insert", null,
                                     ConcurrencyMode.Parallel.name(), "1000000", "10000", "Fail on Error",
                                     BaseSalesforceETLTest.SECURITY_TOKEN,
                                     null, null, false);

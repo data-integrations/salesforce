@@ -27,10 +27,12 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
 
+**Read Timeout:** Maximum time in seconds to wait for reading data from the server before it times out.
+
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.
 
 Path of the connection
 ----------------------
-To browse, get a sample from, or get the specification for this connection. (Not supported in the Salesforce Streaming 
+To browse, get a sample from, or get the specification for this connection. (Not supported in the Salesforce Streaming
 source and Salesforce Multi Object batch source.).  
 /{object} This path indicates a Salesforce object. An object is the only one that can be sampled.

@@ -159,6 +159,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable String password,
                               @Nullable String loginUrl,
                               @Nullable Integer connectTimeout,
+                              @Nullable Integer readTimeout,
                               String sObject,
                               String operation, String externalIdField, String concurrencyMode,
                               String maxBytesPerBatch, String maxRecordsPerBatch,
@@ -169,7 +170,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable Boolean datatypeValidation) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
-                                               securityToken, connectTimeout, oAuthInfo, proxyUrl);
+                                               securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;
@@ -267,6 +268,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
       (credentials);
@@ -428,6 +430,7 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   private SObjectsDescribeResult getSObjectDescribeResult(FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));

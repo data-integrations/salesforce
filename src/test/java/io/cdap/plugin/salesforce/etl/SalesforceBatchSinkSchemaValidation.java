@@ -29,7 +29,6 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.sink.batch.SalesforceSinkConfig;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,18 +58,22 @@ public class SalesforceBatchSinkSchemaValidation {
   public void testInputSchemaValidation() throws Exception {
     MockFailureCollector collector = new MockFailureCollector();
     AuthenticatorCredentials authenticatorCredentials = Mockito.mock(AuthenticatorCredentials.class);
-    SalesforceSinkConfig salesforceSinkConfig = Mockito.spy(new SalesforceSinkConfig(REFERENCE_NAME,
-      "CONSUMER_KEY", "CONSUMER_SECRET",
-      "USERNAME", "PASSWORD",
-      "LOGIN_URL", 30000, "sObject", "Insert", null,
-      ConcurrencyMode.Parallel.name(), "1000000", "10000", "Fail on Error",
-      BaseSalesforceETLTest.SECURITY_TOKEN,
-      null, null, true));
+    SalesforceSinkConfig salesforceSinkConfig = Mockito.spy(
+      new SalesforceSinkConfig(REFERENCE_NAME,
+                               "CONSUMER_KEY", "CONSUMER_SECRET",
+                               "USERNAME", "PASSWORD",
+                               "LOGIN_URL", 30000, 3600,
+                               "sObject", "Insert", null,
+                               ConcurrencyMode.Parallel.name(),
+                               "1000000", "10000",
+                               "Fail on Error",
+                               BaseSalesforceETLTest.SECURITY_TOKEN,
+                               null, null, true));
     Schema schema = Schema.recordOf("output",
-      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("Tax", Schema.of(Schema.Type.DOUBLE)),
-      Schema.Field.of("Amount", Schema.of(Schema.Type.INT))
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("Tax", Schema.of(Schema.Type.DOUBLE)),
+                                    Schema.Field.of("Amount", Schema.of(Schema.Type.INT))
     );
     Field field = new Field();
     List<SObjectDescriptor.FieldDescriptor> fields = new ArrayList<>();
@@ -125,22 +128,26 @@ public class SalesforceBatchSinkSchemaValidation {
   public void testInputSchemaValidationWithDifferentFields() throws Exception {
     MockFailureCollector collector = new MockFailureCollector();
     AuthenticatorCredentials authenticatorCredentials = Mockito.mock(AuthenticatorCredentials.class);
-    SalesforceSinkConfig salesforceSinkConfig = Mockito.spy(new SalesforceSinkConfig(REFERENCE_NAME,
-      "CONSUMER_KEY", "CONSUMER_SECRET",
-      "USERNAME", "PASSWORD",
-      "LOGIN_URL", 30000, "sObject", "Insert", null,
-      ConcurrencyMode.Parallel.name(), "1000000", "10000", "Fail on Error",
-      BaseSalesforceETLTest.SECURITY_TOKEN,
-      null, null, true));
+    SalesforceSinkConfig salesforceSinkConfig = Mockito.spy(
+      new SalesforceSinkConfig(REFERENCE_NAME,
+                               "CONSUMER_KEY", "CONSUMER_SECRET",
+                               "USERNAME", "PASSWORD",
+                               "LOGIN_URL", 30000, 3600,
+                               "sObject", "Insert", null,
+                               ConcurrencyMode.Parallel.name(),
+                               "1000000", "10000",
+                               "Fail on Error",
+                               BaseSalesforceETLTest.SECURITY_TOKEN,
+                               null, null, true));
     Schema schema = Schema.recordOf("output",
-      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)));
+                                    Schema.Field.of("Name", Schema.of(Schema.Type.STRING)));
     Field field = new Field();
     List<SObjectDescriptor.FieldDescriptor> fields = new ArrayList<>();
     List<String> nameParts = new ArrayList<>();
     nameParts.add("Amount");
     SalesforceFunctionType salesforceFunctionType = SalesforceFunctionType.INT;
     SObjectDescriptor.FieldDescriptor descriptor = new SObjectDescriptor.FieldDescriptor(nameParts, "Name",
-      salesforceFunctionType);
+                                                                                         salesforceFunctionType);
     fields.add(descriptor);
 
     SalesforceConnectorInfo connection = Mockito.mock(SalesforceConnectorInfo.class);

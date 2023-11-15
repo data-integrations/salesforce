@@ -47,7 +47,6 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
-import org.apache.hadoop.mapreduce.RecordReader;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -199,8 +198,9 @@ public class SalesforceBatchSource extends
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
-          config.getConnection().getConnectTimeout(),
-          config.getConnection().getProxyUrl());
+                                                                          config.getConnection().getConnectTimeout(),
+                                                                          config.getConnection().getReadTimeout(),
+                                                                          config.getConnection().getProxyUrl());
       return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor);
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

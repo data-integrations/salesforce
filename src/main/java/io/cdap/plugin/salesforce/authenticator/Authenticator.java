@@ -63,6 +63,7 @@ public class Authenticator {
       // Set this to true to see HTTP requests and responses on stdout
       connectorConfig.setTraceMessage(false);
       connectorConfig.setConnectionTimeout(credentials.getConnectTimeout());
+      connectorConfig.setReadTimeout(credentials.getReadTimeout());
       return connectorConfig;
     } catch (Exception e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

@@ -15,7 +15,6 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
@@ -90,27 +89,28 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private final String parent;
   
   public SalesforceSourceConfig(String referenceName,
-                         @Nullable String consumerKey,
-                         @Nullable String consumerSecret,
-                         @Nullable String username,
-                         @Nullable String password,
-                         @Nullable String loginUrl,
-                         @Nullable Integer connectTimeout,
-                         @Nullable String query,
-                         @Nullable String sObjectName,
-                         @Nullable String datetimeAfter,
-                         @Nullable String datetimeBefore,
-                         @Nullable String duration,
-                         @Nullable String offset,
-                         @Nullable String schema,
-                         @Nullable String securityToken,
-                         @Nullable String operation,
-                         @Nullable OAuthInfo oAuthInfo,
-                         @Nullable Boolean enablePKChunk,
-                         @Nullable Integer chunkSize,
-                         @Nullable String parent,
-                         @Nullable String proxyUrl) {
-    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout,
+                                @Nullable String consumerKey,
+                                @Nullable String consumerSecret,
+                                @Nullable String username,
+                                @Nullable String password,
+                                @Nullable String loginUrl,
+                                @Nullable Integer connectTimeout,
+                                @Nullable Integer readTimeout,
+                                @Nullable String query,
+                                @Nullable String sObjectName,
+                                @Nullable String datetimeAfter,
+                                @Nullable String datetimeBefore,
+                                @Nullable String duration,
+                                @Nullable String offset,
+                                @Nullable String schema,
+                                @Nullable String securityToken,
+                                @Nullable String operation,
+                                @Nullable OAuthInfo oAuthInfo,
+                                @Nullable Boolean enablePKChunk,
+                                @Nullable Integer chunkSize,
+                                @Nullable String parent,
+                                @Nullable String proxyUrl) {
+    super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, proxyUrl);
     this.query = query;
     this.sObjectName = sObjectName;
@@ -223,6 +223,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     try {
       AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                           this.getConnection().getConnectTimeout(),
+                                                                          this.getConnection().getReadTimeout(),
                                                                           this.getConnection().getProxyUrl());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, credentials);
       List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
@@ -328,6 +329,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
+                                                                        this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());
     try {
       PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));

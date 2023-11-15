@@ -23,7 +23,7 @@ You also can use the macro function ${conn(connection-name)}.
 **Security Token:** Salesforce security token. If the password does not contain the security token, the plugin 
 will append the token before authenticating with Salesforce.
 
-**Consumer Key:** Application Consumer Key. This is also known as the OAuth client  ID.
+**Consumer Key:** Application Consumer Key. This is also known as the OAuth client ID.
 A Salesforce connected application must be created in order to get a consumer key.
 
 **Consumer Secret:** Application Consumer Secret. This is also known as the OAuth client secret.
@@ -33,12 +33,15 @@ A Salesforce connected application must be created in order to get a client secr
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
 
+**Read Timeout:** Maximum time in seconds to wait for reading data from the server before it times out.
+
 **Proxy URL:** Proxy URL. Must contain a protocol, address and port.
 
 **SObject Name:** Salesforce object name to insert records into.
 
 There are also **sObjects** that are not supported in the Bulk API of Salesforce.
-When a job is created using an object that is not supported in the Bulk API, "_Entity is not supported by the Bulk API_" is thrown.
+When a job is created using an object that is not supported in the Bulk API, "_Entity is not supported by the Bulk API_"
+is thrown.
 These objects are also not supported by _Einstein Analytics_ as it also uses Bulk API for querying data.
 
 Below is a non-comprehensive list of **sObjects** that are not currently available in the Bulk API:

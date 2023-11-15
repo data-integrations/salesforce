@@ -103,6 +103,7 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),
                                                                         config.getConnectTimeout(),
+                                                                        config.getReadTimeoutInMillis(),
                                                                         config.getProxyUrl());
     BrowseDetail.Builder browseDetailBuilder = BrowseDetail.builder();
     int count = 0;

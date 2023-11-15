@@ -86,6 +86,15 @@
             "min": "0",
             "default": "30000"
           }
+        },
+        {
+          "widget-type": "number",
+          "label": "Read Timeout(In Sec)",
+          "name": "readTimeout",
+          "widget-attributes": {
+            "min": "0",
+            "default": "3600"
+          }
         }
       ]
     },
@@ -251,6 +260,10 @@
         {
           "type": "property",
           "name": "connectTimeout"
+        },
+        {
+          "type": "property",
+          "name": "readTimeout"
         },
         {
           "type": "property",

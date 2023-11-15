@@ -54,7 +54,8 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_ERROR_HANDLING, config.getErrorHandling().getValue())
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
-      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString())
+      .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString());
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
