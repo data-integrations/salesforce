@@ -67,11 +67,13 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
   protected static final String USERNAME = System.getProperty("salesforce.test.username");
   protected static final String PASSWORD = System.getProperty("salesforce.test.password");
   protected static final String LOGIN_URL = System.getProperty("salesforce.test.loginUrl",
-                                                             "https://login.salesforce.com/services/oauth2/token");
+                                                               "https://login.salesforce.com/services/oauth2/token");
   protected static final String SECURITY_TOKEN = System.getProperty("salesforce.test.securityToken",
-                                                               "");
+                                                                    "");
   protected static final String CONNECT_TIMEOUT = System.getProperty("salesforce.test.connectTimeout",
-                                                                  "30000");
+                                                                     "30000");
+  protected static final String READ_TIMEOUT = System.getProperty("salesforce.test.readTimeout",
+                                                                  "3600");
   public static final int SOAP_RECORDS_LIMIT = 200;
 
   @Rule
@@ -89,9 +91,10 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
       throw e;
     }
     Integer connectTimeout = Integer.parseInt(CONNECT_TIMEOUT);
+    Integer readTimeout = Integer.parseInt(READ_TIMEOUT);
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(USERNAME, PASSWORD, CONSUMER_KEY,
                                                                         CONSUMER_SECRET, LOGIN_URL, connectTimeout,
-                                                                        null);
+                                                                        readTimeout, null);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
   }
 

@@ -274,7 +274,7 @@ public class SalesforceSourceConfigTest {
     PowerMockito.whenNew(SalesforceConnectorConfig.class).withArguments(Mockito.anyString(), Mockito.anyString(),
                                                                         Mockito.anyString(), Mockito.anyString(),
                                                                         Mockito.anyString(), Mockito.anyString(),
-                                                                        Mockito.any(), Mockito.any(),
+                                                                        Mockito.any(), Mockito.any(), Mockito.any(),
                                                                         Mockito.anyString())
       .thenReturn(connectorConfig);
     SalesforceConnectorInfo salesforceConnectorInfo = new SalesforceConnectorInfo(null, connectorConfig);

@@ -123,26 +123,28 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     if (parserIterator == null) {
       return false;
     }
-    while (!parserIterator.hasNext()) {
-      if (resultIdIndex == resultIds.length) {
-        // No more result ids to process.
-        return false;
-      }
-      // Close CSV parser for previous result.
-      if (csvParser != null && !csvParser.isClosed()) {
-        // this also closes the inputStream
-        csvParser.close();
-        csvParser = null;
-      }
-      try {
+    try {
+      while (!parserIterator.hasNext()) {
+        if (resultIdIndex == resultIds.length) {
+          // No more result ids to process.
+          return false;
+        }
+        // Close CSV parser for previous result.
+        if (csvParser != null && !csvParser.isClosed()) {
+          // this also closes the inputStream
+          csvParser.close();
+          csvParser = null;
+        }
         // Parse the next result.
         setupParser();
-      } catch (AsyncApiException e) {
-        throw new IOException("Failed to query results", e);
       }
+      value = parserIterator.next().toMap();
+    } catch (AsyncApiException e) {
+      LOG.error("AsyncApiException error message with code is: {}" + e.getMessage());
+      throw new IOException("Failed to query results", e);
+    } catch (Exception e) {
+      throw new IOException("Failed to query results", e);
     }
-
-    value = parserIterator.next().toMap();
     return true;
   }
 

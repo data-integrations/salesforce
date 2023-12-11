@@ -39,6 +39,7 @@ public class SalesforceMultiSourceConfigBuilder {
   private OAuthInfo oAuthInfo;
   private String operation;
   private Integer connectTimeout;
+  private Integer readTimeout;
   private String proxyUrl;
 
   public SalesforceMultiSourceConfigBuilder setReferenceName(String referenceName) {
@@ -126,6 +127,11 @@ public class SalesforceMultiSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceMultiSourceConfigBuilder setReadTimeout(Integer readTimeout) {
+    this.readTimeout = readTimeout;
+    return this;
+  }
+
   public SalesforceMultiSourceConfigBuilder setProxyUrl(String proxyUrl) {
     this.proxyUrl = proxyUrl;
     return this;
@@ -133,7 +139,8 @@ public class SalesforceMultiSourceConfigBuilder {
 
   public SalesforceMultiSourceConfig build() {
     return new SalesforceMultiSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                           connectTimeout, datetimeAfter, datetimeBefore, duration, offset, whiteList,
+                                           connectTimeout, readTimeout, datetimeAfter, datetimeBefore, duration, offset,
+                                           whiteList,
                                            blackList, sObjectNameField, securityToken, oAuthInfo, operation, proxyUrl);
   }
 }
