@@ -93,6 +93,25 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   @Nullable
   private String operation;
 
+  @Name(SalesforceSourceConstants.PROPERTY_INITIAL_RETRY_DURATION)
+  @Description("Time taken for the first retry. Default is 5 seconds.")
+  @Nullable
+  private Long initialRetryDuration;
+
+  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_DURATION)
+  @Description("Maximum time in seconds retries can take. Default is 80 seconds.")
+  @Nullable
+  private Long maxRetryDuration;
+
+  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_COUNT)
+  @Description("Maximum number of retries allowed. Default is 5.")
+  @Nullable
+  private Integer maxRetryCount;
+
+  @Name(SalesforceSourceConstants.PROPERTY_RETRY_REQUIRED)
+  @Description("Retry is required or not for some of the internal call failures")
+  private Boolean retryOnBackendError;
+
   @Name(ConfigUtil.NAME_USE_CONNECTION)
   @Nullable
   @Description("Whether to use an existing connection.")
@@ -128,6 +147,10 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable String securityToken,
                                        @Nullable OAuthInfo oAuthInfo,
                                        @Nullable String operation,
+                                       @Nullable Long initialRetryDuration,
+                                       @Nullable Long maxRetryDuration,
+                                       @Nullable Integer maxRetryCount,
+                                       Boolean retryOnBackendError,
                                        @Nullable String proxyUrl) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
@@ -137,11 +160,19 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
     this.duration = duration;
     this.offset = offset;
     this.operation = operation;
+    this.initialRetryDuration = initialRetryDuration;
+    this.maxRetryDuration = maxRetryDuration;
+    this.retryOnBackendError = retryOnBackendError;
+    this.maxRetryCount = maxRetryCount;
   }
 
 
   public Map<ChronoUnit, Integer> getDuration() {
     return extractRangeValue(SalesforceSourceConstants.PROPERTY_DURATION, duration);
+  }
+
+  public Boolean isRetryRequired() {
+    return retryOnBackendError == null || retryOnBackendError;
   }
 
   public Map<ChronoUnit, Integer> getOffset() {
@@ -186,6 +217,19 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                                                         this.connection.getProxyUrl());
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
+  }
+
+  public Long getInitialRetryDuration() {
+    return initialRetryDuration == null ? SalesforceSourceConstants.DEFAULT_INITIAL_RETRY_DURATION_SECONDS :
+      initialRetryDuration;
+  }
+
+  public Long getMaxRetryDuration() {
+    return maxRetryDuration == null ? SalesforceSourceConstants.DEFULT_MAX_RETRY_DURATION_SECONDS : maxRetryDuration;
+  }
+
+  public Integer getMaxRetryCount() {
+    return maxRetryCount == null ? SalesforceSourceConstants.DEFAULT_MAX_RETRY_COUNT : maxRetryCount;
   }
 
   public void validateFilters(FailureCollector collector) {
