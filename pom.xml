@@ -57,7 +57,7 @@
     <surefire.redirectTestOutputToFile>true</surefire.redirectTestOutputToFile>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
-    <avro.version>1.7.7</avro.version>
+    <avro.version>1.11.3</avro.version>
     <cdap.version>6.8.0</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
