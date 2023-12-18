@@ -40,6 +40,8 @@ import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

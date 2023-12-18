@@ -39,6 +39,7 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 
+import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
