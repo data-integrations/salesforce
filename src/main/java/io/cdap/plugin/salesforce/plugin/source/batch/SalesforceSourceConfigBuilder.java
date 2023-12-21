@@ -38,8 +38,13 @@ public class SalesforceSourceConfigBuilder {
   private Integer chunkSize;
   private String parent;
   private String operation;
+  private Long initialRetryDuration;
+  private Long maxRetryDuration;
+  private Integer maxRetryCount;
   private Integer connectTimeout;
+  private Integer readTimeout;
   private String proxyUrl;
+  private Boolean retryOnBackendError;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -131,8 +136,28 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public SalesforceSourceConfigBuilder setInitialRetryDuration(Long initialRetryDuration) {
+    this.initialRetryDuration = initialRetryDuration;
+    return this;
+  }
+
+  public SalesforceSourceConfigBuilder setMaxRetryDuration(Long maxRetryDuration) {
+    this.maxRetryDuration = maxRetryDuration;
+    return this;
+  }
+
+  public SalesforceSourceConfigBuilder setMaxRetryCount(Integer maxRetryCount) {
+    this.maxRetryCount = maxRetryCount;
+    return this;
+  }
+
   public SalesforceSourceConfigBuilder setConnectTimeout(Integer connectTimeout) {
     this.connectTimeout = connectTimeout;
+    return this;
+  }
+
+  public SalesforceSourceConfigBuilder setReadTimeout(Integer readTimeout) {
+    this.readTimeout = readTimeout;
     return this;
   }
 
@@ -143,8 +168,9 @@ public class SalesforceSourceConfigBuilder {
 
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
-                                      connectTimeout, query, sObjectName, datetimeAfter, datetimeBefore, duration,
-                                      offset, schema, securityToken, operation, null, enablePKChunk,
+                                      connectTimeout, readTimeout, query, sObjectName, datetimeAfter, datetimeBefore,
+                                      duration, offset, schema, securityToken, operation, initialRetryDuration,
+                                      maxRetryDuration, maxRetryCount, retryOnBackendError, null, enablePKChunk,
                                       chunkSize, parent, proxyUrl);
   }
 }

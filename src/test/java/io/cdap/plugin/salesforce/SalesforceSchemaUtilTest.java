@@ -21,7 +21,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.cdap.etl.mock.common.MockPipelineConfigurer;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
-import io.cdap.plugin.salesforce.plugin.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import io.cdap.plugin.salesforce.plugin.sink.batch.CSVRecord;
 import io.cdap.plugin.salesforce.plugin.sink.batch.FileUploadSobject;
 import io.cdap.plugin.salesforce.plugin.sink.batch.StructuredRecordToCSVRecordTransformer;
@@ -123,29 +123,42 @@ public class SalesforceSchemaUtilTest {
 
     Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult);
 
-    Schema expectedSchema = Schema.recordOf("output",
-      Schema.Field.of("Id", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
-      Schema.Field.of("Amount", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("Percent", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("ConversionRate", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("IsWon", Schema.of(Schema.Type.BOOLEAN)),
-      Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("CreatedDateTime", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
-      Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
-      Schema.Field.of("Account_NumberOfEmployees", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("DayOnlyFunc", Schema.of(Schema.LogicalType.DATE)),
-      Schema.Field.of("GroupingFunc", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("AvgFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
-      Schema.Field.of("SumFunc", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-      Schema.Field.of("SumRelFunc", Schema.of(Schema.Type.LONG)),
-      Schema.Field.of(contacts, Schema.arrayOf(Schema.recordOf(contacts,
-        Schema.Field.of("FirstName", Schema.of(Schema.Type.STRING)),
-        Schema.Field.of("Owner_Status", Schema.of(Schema.Type.STRING))))));
+    Schema expectedSchema =
+      Schema.recordOf("output",
+                      Schema.Field.of("Id", Schema.of(Schema.Type.LONG)),
+                      Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+                      Schema.Field.of("Amount", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                      Schema.Field.of("Percent",
+                                      Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                      Schema.Field.of("ConversionRate",
+                                      Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                      Schema.Field.of("IsWon", Schema.of(Schema.Type.BOOLEAN)),
+                      Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
+                      Schema.Field.of("CreatedDateTime",
+                                      Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+                      Schema.Field.of("CreatedTime", Schema.of(Schema.LogicalType.TIME_MICROS)),
+                      Schema.Field.of("Account_NumberOfEmployees",
+                                      Schema.nullableOf(Schema.of(Schema.Type.LONG))),
+                      Schema.Field.of("IdAlias", Schema.of(Schema.Type.LONG)),
+                      Schema.Field.of("Cnt", Schema.of(Schema.Type.LONG)),
+                      Schema.Field.of("Mx", Schema.of(Schema.LogicalType.DATE)),
+                      Schema.Field.of("DayOnlyFunc", Schema.of(Schema.LogicalType.DATE)),
+                      Schema.Field.of("GroupingFunc", Schema.of(Schema.Type.INT)),
+                      Schema.Field.of("AvgFunc",
+                                      Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                      Schema.Field.of("CalMonFunc", Schema.of(Schema.Type.INT)),
+                      Schema.Field.of("SumFunc",
+                                      Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+                      Schema.Field.of("SumRelFunc",
+                                      Schema.nullableOf(Schema.of(Schema.Type.LONG))),
+                      Schema.Field.of(contacts,
+                                      Schema.arrayOf(Schema.recordOf(contacts,
+                                                                     Schema.Field.of("FirstName", Schema.of(
+                                                                       Schema.Type.STRING)),
+                                                                     Schema.Field.of("Owner_Status",
+                                                                                     Schema.nullableOf(
+                                                                                       Schema.of(
+                                                                                         Schema.Type.STRING)))))));
 
     Assert.assertEquals(expectedSchema, actualSchema);
 
@@ -266,7 +279,7 @@ public class SalesforceSchemaUtilTest {
     SalesforceSourceConfig mockConfig = Mockito.mock(SalesforceSourceConfig.class);
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceBatchSource source = new SalesforceBatchSource(mockConfig);
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
     Mockito.when(mockConfig.getSchema()).thenReturn(schema);
@@ -283,7 +296,7 @@ public class SalesforceSchemaUtilTest {
     SalesforceStreamingSourceConfig mockConfig = Mockito.mock(SalesforceStreamingSourceConfig.class);
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceStreamingSource source = new SalesforceStreamingSource(mockConfig);
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     mockConfig.referenceName = "TestStreaming";
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
@@ -299,7 +312,7 @@ public class SalesforceSchemaUtilTest {
     MockPipelineConfigurer mockPipelineConfigurer = new MockPipelineConfigurer(null);
     SalesforceBatchMultiSource source = new SalesforceBatchMultiSource(mockConfig);
     mockConfig.referenceName = "TestStreaming";
-    SalesforceConnectorConfig mockConnection = Mockito.mock(SalesforceConnectorConfig.class);
+    SalesforceConnectorInfo mockConnection = Mockito.mock(SalesforceConnectorInfo.class);
     Mockito.when(mockConfig.getConnection()).thenReturn(mockConnection);
     Mockito.when(mockConfig.getConnection().canAttemptToEstablishConnection()).thenReturn(false);
     source.configurePipeline(mockPipelineConfigurer);

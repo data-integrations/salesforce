@@ -45,7 +45,13 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     ImmutableMap.Builder<String, String> configBuilder = new ImmutableMap.Builder<String, String>()
       .put(SalesforceSourceConstants.CONFIG_SCHEMAS, GSON.toJson(schemas));
     configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits))
-      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString());
+      .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString())
+      .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString())
+      .put(SalesforceSourceConstants.CONFIG_INITIAL_RETRY_DURATION, config.getInitialRetryDuration().toString())
+      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_DURATION, config.getMaxRetryDuration().toString())
+      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_COUNT, config.getMaxRetryCount().toString())
+      .put(SalesforceSourceConstants.CONFIG_RETRY_REQUIRED, config.isRetryRequired().toString());
+
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
     }

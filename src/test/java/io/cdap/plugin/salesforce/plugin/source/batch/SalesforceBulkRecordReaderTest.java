@@ -17,10 +17,14 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.sforce.async.AsyncApiException;
+import com.sforce.async.AsyncExceptionCode;
 import com.sforce.async.BulkConnection;
+import dev.failsafe.FailsafeException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -311,6 +315,201 @@ public class SalesforceBulkRecordReaderTest {
       Map<String, Object> fields = (Map<String, Object>) fieldsField.get(record);
       Assert.assertTrue(expectedRecords.contains(fields));
     }
+  }
+
+  /**
+   * The FailsafeException is thrown as retry limit gets exceeded.
+   * The retry policy is correctly configured with the specified configurations.
+   */
+  @Test(expected = FailsafeException.class)
+  public void testRetryMechanism() throws Exception {
+    Long initialRetryDuration = 5L;
+    Long maxRetryDuration = 10L;
+    Integer maxRetryCount = 5;
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("Time", Schema.of(Schema.LogicalType.TIME_MICROS))
+    );
+
+    Assert.assertEquals(5, SalesforceSplitUtil.getRetryPolicy
+      (initialRetryDuration, maxRetryDuration, maxRetryCount).getConfig().getMaxRetries());
+      assertRecordReaderOutputRecordsRetryMechanism(new String[]{csvString1, csvString2}, schema);
+  }
+
+  private void assertRecordReaderOutputRecordsRetryMechanism(String[] csvStrings, Schema schema) throws Exception {
+    String jobId = "job";
+    String batchId = "batch";
+    String[] resultIds = new String[csvStrings.length];
+    for (int i = 0; i < csvStrings.length; i++) {
+      resultIds[i] = String.format("result%d", i);
+    }
+
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
+    BulkConnection mock = Mockito.mock(BulkConnection.class);
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
+    for (int i = 0; i < csvStrings.length; i++) {
+      AsyncApiException salesforceQueryExecutionException =
+        Mockito.mock(AsyncApiException.class);
+      Mockito.when(mock.getQueryResultStream(jobId, batchId, resultIds[i]))
+        .thenThrow(salesforceQueryExecutionException);
+      Mockito.when(salesforceQueryExecutionException.getExceptionCode()).thenReturn(AsyncExceptionCode.Unknown);
+    }
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("initialRetryDuration")
+      , 1L);
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("maxRetryDuration"), 10L);
+    reader.setupParser();
+  }
+
+  @Test (expected = AsyncApiException.class)
+  public void testSetupParserWithoutRetry() throws Exception {
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"2019-02-22T07:03:21.000Z\",\"2018-12-20\",\"12:00:40.000Z\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"2019-02-22T07:03:21.000Z\",\"2018-11-15\",\"12:00:50.000Z\"\n";
+
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("IsDeleted", Schema.of(Schema.Type.BOOLEAN)),
+      Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.DOUBLE)),
+      Schema.Field.of("LastModifiedDate", Schema.of(Schema.LogicalType.TIMESTAMP_MICROS)),
+      Schema.Field.of("CloseDate", Schema.of(Schema.LogicalType.DATE)),
+      Schema.Field.of("Time", Schema.of(Schema.LogicalType.TIME_MICROS))
+    );
+      assertRecordReaderOutputRecordsWithoutRetryMechanism(new String[]{csvString1, csvString2}, schema);
+  }
+
+  private void assertRecordReaderOutputRecordsWithoutRetryMechanism(String[] csvStrings, Schema schema)
+    throws Exception {
+    String jobId = "job";
+    String batchId = "batch";
+    String[] resultIds = new String[csvStrings.length];
+    for (int i = 0; i < csvStrings.length; i++) {
+      resultIds[i] = String.format("result%d", i);
+    }
+
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
+    BulkConnection mock = Mockito.mock(BulkConnection.class);
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
+    for (int i = 0; i < csvStrings.length; i++) {
+        AsyncApiException salesforceQueryExecutionException =
+          Mockito.mock(AsyncApiException.class);
+        Mockito.when(mock.getQueryResultStream(jobId, batchId, resultIds[i]))
+          .thenThrow(salesforceQueryExecutionException);
+        Mockito.when(salesforceQueryExecutionException.getExceptionCode()).thenReturn(AsyncExceptionCode.ExceededQuota);
+      }
+      reader.setupParser();
+    }
+
+  @Test
+  public void testSetupParserWithRetrySuccess() throws Exception {
+    String jobId = "job";
+    String batchId = "batch";
+    String resultId = "result";
+
+    String csvString1 = "\"Id\",\"ShippingStreet\"\n" +
+      "\"0061i000003XNcBAAW\",\"1301 Hoch Drive\"\n" +
+      "\"0061i000003XNcCAAW\",\"1301 Avenue of the Americas \n" +
+      "New York, NY 10019\n" +
+      "USA\"\n" +
+      "\"0061i000003XNcDAAW\",\"620 SW 5th Avenue Suite 400\n" +
+      "Portland, Oregon 97204\n" +
+      "United States\"\n" +
+      "\"0061i000003XNcEAAW\",\"345 Shoreline Park\n" +
+      "Mountain View, CA 94043\n" +
+      "USA\"";
+
+    String csvString2 = "\"Id\",\"ShippingStreet\"\n" +
+      "\"0061i000003XNcBAAW\",\"1301 Hoch Drive\"\n" +
+      "\"0061i000003XNcCAAW\",\"1301 Avenue of the Americas \n" +
+      "New York, NY 10019\n" +
+      "USA\"\n" +
+      "\"0061i000003XNcDAAW\",\"620 SW 5th Avenue Suite 400\n" +
+      "Portland, Oregon 97204\n" +
+      "United States\"\n" +
+      "\"0061i000003XNcEAAW\",\"345 Shoreline Park\n" +
+      "Mountain View, CA 94043\n" +
+      "UK\"";
+
+    Schema schema = Schema.recordOf("output",
+      Schema.Field.of("Id", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("ShippingStreet", Schema.of(Schema.Type.STRING))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
+      .add(new ImmutableMap.Builder<String, Object>()
+        .put("Id", "0061i000003XNcBAAW")
+        .put("ShippingStreet", "1301 Hoch Drive")
+        .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+        .put("Id", "0061i000003XNcCAAW")
+        .put("ShippingStreet", "1301 Avenue of the Americas \n" +
+          "New York, NY 10019\n" +
+          "USA")
+        .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+        .put("Id", "0061i000003XNcDAAW")
+        .put("ShippingStreet", "620 SW 5th Avenue Suite 400\n" +
+          "Portland, Oregon 97204\n" +
+          "United States")
+        .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+        .put("Id", "0061i000003XNcEAAW")
+        .put("ShippingStreet", "345 Shoreline Park\n" +
+          "Mountain View, CA 94043\n" +
+          "UK")
+        .build()
+      )
+      .build();
+    String[] csvStrings = new String[]{csvString1, csvString2};
+    String[] resultIds = new String[csvStrings.length];
+    for (int i = 0; i < csvStrings.length; i++) {
+      resultIds[i] = String.format("result%d", i);
+    }
+
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, new String[]{resultId});
+    BulkConnection mockConnection = Mockito.mock(BulkConnection.class);
+    AsyncApiException salesforceQueryExecutionException =
+      Mockito.mock(AsyncApiException.class);
+    Mockito.when(mockConnection.getQueryResultStream(jobId, batchId, resultId))
+      .thenThrow(salesforceQueryExecutionException)
+      .thenThrow(salesforceQueryExecutionException)
+      .thenReturn(new ByteArrayInputStream(csvStrings[1].getBytes(StandardCharsets.UTF_8)));
+    Mockito.when(salesforceQueryExecutionException.getExceptionCode()).thenReturn(AsyncExceptionCode.Unknown);
+
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mockConnection);
+    reader.setupParser();
+
+    Field fieldsField = StructuredRecord.class.getDeclaredField("fields");
+    fieldsField.setAccessible(true);
+
+    List<StructuredRecord> records = new ArrayList<>();
+    MapToRecordTransformer transformer = new MapToRecordTransformer();
+
+    while (reader.nextKeyValue()) {
+      Map<String, ?> value = reader.getCurrentValue();
+      StructuredRecord record = transformer.transform(schema, value);
+      records.add(record);
+    }
+
+    for (StructuredRecord record : records) {
+      Map<String, Object> fields = (Map<String, Object>) fieldsField.get(record);
+      Assert.assertTrue(expectedRecords.contains(fields));
+    }
+    Mockito.verify(mockConnection, Mockito.times(3)).getQueryResultStream(jobId, batchId, resultId);
   }
 
   @Test
