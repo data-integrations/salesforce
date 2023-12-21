@@ -110,6 +110,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   @Name(SalesforceSourceConstants.PROPERTY_RETRY_REQUIRED)
   @Description("Retry is required or not for some of the internal call failures")
+  @Nullable
   private Boolean retryOnBackendError;
 
   @Name(ConfigUtil.NAME_USE_CONNECTION)
