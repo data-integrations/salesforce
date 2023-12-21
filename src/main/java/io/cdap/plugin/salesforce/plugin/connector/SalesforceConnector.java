@@ -88,16 +88,17 @@ public class SalesforceConnector implements DirectConnector {
 
   @Override
   public BrowseDetail browse(ConnectorContext connectorContext, BrowseRequest browseRequest) throws IOException {
-    return browse();
+    return browse(false);
   }
 
   /**
    * Browse functionality based on the config.
    *
+   * @param onlyReturnQueryableObjects Whether to return only the queryable sObjects.
    * @return BrowseDetail for the given config
    * @throws IOException In case of Salesforce connection failure while browsing
    */
-  public BrowseDetail browse() throws IOException {
+  public BrowseDetail browse(boolean onlyReturnQueryableObjects) throws IOException {
     AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
@@ -114,6 +115,13 @@ public class SalesforceConnector implements DirectConnector {
       for (int i = 0; i < dgr.getSobjects().length; i++) {
         String name = dgr.getSobjects()[i].getName();
         String label = dgr.getSobjects()[i].getLabel();
+        boolean isQueryable = dgr.getSobjects()[i].isQueryable();
+
+        // Continue in case of returning only queryable sObjects and the current sObject is non-queryable.
+        if (onlyReturnQueryableObjects && !isQueryable) {
+          continue;
+        }
+
         BrowseEntity.Builder entity = (BrowseEntity.builder(name, name, ENTITY_TYPE_OBJECTS).
           canBrowse(false).canSample(true));
         entity.addProperty(LABEL_NAME, BrowseEntityPropertyValue.builder(label, BrowseEntityPropertyValue.
