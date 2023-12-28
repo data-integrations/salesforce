@@ -163,9 +163,20 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, Structure
       SalesforceBulkUtil.awaitCompletion(bulkConnection, jobInfo, batchInfoList,
                                          errorHandling.equals(ErrorHandling.SKIP));
       SalesforceBulkUtil.checkResults(bulkConnection, jobInfo, batchInfoList, errorHandling.equals(ErrorHandling.SKIP));
-    } catch (AsyncApiException | ConditionTimeoutException | BulkAPIBatchException e) {
+    } catch (AsyncApiException | ConditionTimeoutException e) {
       throw new RuntimeException(String.format("Failed to check the result of a batch for writes: %s",
                                                e.getMessage()), e);
+    } catch (BulkAPIBatchException e) {
+      // This exception will be thrown if batch got failed or any record insertion got failed and
+      // user has selected Fail on Error option in Error Handling.
+      // In that case, abort the job to avoid creating multiple batches due to spark task retries on failure.
+      try {
+        bulkConnection.abortJob(jobInfo.getId());
+        LOG.debug("Job aborted with Id: {}", jobInfo.getId());
+      } catch (AsyncApiException ex) {
+        throw new RuntimeException(String.format("Failed to abort job %s", jobInfo.getId()), e);
+      }
+      throw new RuntimeException(String.format("Batch write failed with error: %s", e.getMessage()), e);
     } catch (Exception e) {
       throw new RuntimeException(String.format("Pipeline Failed due to error: %s", e.getMessage()), e);
     } finally {
@@ -174,6 +185,7 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, Structure
       } catch (IOException ex) {
         throw ex;
       } finally {
+        csvBuffer.reset();
         csvBuffer.close();
       }
     }
