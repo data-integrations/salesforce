@@ -1,0 +1,103 @@
+{
+    "artifact": {
+        "name": "cdap-data-pipeline",
+        "version": "6.2.3",
+        "scope": "SYSTEM"
+    },
+    "description": "",
+    "name": "example-salesforce-source-large-dataset-pk-chunk",
+    "config": {
+        "resources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "driverResources": {
+            "memoryMB": 2048,
+            "virtualCores": 1
+        },
+        "connections": [
+            {
+                "from": "Salesforce",
+                "to": "GCS"
+            }
+        ],
+        "comments": [],
+        "postActions": [],
+        "properties": {},
+        "processTimingEnabled": true,
+        "stageLoggingEnabled": false,
+        "stages": [
+            {
+                "name": "Salesforce",
+                "plugin": {
+                    "name": "Salesforce",
+                    "type": "batchsource",
+                    "label": "Salesforce",
+                    "artifact": {
+                        "name": "salesforce-plugins",
+                        "version": "1.3.2",
+                        "scope": "USER"
+                    },
+                    "properties": {
+                        "loginUrl": "${login_url}",
+                        "enablePKChunk": "true",
+                        "username": "${username}",
+                        "password": "${password}",
+                        "securityToken": "${security_token}",
+                        "consumerKey": "${consumer_key}",
+                        "consumerSecret": "${consumer_secret}",
+                        "referenceName": "SalesforceName",
+                        "chunkSize": "250000",
+                        "sObjectName": "${sobject_name}"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": ""
+                    }
+                ],
+                "id": "Salesforce"
+            },
+            {
+                "name": "GCS",
+                "plugin": {
+                    "name": "GCS",
+                    "type": "batchsink",
+                    "label": "GCS",
+                    "artifact": {
+                        "name": "google-cloud",
+                        "version": "0.15.3",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "project": "auto-detect",
+                        "suffix": "yyyy-MM-dd-HH-mm",
+                        "format": "${format}",
+                        "serviceFilePath": "auto-detect",
+                        "location": "us",
+                        "path": "${path}",
+                        "referenceName": "sink"
+                    }
+                },
+                "outputSchema": [
+                    {
+                        "name": "etlSchemaBody",
+                        "schema": ""
+                    }
+                ],
+                "inputSchema": [
+                    {
+                        "name": "Salesforce",
+                        "schema": ""
+                    }
+                ],
+                "id": "GCS"
+            }
+        ],
+        "schedule": "0 * * * *",
+        "engine": "spark",
+        "numOfRecordsPreview": 100,
+        "maxConcurrentRuns": 1
+    }
+}
