@@ -20,7 +20,7 @@ Configuration
 
 **Username:** Salesforce username.
 
-**Password:** Salesforce password.
+**Password:** Salesforce password + security token (concatenated together with no spaces in between).
 
 **Security Token:** Salesforce security token. If the password does not contain the security token, the plugin 
 will append the token before authenticating with Salesforce.
