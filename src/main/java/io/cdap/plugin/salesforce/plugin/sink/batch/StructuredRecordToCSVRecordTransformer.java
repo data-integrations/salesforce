@@ -16,13 +16,17 @@
 package io.cdap.plugin.salesforce.plugin.sink.batch;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
+import io.cdap.cdap.api.data.format.UnexpectedFormatException;
 import io.cdap.cdap.api.data.schema.Schema;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +80,20 @@ public class StructuredRecordToCSVRecordTransformer {
           // convert timestamp to HH:mm:ss,SSS
           instant = Instant.ofEpochMilli((Long) value);
           return instant.atZone(ZoneOffset.UTC).toLocalTime().toString();
+        case DATETIME:
+          try {
+            LocalDateTime.parse(value.toString());
+          } catch (DateTimeParseException exception) {
+            throw new UnexpectedFormatException(
+              String.format("Datetime field with value '%s' is not in ISO-8601 format.",
+                            fieldSchema.getDisplayName(),
+                            value),
+              exception);
+          }
+          //If properly formatted return the string
+          return value.toString();
+        case DECIMAL:
+          return new BigDecimal(new BigInteger((byte[]) value), fieldSchema.getScale()).toString();
         default:
           throw new IllegalArgumentException(
             String.format("Field '%s' is of unsupported type '%s'", field.getName(), logicalType.getToken()));

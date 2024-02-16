@@ -20,6 +20,8 @@ import io.cdap.cdap.api.data.schema.Schema;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+
 public class StructuredRecordToCSVRecordTransformerTest {
 
   @Test
@@ -31,8 +33,9 @@ public class StructuredRecordToCSVRecordTransformerTest {
       Schema.Field.of("time_micros_field", Schema.of(Schema.LogicalType.TIME_MICROS)),
       Schema.Field.of("timestamp_millis_field", Schema.of(Schema.LogicalType.TIMESTAMP_MILLIS)),
       Schema.Field.of("time_millis_field", Schema.of(Schema.LogicalType.TIME_MILLIS)),
-      Schema.Field.of("string_field", Schema.of(Schema.Type.STRING)));
-
+      Schema.Field.of("string_field", Schema.of(Schema.Type.STRING)),
+      Schema.Field.of("datetime_field", Schema.of(Schema.LogicalType.DATETIME)),
+      Schema.Field.of("decimal_field", Schema.decimalOf(15, 3)));
     /**
      * Create the record as if coming from the reader
      * Date: 2023-06-12, Time: 07:00:00 GMT
@@ -44,6 +47,8 @@ public class StructuredRecordToCSVRecordTransformerTest {
     recordBuilder.set("timestamp_millis_field", 1686553200000L /*2023-06-12T07:00:00Z*/);
     recordBuilder.set("time_millis_field", 1686553200000L /*07:00*/);
     recordBuilder.set("string_field", "testValue");
+    recordBuilder.set("datetime_field", "2023-06-12T07:00:00");
+    recordBuilder.setDecimal("decimal_field", new BigDecimal("1234234.221"));
     StructuredRecord record = recordBuilder.build();
 
     // Converting schema fields to string which can be read by salesforce
@@ -59,6 +64,10 @@ public class StructuredRecordToCSVRecordTransformerTest {
       record.get("time_millis_field"), schema.getField("time_millis_field"));
     String string = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
       record.get("string_field"), schema.getField("string_field"));
+    String datetime = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
+      record.get("datetime_field"), schema.getField("datetime_field"));
+    String decimal = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
+      record.get("decimal_field"), schema.getField("decimal_field"));
 
     Assert.assertEquals(date, "2023-06-12");
     Assert.assertEquals(timestampMicros, "2023-06-12T07:00:00Z");
@@ -66,6 +75,8 @@ public class StructuredRecordToCSVRecordTransformerTest {
     Assert.assertEquals(timestampMillis, "2023-06-12T07:00:00Z");
     Assert.assertEquals(timeMillis, "07:00");
     Assert.assertEquals(string, "testValue");
+    Assert.assertEquals(datetime, "2023-06-12T07:00:00");
+    Assert.assertEquals(decimal, "1234234.221");
 
     /**
      * Create the record as if coming from the reader
@@ -77,6 +88,8 @@ public class StructuredRecordToCSVRecordTransformerTest {
     recordBuilder.set("time_micros_field", -62135593200000000L /*01:00:00.000Z*/);
     recordBuilder.set("timestamp_millis_field", -62135593200000L /*0001-01-01T01:00:00Z*/);
     recordBuilder.set("time_millis_field", -62135593200000L /*01:00*/);
+    recordBuilder.set("datetime_field", "0001-01-01T01:00:00");
+    recordBuilder.setDecimal("decimal_field", new BigDecimal("1.321"));
     StructuredRecord startRecord = recordBuilder.build();
 
     // Converting schema fields to string which can be read by salesforce
@@ -90,11 +103,17 @@ public class StructuredRecordToCSVRecordTransformerTest {
       startRecord.get("timestamp_millis_field"), schema.getField("timestamp_millis_field"));
     String startTimeMillis = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
       startRecord.get("time_millis_field"), schema.getField("time_millis_field"));
+    String dateTimeStart = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
+      startRecord.get("datetime_field"), schema.getField("datetime_field"));
+    String decimalStart = StructuredRecordToCSVRecordTransformer.convertSchemaFieldToString(
+      startRecord.get("decimal_field"), schema.getField("decimal_field"));
 
     Assert.assertEquals(startDate, "0001-01-01");
     Assert.assertEquals(startTimestampMicros, "0001-01-01T01:00:00Z");
     Assert.assertEquals(startTimeMicros, "01:00:00.000Z");
     Assert.assertEquals(startTimestampMillis, "0001-01-01T01:00:00Z");
     Assert.assertEquals(startTimeMillis, "01:00");
+    Assert.assertEquals(dateTimeStart, "0001-01-01T01:00:00");
+    Assert.assertEquals(decimalStart, "1.321");
   }
 }
