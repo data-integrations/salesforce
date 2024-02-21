@@ -21,6 +21,7 @@ import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
 import io.cdap.plugin.salesforce.InvalidConfigException;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
@@ -277,7 +278,10 @@ public class SalesforceSourceConfigTest {
                                                                         Mockito.any(), Mockito.any(), Mockito.any(),
                                                                         Mockito.anyString())
       .thenReturn(connectorConfig);
-    SalesforceConnectorInfo salesforceConnectorInfo = new SalesforceConnectorInfo(null, connectorConfig);
+    SalesforceConnectorInfo salesforceConnectorInfo =
+      new SalesforceConnectorInfo(null, connectorConfig,
+                                  SalesforceConstants.isOAuthMacroFunction.apply(
+                                    connectorConfig));
     Mockito.when(mock.getConnection()).thenReturn(salesforceConnectorInfo);
     PowerMockito.when(salesforceConnectorInfo.canAttemptToEstablishConnection()).thenReturn(false);
     ValidationFailure failure;
