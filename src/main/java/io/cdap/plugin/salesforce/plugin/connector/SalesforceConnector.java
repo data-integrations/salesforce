@@ -81,7 +81,10 @@ public class SalesforceConnector implements DirectConnector {
   @Override
   public void test(ConnectorContext connectorContext) throws ValidationException {
     FailureCollector collector = connectorContext.getFailureCollector();
-    SalesforceConnectorInfo connectorInfo = new SalesforceConnectorInfo(config.getOAuthInfo(), config);
+    SalesforceConnectorInfo connectorInfo =
+      new SalesforceConnectorInfo(config.getOAuthInfo(), config,
+                                  SalesforceConstants.isOAuthMacroFunction.apply(
+                                    config));
     OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(connectorInfo, collector);
     connectorInfo.validate(collector, oAuthInfo);
   }
@@ -130,7 +133,10 @@ public class SalesforceConnector implements DirectConnector {
       properties.put(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME, tableName);
       properties.put(SalesforceSinkConfig.PROPERTY_SOBJECT, tableName);
     }
-    SalesforceConnectorInfo connectorInfo = new SalesforceConnectorInfo(config.getOAuthInfo(), config);
+    SalesforceConnectorInfo connectorInfo =
+      new SalesforceConnectorInfo(config.getOAuthInfo(), config,
+                                  SalesforceConstants.isOAuthMacroFunction.apply(
+                                    config));
     AuthenticatorCredentials authenticatorCredentials = connectorInfo.getAuthenticatorCredentials();
     try {
       String fields = getObjectFields(tableName, authenticatorCredentials);
@@ -165,7 +171,10 @@ public class SalesforceConnector implements DirectConnector {
   private List<StructuredRecord> listObjectDetails(String object, int limit) throws AsyncApiException,
     ConnectionException {
     List<StructuredRecord> samples = new ArrayList<>();
-    SalesforceConnectorInfo connectorInfo = new SalesforceConnectorInfo(config.getOAuthInfo(), config);
+    SalesforceConnectorInfo connectorInfo =
+      new SalesforceConnectorInfo(config.getOAuthInfo(), config,
+                                  SalesforceConstants.isOAuthMacroFunction.apply(
+                                    config));
     AuthenticatorCredentials credentials = connectorInfo.getAuthenticatorCredentials();
     String fields = getObjectFields(object, credentials);
     String query = String.format("SELECT %s FROM %s LIMIT %d", fields, object, limit);

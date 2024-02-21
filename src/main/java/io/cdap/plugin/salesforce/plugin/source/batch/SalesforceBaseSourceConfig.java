@@ -182,7 +182,9 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   @Nullable
   public SalesforceConnectorInfo getConnection() {
-    return connection == null ? null : new SalesforceConnectorInfo(oAuthInfo, connection);
+    return connection == null ? null : new SalesforceConnectorInfo(oAuthInfo, connection,
+                                                                   SalesforceConstants.isOAuthMacroFunction.apply(
+                                                                     this));
   }
 
   @Nullable
