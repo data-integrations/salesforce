@@ -33,9 +33,13 @@ public class SalesforceConnectorInfo {
   private final OAuthInfo oAuthInfo;
   private final SalesforceConnectorBaseConfig config;
 
-  public SalesforceConnectorInfo(@Nullable OAuthInfo oAuthInfo, SalesforceConnectorBaseConfig config) {
+  private final boolean isOAuthInfoMacro;
+
+  public SalesforceConnectorInfo(@Nullable OAuthInfo oAuthInfo, SalesforceConnectorBaseConfig config,
+                                 boolean isOAuthInfoMacro) {
     this.oAuthInfo = oAuthInfo;
     this.config = config;
+    this.isOAuthInfoMacro = isOAuthInfoMacro;
   }
 
   @Nullable
@@ -118,7 +122,7 @@ public class SalesforceConnectorInfo {
     }
 
     // At configurePipeline time, macro is not resolved, hence the OAuth field will be null.
-    if (config.containsMacro(SalesforceConstants.PROPERTY_OAUTH_INFO)) {
+    if (isOAuthInfoMacro) {
       return false;
     }
 

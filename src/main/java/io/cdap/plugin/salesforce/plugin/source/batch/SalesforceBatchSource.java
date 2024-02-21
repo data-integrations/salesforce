@@ -83,7 +83,8 @@ public class SalesforceBatchSource extends
   public void configurePipeline(PipelineConfigurer pipelineConfigurer) {
     FailureCollector collector = pipelineConfigurer.getStageConfigurer().getFailureCollector();
 
-    OAuthInfo oAuthInfo = SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
+    OAuthInfo oAuthInfo = config.containsMacro(SalesforceConstants.PROPERTY_OAUTH_INFO)
+      ? null : SalesforceConnectionUtil.getOAuthInfo(config.getConnection(), collector);
     config.validate(collector, oAuthInfo);
 
     if (config.containsMacro(SalesforceSourceConstants.PROPERTY_SCHEMA)) {
