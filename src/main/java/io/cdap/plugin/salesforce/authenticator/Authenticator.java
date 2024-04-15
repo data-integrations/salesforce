@@ -64,6 +64,10 @@ public class Authenticator {
       connectorConfig.setTraceMessage(false);
       connectorConfig.setConnectionTimeout(credentials.getConnectTimeout());
       connectorConfig.setReadTimeout(credentials.getReadTimeout());
+
+      // Set the default content type for the connector config
+      connectorConfig.setRequestHeader("content-type", "text/csv");
+
       return connectorConfig;
     } catch (Exception e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
