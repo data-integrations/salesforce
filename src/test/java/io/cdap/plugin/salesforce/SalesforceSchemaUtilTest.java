@@ -15,6 +15,8 @@
  */
 package io.cdap.plugin.salesforce;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.sforce.soap.partner.Field;
 import com.sforce.soap.partner.FieldType;
 import io.cdap.cdap.api.data.format.StructuredRecord;
@@ -167,6 +169,52 @@ public class SalesforceSchemaUtilTest {
   }
 
   @Test
+  public void  testSchemaWithSetAllCustomFieldsNullable() {
+    String objectName = "CustomTable";
+
+    List<SObjectDescriptor.FieldDescriptor> fieldDescriptors = Stream
+            .of("Name", "Value", "CreatedDate")
+            .map(name -> getFieldWithType(name, FieldType.anyType, false))
+            .map(SObjectDescriptor.FieldDescriptor::new)
+            .collect(Collectors.toList());
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+            Collections.singletonList("Name"), null, SalesforceFunctionType.NONE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+            Collections.singletonList("Value"), null, SalesforceFunctionType.NONE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+            Collections.singletonList("CreatedDate"), null, SalesforceFunctionType.NONE));
+    SObjectDescriptor sObjectDescriptor = new SObjectDescriptor(objectName, fieldDescriptors, ImmutableList.of());
+
+    Map<String, Field> objectFields = new LinkedHashMap<>();
+    objectFields.put("Name", getCustomFieldWithType("Name", FieldType.string, false));
+    objectFields.put("Value", getCustomFieldWithType("Value", FieldType.currency, false));
+    objectFields.put("CreatedDate", getCustomFieldWithType("CreatedDate", FieldType.date, false));
+    SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(ImmutableMap.of(objectName, objectFields));
+
+    // Testing case with flag setAllCustomFieldsNullable = true
+    Schema expectedSchema = Schema.recordOf("output",
+            Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
+            Schema.Field.of("Value", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
+            Schema.Field.of("CreatedDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE)))
+    );
+
+    Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult, true);
+
+    Assert.assertEquals(expectedSchema, actualSchema);
+
+    // Testing case with flag setAllCustomFieldsNullable = false
+    expectedSchema = Schema.recordOf("output",
+            Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
+            Schema.Field.of("Value", Schema.of(Schema.Type.DOUBLE)),
+            Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE))
+    );
+
+    actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult, false);
+
+    Assert.assertEquals(expectedSchema, actualSchema);
+  }
+
+  @Test
   public void testValidateSupportedFieldSchemas() {
     Schema schema = Schema.recordOf("schema",
       Schema.Field.of("IntField", Schema.of(Schema.Type.INT)),
@@ -262,6 +310,13 @@ public class SalesforceSchemaUtilTest {
     SalesforceSchemaUtil.checkCompatibility(actualSchema, providedSchema);
   }
 
+  private Field getCustomFieldWithType(String name, FieldType type, boolean isNillable) {
+    Field customField = getFieldWithType(name, type, isNillable);
+    customField.setCustom(true);
+    return customField;
+
+  }
+
   private Field getFieldWithType(String name, FieldType type, boolean isNillable) {
     Field field = new Field();
     field.setName(name);
@@ -270,7 +325,7 @@ public class SalesforceSchemaUtilTest {
 
     return field;
   }
-  
+
   @Test
   public void testSourceSchemaNotNullIfConnectionMacroAndImportManually() {
     Schema schema = Schema.recordOf("output",

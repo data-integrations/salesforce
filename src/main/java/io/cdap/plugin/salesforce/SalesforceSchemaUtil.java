@@ -97,12 +97,28 @@ public class SalesforceSchemaUtil {
    * @throws ConnectionException if unable to connect to Salesforce
    */
   public static Schema getSchema(AuthenticatorCredentials credentials, SObjectDescriptor sObjectDescriptor)
+          throws ConnectionException {
+    return getSchema(credentials, sObjectDescriptor, false);
+  }
+
+  /**
+   * Connects to Salesforce and obtains description of sObjects needed to determine schema field types.
+   * Based on this information, creates schema for the fields used in sObject descriptor.
+   *
+   * @param credentials connection credentials
+   * @param sObjectDescriptor sObject descriptor
+   * @param setAllCustomFieldsNullable set all custom fields nullable by default
+   * @return CDAP schema
+   * @throws ConnectionException if unable to connect to Salesforce
+   */
+  public static Schema getSchema(AuthenticatorCredentials credentials, SObjectDescriptor sObjectDescriptor,
+                                 boolean setAllCustomFieldsNullable)
     throws ConnectionException {
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
     SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(partnerConnection,
       sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());
 
-    return getSchemaWithFields(sObjectDescriptor, describeResult);
+    return getSchemaWithFields(sObjectDescriptor, describeResult, setAllCustomFieldsNullable);
   }
 
   /**
@@ -190,12 +206,20 @@ public class SalesforceSchemaUtil {
 
   public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor,
                                            SObjectsDescribeResult describeResult) {
-    return getSchemaWithFields(sObjectDescriptor, describeResult, Collections.emptyList());
+    return getSchemaWithFields(sObjectDescriptor, describeResult, Collections.emptyList(), false);
   }
 
   public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor,
                                            SObjectsDescribeResult describeResult,
-                                           List<String> topLevelParents) {
+                                           boolean setAllCustomFieldsNullable) {
+    return getSchemaWithFields(sObjectDescriptor, describeResult,
+            Collections.emptyList(), setAllCustomFieldsNullable);
+  }
+
+  public static Schema getSchemaWithFields(SObjectDescriptor sObjectDescriptor,
+                                           SObjectsDescribeResult describeResult,
+                                           List<String> topLevelParents,
+                                           boolean setAllCustomFieldsNullable) {
     List<Schema.Field> schemaFields = new ArrayList<>();
 
     for (SObjectDescriptor.FieldDescriptor fieldDescriptor : sObjectDescriptor.getFields()) {
@@ -214,7 +238,7 @@ public class SalesforceSchemaUtil {
               fieldDescriptor.getFullName(), parentsPath));
         }
 
-        fieldSchema = createFieldSchema(field, fieldDescriptor.hasParents());
+        fieldSchema = createFieldSchema(field, fieldDescriptor.hasParents(), setAllCustomFieldsNullable);
       }
 
       Schema queryFieldSchema = functionType.getSchema(fieldSchema);
@@ -250,7 +274,7 @@ public class SalesforceSchemaUtil {
      */
     for (SObjectDescriptor childSObject : sObjectDescriptor.getChildSObjects()) {
       Schema childSchema = getSchemaWithFields(childSObject, describeResult,
-                                               Collections.singletonList(sObjectDescriptor.getName()));
+              Collections.singletonList(sObjectDescriptor.getName()), setAllCustomFieldsNullable);
 
       String childName = normalizeAvroName(childSObject.getName());
       Schema.Field childField = Schema.Field.of(childName,
@@ -264,8 +288,9 @@ public class SalesforceSchemaUtil {
 
   // Setting all the child columns as Nullable as in child object these fields can be mandatory but its reference
   // object in parent class can be null.
-  private static Schema createFieldSchema(Field field, boolean isChild) {
+  private static Schema createFieldSchema(Field field, boolean isChild, boolean setAllCustomFieldsNullable) {
     Schema fieldSchema = SALESFORCE_TYPE_TO_CDAP_SCHEMA.getOrDefault(field.getType(), DEFAULT_SCHEMA);
-    return field.isNillable() || isChild ? Schema.nullableOf(fieldSchema) : fieldSchema;
+    return field.isNillable() || isChild || (setAllCustomFieldsNullable && field.isCustom()) ?
+            Schema.nullableOf(fieldSchema) : fieldSchema;
   }
 }

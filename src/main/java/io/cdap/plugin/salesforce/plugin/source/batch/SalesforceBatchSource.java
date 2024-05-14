@@ -190,12 +190,24 @@ public class SalesforceBatchSource extends
   }
 
   /**
-   * Get Salesforce schema by query.
+   * Get Salesforce schema by query
    *
    * @param config Salesforce Source Batch config
    * @return schema calculated from query
    */
   public static Schema getSchema(SalesforceSourceConfig config, OAuthInfo oAuthInfo) {
+    return getSchema(config, oAuthInfo, false);
+  }
+
+  /**
+   * Get Salesforce schema by query, with the option to allow null values in non-nullable custom fields
+   *
+   * @param config Salesforce Source Batch config
+   * @param setAllCustomFieldsNullable set all custom fields nullable by default
+   * @return schema calculated from query
+   */
+  public static Schema getSchema(SalesforceSourceConfig config, OAuthInfo oAuthInfo,
+                                 boolean setAllCustomFieldsNullable) {
     String query = config.getQuery(System.currentTimeMillis(), oAuthInfo);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
@@ -203,7 +215,7 @@ public class SalesforceBatchSource extends
                                                                           config.getConnection().getConnectTimeout(),
                                                                           config.getConnection().getReadTimeout(),
                                                                           config.getConnection().getProxyUrl());
-      return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor);
+      return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor, setAllCustomFieldsNullable);
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
