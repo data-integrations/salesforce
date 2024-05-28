@@ -64,11 +64,11 @@ public class SalesforceConnectionUtil {
     }
     String proxyUrl = conf.get(SalesforceConstants.CONFIG_PROXY_URL);
     if (oAuthToken != null && instanceURL != null) {
-      return new AuthenticatorCredentials(new OAuthInfo(oAuthToken, instanceURL), connectTimeout, readTimeout,
-                                          proxyUrl);
+      return AuthenticatorCredentials.fromParameters(
+              new OAuthInfo(oAuthToken, instanceURL), connectTimeout, readTimeout, proxyUrl);
     }
 
-    return new AuthenticatorCredentials(conf.get(SalesforceConstants.CONFIG_USERNAME),
+    return AuthenticatorCredentials.fromParameters(conf.get(SalesforceConstants.CONFIG_USERNAME),
                                         conf.get(SalesforceConstants.CONFIG_PASSWORD),
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
                                         conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),

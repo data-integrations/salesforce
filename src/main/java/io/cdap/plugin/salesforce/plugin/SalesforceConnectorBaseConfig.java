@@ -162,11 +162,10 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     if (oAuthInfo == null) {
       return;
     }
-
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
+            oAuthInfo, this.getConnectTimeout(), this.getReadTimeoutInMillis(), getProxyUrl());
     try {
-      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, this.getConnectTimeout(),
-                                                                                 this.getReadTimeoutInMillis(),
-                                                                                 getProxyUrl()));
+      SalesforceConnectionUtil.getPartnerConnection(credentials);
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(

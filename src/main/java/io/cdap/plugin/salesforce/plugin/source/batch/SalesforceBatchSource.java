@@ -211,7 +211,7 @@ public class SalesforceBatchSource extends
     String query = config.getQuery(System.currentTimeMillis(), oAuthInfo);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
-      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                           config.getConnection().getConnectTimeout(),
                                                                           config.getConnection().getReadTimeout(),
                                                                           config.getConnection().getProxyUrl());

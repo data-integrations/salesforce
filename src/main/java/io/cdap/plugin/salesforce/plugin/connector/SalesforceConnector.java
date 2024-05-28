@@ -102,7 +102,8 @@ public class SalesforceConnector implements DirectConnector {
    * @throws IOException In case of Salesforce connection failure while browsing
    */
   public BrowseDetail browse(boolean onlyReturnQueryableObjects) throws IOException {
-    AuthenticatorCredentials credentials = new AuthenticatorCredentials(config.getUsername(), config.getPassword(),
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
+                                                                        config.getUsername(), config.getPassword(),
                                                                         config.getConsumerKey(),
                                                                         config.getConsumerSecret(),
                                                                         config.getLoginUrl(),

@@ -92,7 +92,7 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
     }
     Integer connectTimeout = Integer.parseInt(CONNECT_TIMEOUT);
     Integer readTimeout = Integer.parseInt(READ_TIMEOUT);
-    AuthenticatorCredentials credentials = new AuthenticatorCredentials(USERNAME, PASSWORD, CONSUMER_KEY,
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(USERNAME, PASSWORD, CONSUMER_KEY,
                                                                         CONSUMER_SECRET, LOGIN_URL, connectTimeout,
                                                                         readTimeout, null);
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);

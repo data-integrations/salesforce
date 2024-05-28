@@ -226,7 +226,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector,
                                       OAuthInfo oAuthInfo) {
     try {
-      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                           this.getConnection().getConnectTimeout(),
                                                                           this.getConnection().getReadTimeout(),
                                                                           this.getConnection().getProxyUrl());
@@ -332,7 +332,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
-    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
                                                                         this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());

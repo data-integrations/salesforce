@@ -178,7 +178,7 @@ public class SalesforceClient {
   public static void deletePushTopic(String pushTopicName) {
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(new AuthenticatorCredentials(USERNAME, PASSWORD + SECURITYTOKEN,
+        Authenticator.createConnectorConfig(AuthenticatorCredentials.fromParameters(USERNAME, PASSWORD + SECURITYTOKEN,
                                                                          CLIENTID, CLIENTSECRET, PluginPropertyUtils.
                                                                            pluginProp("login.url"),
                                                                          30000, 3600, "")));

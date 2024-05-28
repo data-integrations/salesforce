@@ -101,10 +101,10 @@ public class SalesforceConnectorInfo {
   public AuthenticatorCredentials getAuthenticatorCredentials() {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
-      return new AuthenticatorCredentials(oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(),
-                                          config.getProxyUrl());
+      return AuthenticatorCredentials.fromParameters(
+              oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl());
     }
-    return new AuthenticatorCredentials(config.getUsername(), config.getPassword(), config.getConsumerKey(),
+    return AuthenticatorCredentials.fromParameters(config.getUsername(), config.getPassword(), config.getConsumerKey(),
                                         config.getConsumerSecret(), config.getLoginUrl(), config.getConnectTimeout(),
                                         config.getReadTimeoutInMillis(), config.getProxyUrl());
   }
@@ -140,11 +140,11 @@ public class SalesforceConnectorInfo {
     if (oAuthInfo == null) {
       return;
     }
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
+            oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl());
 
     try {
-      SalesforceConnectionUtil.getPartnerConnection(new AuthenticatorCredentials(oAuthInfo, config.getConnectTimeout(),
-                                                                                 config.getReadTimeoutInMillis(),
-                                                                                 config.getProxyUrl()));
+      SalesforceConnectionUtil.getPartnerConnection(credentials);
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(

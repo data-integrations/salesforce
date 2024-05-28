@@ -176,7 +176,7 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     }
     DescribeGlobalResult describeGlobalResult;
     try {
-      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                           getConnection().getConnectTimeout(),
                                                                           this.getConnection().getReadTimeout(),
                                                                           this.getConnection().getProxyUrl());

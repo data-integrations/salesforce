@@ -214,7 +214,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   }
 
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
-    AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                         this.getConnection().getConnectTimeout(),
                                                                         this.getConnection().getReadTimeout(),
                                                                         this.connection.getProxyUrl());
@@ -277,7 +277,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
-      AuthenticatorCredentials credentials = new AuthenticatorCredentials(oAuthInfo,
+      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                           this.getConnection().getConnectTimeout(),
                                                                           this.getConnection().getReadTimeout(),
                                                                           this.connection.getProxyUrl());

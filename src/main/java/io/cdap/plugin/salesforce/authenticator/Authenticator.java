@@ -25,6 +25,7 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.net.URI;
@@ -84,6 +85,10 @@ public class Authenticator {
       return oAuthInfo;
     }
 
+    if (credentials.getGrantType() == null) {
+      throw new IllegalArgumentException("Grant type cannot be null for OAuth flow to fetch access token.");
+    }
+
     SslContextFactory sslContextFactory = new SslContextFactory();
     HttpClient httpClient = new HttpClient(sslContextFactory);
     httpClient.setConnectTimeout(credentials.getConnectTimeout());
@@ -92,12 +97,24 @@ public class Authenticator {
     }
     try {
       httpClient.start();
-      String response = httpClient.POST(credentials.getLoginUrl()).param("grant_type", "password")
-        .param("client_id", credentials.getConsumerKey())
-        .param("client_secret", credentials.getConsumerSecret())
-        .param("username", credentials.getUsername())
-        .param("password", credentials.getPassword()).send().getContentAsString();
 
+      Request authRequest = httpClient.POST(credentials.getLoginUrl())
+              .param("grant_type", credentials.getGrantType().getType());
+
+      switch(credentials.getGrantType()) {
+        case CLIENT_CREDENTIALS:
+          authRequest = authRequest.param("client_id", credentials.getConsumerKey())
+                  .param("client_secret", credentials.getConsumerSecret());
+          break;
+        case PASSWORD:
+          authRequest = authRequest.param("client_id", credentials.getConsumerKey())
+                  .param("client_secret", credentials.getConsumerSecret())
+                  .param("username", credentials.getUsername())
+                  .param("password", credentials.getPassword());
+          break;
+      }
+
+      String response = authRequest.send().getContentAsString();
       AuthResponse authResponse = GSON.fromJson(response, AuthResponse.class);
 
       if (!Strings.isNullOrEmpty(authResponse.getError())) {

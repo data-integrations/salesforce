@@ -233,7 +233,7 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
 
     try {
       PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(new AuthenticatorCredentials(oAuthInfo,
+        Authenticator.createConnectorConfig(AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                          this.getConnection().getConnectTimeout(),
                                                                          this.getConnection().getReadTimeout(),
                                                                          this.connection.getProxyUrl())));

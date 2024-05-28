@@ -89,7 +89,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
         && oAuthInfo != null) {
-        Schema schema = SalesforceSchemaUtil.getSchema(new AuthenticatorCredentials(oAuthInfo,
+        Schema schema = SalesforceSchemaUtil.getSchema(AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                                     config.getConnection()
                                                                                       .getConnectTimeout(),
                                                                                     config.getConnection()
