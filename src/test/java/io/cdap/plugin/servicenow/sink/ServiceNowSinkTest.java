@@ -89,17 +89,16 @@ public class ServiceNowSinkTest {
     PowerMockito.whenNew(ServiceNowTableAPIClientImpl.class).withParameterTypes(ServiceNowConnectorConfig.class)
       .withArguments(Mockito.any(ServiceNowConnectorConfig.class)).thenReturn(restApi);
     List<Map<String, String>> result = new ArrayList<>();
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": []\n" +
       "}";
     MockFailureCollector collector = new MockFailureCollector();
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
-    Mockito.when(restApi.executeGet(Mockito.any())).thenReturn(restAPIResponse);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     serviceNowSink.configurePipeline(mockPipelineConfigurer);
-    Assert.assertEquals(200, restAPIResponse.getHttpStatus());
+    Assert.assertNull(restAPIResponse.getException());
     Assert.assertEquals(0, collector.getValidationFailures().size());
   }
 
@@ -117,7 +116,6 @@ public class ServiceNowSinkTest {
     Map<String, String> map = new HashMap<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": [\n" +
@@ -134,8 +132,8 @@ public class ServiceNowSinkTest {
                                     Schema.Field.of("price", Schema.of(Schema.Type.DOUBLE)));
     Emitter<KeyValue<NullWritable, JsonObject>> emitter = Mockito.mock(Emitter.class);
     Mockito.when(context.getInputSchema()).thenReturn(schema);
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
-    Mockito.when(restApi.executeGet(Mockito.any())).thenReturn(restAPIResponse);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
     PowerMockito.whenNew(OAuthClient.class).

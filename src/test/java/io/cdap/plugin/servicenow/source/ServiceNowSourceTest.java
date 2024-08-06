@@ -106,7 +106,6 @@ public class ServiceNowSourceTest {
     List<Map<String, String>> result = new ArrayList<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": [\n" +
@@ -173,8 +172,8 @@ public class ServiceNowSourceTest {
     PowerMockito.mockStatic(ServiceNowInputFormat.class);
     Mockito.when(ServiceNowInputFormat.fetchTableInfo(Mockito.any(), Mockito.any(), Mockito.anyString(),
       Mockito.any())).thenReturn(tableInfo);
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
-    Mockito.when(restApi.executeGet(Mockito.any())).thenReturn(restAPIResponse);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
     PowerMockito.whenNew(OAuthClient.class).
@@ -208,13 +207,12 @@ public class ServiceNowSourceTest {
     PowerMockito.whenNew(ServiceNowTableAPIClientImpl.class).withParameterTypes(ServiceNowConnectorConfig.class)
       .withArguments(Mockito.any(ServiceNowConnectorConfig.class)).thenReturn(restApi);
     List<Map<String, String>> result = new ArrayList<>();
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": []\n" +
       "}";
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
-    Mockito.when(restApi.executeGet(Mockito.any())).thenReturn(restAPIResponse);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     try {
       serviceNowSource.configurePipeline(mockPipelineConfigurer);
@@ -239,7 +237,6 @@ public class ServiceNowSourceTest {
     Map<String, String> map = new HashMap<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": [\n" +
@@ -303,8 +300,8 @@ public class ServiceNowSourceTest {
       "        }\n" +
       "    ]\n" +
       "}";
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
-    PowerMockito.when(restApi.executeGet(Mockito.any())).thenReturn(restAPIResponse);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
+    PowerMockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
     PowerMockito.whenNew(OAuthClient.class).

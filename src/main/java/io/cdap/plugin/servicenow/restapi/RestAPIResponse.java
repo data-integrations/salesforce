@@ -18,8 +18,7 @@ package io.cdap.plugin.servicenow.restapi;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.cdap.plugin.servicenow.apiclient.NonRetryableException;
-import io.cdap.plugin.servicenow.apiclient.RetryableException;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
@@ -27,7 +26,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Pojo class to capture the API response.
@@ -45,55 +44,60 @@ public class RestAPIResponse {
   private static final String HTTP_ERROR_MESSAGE = "Http call to ServiceNow instance returned status code %d.";
   private static final String REST_ERROR_MESSAGE = "Rest Api response has errors. Error message: %s.";
   private static final Set<Integer> SUCCESS_CODES = new HashSet<>(Collections.singletonList(HttpStatus.SC_OK));
-  private static final Set<Integer> RETRYABLE_CODES = new HashSet<>(Arrays.asList(429,
-          HttpStatus.SC_BAD_GATEWAY,
-          HttpStatus.SC_SERVICE_UNAVAILABLE,
-          HttpStatus.SC_REQUEST_TIMEOUT,
-          HttpStatus.SC_GATEWAY_TIMEOUT));
-  private final int httpStatus;
   private final Map<String, String> headers;
   private final String responseBody;
+  @Nullable private final ServiceNowAPIException exception;
 
-  public RestAPIResponse(int httpStatus, Map<String, String> headers, String responseBody) {
-    this.httpStatus = httpStatus;
+  public RestAPIResponse(
+      Map<String, String> headers,
+      @Nullable String responseBody,
+      @Nullable ServiceNowAPIException exception) {
     this.headers = headers;
     this.responseBody = responseBody;
+    this.exception = exception;
   }
 
   /**
    * Parses HttpResponse into RestAPIResponse object when no errors occur.
-   * Throws a {@link RetryableException} if the error is retryable.
-   * Throws an {@link NonRetryableException} if the error is not retryable.
+   * Throws a {@link ServiceNowAPIException}.
    *
    * @param httpResponse The HttpResponse object to parse
    * @param headerNames The list of header names to be extracted
    * @return An instance of RestAPIResponse object.
    */
-  public static RestAPIResponse parse(HttpResponse httpResponse, String... headerNames) throws IOException {
-    validateHttpResponse(httpResponse);
-    List<String> headerNameList = headerNames == null ? Collections.emptyList() : Arrays.asList(headerNames);
-    int httpStatus = httpResponse.getStatusLine().getStatusCode();
+  public static RestAPIResponse parse(HttpResponse httpResponse, String... headerNames) {
+    List<String> headerNameList =
+        headerNames == null ? Collections.emptyList() : Arrays.asList(headerNames);
     Map<String, String> headers = new HashMap<>();
 
     if (!headerNameList.isEmpty()) {
-      headers.putAll(Arrays.stream(httpResponse.getAllHeaders())
-        .filter(o -> headerNameList.contains(o.getName()))
-        .collect(Collectors.toMap(Header::getName, Header::getValue)));
+      headers.putAll(
+          Arrays.stream(httpResponse.getAllHeaders())
+              .filter(o -> headerNameList.contains(o.getName()))
+              .collect(Collectors.toMap(Header::getName, Header::getValue)));
     }
-    String responseBody = EntityUtils.toString(httpResponse.getEntity());
-    validateRestApiResponse(responseBody);
-    return new RestAPIResponse(httpStatus, headers, responseBody);
+
+    ServiceNowAPIException serviceNowAPIException = validateHttpResponse(httpResponse);
+    if (serviceNowAPIException != null) {
+      return new RestAPIResponse(headers, null, serviceNowAPIException);
+    }
+
+    String responseBody = null;
+    try {
+      responseBody = EntityUtils.toString(httpResponse.getEntity());
+    } catch (IOException e) {
+      return new RestAPIResponse(headers, null, new ServiceNowAPIException(e, httpResponse));
+    }
+    serviceNowAPIException = validateRestApiResponse(httpResponse, responseBody);
+    return new RestAPIResponse(headers, responseBody, serviceNowAPIException);
   }
 
   public static RestAPIResponse parse(HttpResponse httpResponse) throws IOException {
     return parse(httpResponse, new String[0]);
   }
 
-  public int getHttpStatus() {
-    return httpStatus;
-  }
-
-  private static void validateRestApiResponse(String responseBody) {
+  private static ServiceNowAPIException validateRestApiResponse(
+      HttpResponse response, String responseBody) {
     JsonObject jo = GSON.fromJson(responseBody, JsonObject.class);
     // check if status is "failure"
     String status = null;
@@ -101,33 +105,37 @@ public class RestAPIResponse {
       status = jo.get(ServiceNowConstants.STATUS).getAsString();
     }
     if (!ServiceNowConstants.FAILURE.equals(status)) {
-      return;
+      return null;
     }
     // check if failure is retryable
     String errorMessage = jo.getAsJsonObject(ServiceNowConstants.ERROR).get(ServiceNowConstants.MESSAGE).getAsString();
-    if (errorMessage.contains(ServiceNowConstants.MAXIMUM_EXECUTION_TIME_EXCEEDED)) {
-      throw new RetryableException(String.format(REST_ERROR_MESSAGE, errorMessage));
-    } else {
-      throw new NonRetryableException(String.format(REST_ERROR_MESSAGE, errorMessage));
-    }
+    return new ServiceNowAPIException(String.format(REST_ERROR_MESSAGE, errorMessage), response);
   }
 
-  private static void validateHttpResponse(HttpResponse response) {
+  private static ServiceNowAPIException validateHttpResponse(HttpResponse response) {
     int code = response.getStatusLine().getStatusCode();
     if (SUCCESS_CODES.contains(code)) {
-      return;
+      return null;
     }
-    if (RETRYABLE_CODES.contains(code)) {
-      throw new RetryableException(String.format(HTTP_ERROR_MESSAGE, code));
-    }
-    throw new NonRetryableException(String.format(HTTP_ERROR_MESSAGE, code));
+    return new ServiceNowAPIException(
+        String.format(HTTP_ERROR_MESSAGE, code), response);
   }
 
   public Map<String, String> getHeaders() {
     return headers;
   }
 
+  @Nullable
   public String getResponseBody() {
     return responseBody;
+  }
+
+  @Nullable
+  public ServiceNowAPIException getException() {
+    return exception;
+  }
+
+  public boolean hasException() {
+    return exception != null;
   }
 }

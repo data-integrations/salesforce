@@ -1,7 +1,5 @@
 package io.cdap.plugin.servicenow.restapi;
 
-import io.cdap.plugin.servicenow.apiclient.NonRetryableException;
-import io.cdap.plugin.servicenow.apiclient.RetryableException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIRequestBuilder;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
@@ -12,6 +10,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.util.EntityUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -31,7 +30,7 @@ import java.io.IOException;
 })
 public class RestAPIClientTest {
 
-  @Test(expected = RetryableException.class)
+  @Test
   public void testExecuteGet_throwRetryableException() throws IOException {
     CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
     StatusLine statusLine = Mockito.mock(BasicStatusLine.class);
@@ -50,11 +49,13 @@ public class RestAPIClientTest {
 
     ServiceNowConnectorConfig config = Mockito.mock(ServiceNowConnectorConfig.class);
     ServiceNowTableAPIClientImpl client = new ServiceNowTableAPIClientImpl(config);
-    client.executeGet(request);
+    RestAPIResponse actualResponse = client.executeGet(request);
+    Assert.assertNotNull(actualResponse.getException());
+    Assert.assertTrue(actualResponse.getException().isErrorRetryable());
   }
 
-  @Test(expected = NonRetryableException.class)
-  public void testExecuteGet_throwIOException() throws IOException {
+  @Test
+  public void testExecuteGet_throwNonRetryableException() throws IOException {
     CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
     StatusLine statusLine = Mockito.mock(BasicStatusLine.class);
     Mockito.when(statusLine.getStatusCode()).thenReturn(HttpStatus.SC_INTERNAL_SERVER_ERROR);
@@ -72,7 +73,9 @@ public class RestAPIClientTest {
 
     ServiceNowConnectorConfig config = Mockito.mock(ServiceNowConnectorConfig.class);
     ServiceNowTableAPIClientImpl client = new ServiceNowTableAPIClientImpl(config);
-    client.executeGet(request);
+    RestAPIResponse actualResponse = client.executeGet(request);
+    Assert.assertNotNull(actualResponse.getException());
+    Assert.assertFalse(actualResponse.getException().isErrorRetryable());
   }
 
   @Test

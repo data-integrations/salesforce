@@ -21,6 +21,7 @@ import io.cdap.cdap.etl.api.validation.CauseAttributes;
 import io.cdap.cdap.etl.api.validation.ValidationException;
 import io.cdap.cdap.etl.api.validation.ValidationFailure;
 import io.cdap.cdap.etl.mock.validation.MockFailureCollector;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.restapi.RestAPIClient;
@@ -29,6 +30,7 @@ import io.cdap.plugin.servicenow.restapi.RestAPIResponse;
 import io.cdap.plugin.servicenow.sink.model.SchemaResponse;
 import io.cdap.plugin.servicenow.sink.model.ServiceNowSchemaField;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -285,6 +287,7 @@ public class ServiceNowSinkConfigTest {
     int httpStatus = HttpStatus.SC_NOT_FOUND;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
+      "  \"status_code\":201 " +
       "    \"result\": [\n" +
       "        {\n" +
       "            \"calendar_integration\": \"1\",\n" +
@@ -299,7 +302,11 @@ public class ServiceNowSinkConfigTest {
     List<ServiceNowSchemaField> schemaFields = new ArrayList<>();
     schemaFields.add(schemaField);
     SchemaResponse schemaResponse = new SchemaResponse(schemaFields);
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
+    HttpResponse mockResponse = Mockito.mock(HttpResponse.class);
+    Mockito.when(mockResponse.getStatusLine()).thenReturn(Mockito.mock(StatusLine.class));
+    Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(httpStatus);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(
+        headers, responseBody, new ServiceNowAPIException("", mockResponse));
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
     PowerMockito.whenNew(OAuthClient.class).
       withArguments(Mockito.any(URLConnectionClient.class)).thenReturn(oAuthClient);
@@ -317,7 +324,7 @@ public class ServiceNowSinkConfigTest {
     CloseableHttpResponse httpResponse = Mockito.mock(CloseableHttpResponse.class);
     Mockito.when(httpClient.execute(Mockito.any())).thenReturn(httpResponse);
     PowerMockito.when(RestAPIResponse.parse(httpResponse, null)).thenReturn(response);
-    Mockito.when(restApi.executeGet(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
     Mockito.when(restApi.fetchTableSchema(Mockito.anyString(), Mockito.any(FailureCollector.class))).thenReturn(schema);
     Mockito.when(restApi.parseSchemaResponse(restAPIResponse.getResponseBody()))
       .thenReturn(schemaResponse);
@@ -348,7 +355,6 @@ public class ServiceNowSinkConfigTest {
     Map<String, Object> map = new HashMap<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
       "    \"result\": [\n" +
@@ -360,7 +366,7 @@ public class ServiceNowSinkConfigTest {
       "        }\n" +
       "    ]\n" +
       "}";
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
     PowerMockito.whenNew(OAuthClient.class).
       withArguments(Mockito.any(URLConnectionClient.class)).thenReturn(oAuthClient);
@@ -381,7 +387,7 @@ public class ServiceNowSinkConfigTest {
     Mockito.when(httpResponse.getStatusLine()).thenReturn(statusLine);
     Mockito.when(httpClient.execute(Mockito.any())).thenReturn(httpResponse);
     PowerMockito.when(RestAPIResponse.parse(httpResponse, null)).thenReturn(response);
-    Mockito.when(restApi.executeGet(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
+    Mockito.when(restApi.executeGetWithRetries(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
     Mockito.when(restApi.fetchTableSchema("tableName", collector)).
       thenReturn(schema);
     config.validateSchema(schema, collector);

@@ -137,7 +137,7 @@ public class ServiceNowBaseConfig extends PluginConfig {
       // Get the response JSON and fetch the header X-Total-Count. Set the value to recordCount
       requestBuilder.setResponseHeaders(ServiceNowConstants.HEADER_NAME_TOTAL_COUNT);
 
-      apiResponse = serviceNowTableAPIClient.executeGet(requestBuilder.build());
+      apiResponse = serviceNowTableAPIClient.executeGetWithRetries(requestBuilder.build());
       if (serviceNowTableAPIClient.parseResponseToResultListOfMap(apiResponse.getResponseBody()).isEmpty()) {
         // Removed config property as in case of MultiSource, only first table error was populating.
         collector.addFailure("Table: " + tableName + " is empty.", "");

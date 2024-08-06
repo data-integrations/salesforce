@@ -16,11 +16,14 @@
 
 package io.cdap.plugin.servicenow.restapi;
 
-import com.jcraft.jsch.IO;
-import io.cdap.plugin.servicenow.apiclient.NonRetryableException;
-import io.cdap.plugin.servicenow.apiclient.RetryableException;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import com.github.rholder.retry.Attempt;
+import com.github.rholder.retry.RetryException;
+import com.github.rholder.retry.Retryer;
+import com.github.rholder.retry.RetryerBuilder;
+import com.github.rholder.retry.StopStrategies;
+import com.github.rholder.retry.WaitStrategies;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
+import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -38,11 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An abstract class to call Rest API.
@@ -65,6 +66,60 @@ public abstract class RestAPIClient {
         return RestAPIResponse.parse(httpResponse, request.getResponseHeaders());
       }
     }
+  }
+
+  /**
+   * Executes the Rest API request and returns the response with retries.
+   *
+   * @param request the Rest API request.
+   * @return an instance of RestAPIResponse object.
+   * @throws ServiceNowAPIException
+   */
+  public RestAPIResponse executeGetWithRetries(RestAPIRequest request)
+      throws ServiceNowAPIException {
+    Callable<RestAPIResponse> callable = () -> executeGet(request);
+    return handleExecution(getRetryer(), callable);
+  }
+
+  private RestAPIResponse handleExecution(
+      Retryer<RestAPIResponse> retryer, Callable<RestAPIResponse> callable)
+      throws ServiceNowAPIException {
+    try {
+      RestAPIResponse response = retryer.call(callable);
+      // Execution is successful
+      if (response.hasException()) {
+        // Execution is successful and returned non retryable error
+        throw response.getException();
+      }
+      return response;
+    } catch (RetryException e) {
+      // Execution successful, returned retryable error and retries exhausted
+      Attempt<?> apiResponseAttempt = e.getLastFailedAttempt();
+      if (apiResponseAttempt.hasException()) {
+        // last attempt has execution failure
+        throw new ServiceNowAPIException(apiResponseAttempt.getExceptionCause(), null);
+      } else {
+        // last execution attempt was successful but has an error response
+        // if execution is successful, it's expected to have a exception in response object
+        RestAPIResponse response = (RestAPIResponse) apiResponseAttempt.getResult();
+        throw response.getException();
+      }
+    } catch (ExecutionException e) {
+      // Execution failed with error
+      throw new ServiceNowAPIException(e, null);
+    }
+  }
+
+  private Retryer<RestAPIResponse> getRetryer() {
+    return RetryerBuilder.<RestAPIResponse>newBuilder()
+        .retryIfResult(
+            restAPIResponse ->
+                restAPIResponse.hasException() && restAPIResponse.getException().isErrorRetryable())
+        .withWaitStrategy(
+            WaitStrategies.exponentialWait(ServiceNowConstants.WAIT_TIME, TimeUnit.MILLISECONDS))
+        .withStopStrategy(
+            StopStrategies.stopAfterAttempt(ServiceNowConstants.MAX_NUMBER_OF_RETRY_ATTEMPTS))
+        .build();
   }
 
   /**

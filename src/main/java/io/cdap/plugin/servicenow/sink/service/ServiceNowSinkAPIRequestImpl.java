@@ -26,6 +26,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.cdap.cdap.api.retry.RetryableException;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIRequestBuilder;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
@@ -107,7 +108,8 @@ public class ServiceNowSinkAPIRequestImpl {
    * @param restRequestsMap The map of restRequests
    * @param accessToken    The access token
    */
-  public void createPostRequest(Map<String, RestRequest> restRequestsMap, String accessToken) {
+  public void createPostRequest(Map<String, RestRequest> restRequestsMap, String accessToken)
+      throws ServiceNowAPIException {
     ServiceNowBatchRequest payloadRequest = getPayloadRequest(restRequestsMap);
     ServiceNowTableAPIRequestBuilder requestBuilder = new ServiceNowTableAPIRequestBuilder(
       config.getConnection().getRestApiEndpoint());
@@ -164,7 +166,7 @@ public class ServiceNowSinkAPIRequestImpl {
       }
     } catch (IOException e) {
       LOG.error("Error while connecting to ServiceNow", e.getMessage());
-      throw new RetryableException("Error while connecting to ServiceNow", e);
+      throw new ServiceNowAPIException("Error while connecting to ServiceNow", e, null, true);
     }
   }
 

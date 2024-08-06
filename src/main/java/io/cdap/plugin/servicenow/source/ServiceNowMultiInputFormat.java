@@ -19,6 +19,7 @@ package io.cdap.plugin.servicenow.source;
 import com.google.common.base.Strings;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
@@ -97,7 +98,7 @@ public class ServiceNowMultiInputFormat extends InputFormat<NullWritable, Struct
     try {
       schema = restApi.fetchTableSchema(tableName);
       recordCount = restApi.getTableRecordCount(tableName);
-    } catch (OAuthProblemException | OAuthSystemException | IOException e) {
+    } catch (ServiceNowAPIException e) {
       throw new RuntimeException(e);
     }
     LOG.debug("table {}, rows = {}", tableName, recordCount);

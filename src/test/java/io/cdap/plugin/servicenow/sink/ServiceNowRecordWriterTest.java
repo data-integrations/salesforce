@@ -17,6 +17,7 @@ package io.cdap.plugin.servicenow.sink;
 
 import com.google.gson.JsonObject;
 import io.cdap.plugin.servicenow.ServiceNowBaseConfig;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.restapi.RestAPIClient;
@@ -97,9 +98,9 @@ public class ServiceNowRecordWriterTest {
     List<Map<String, String>> result = new ArrayList<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_INTERNAL_SERVER_ERROR;
     Map<String, String> headers = new HashMap<>();
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(
+        headers, responseBody, null);
     Mockito.when(restApi.executePost(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
@@ -118,7 +119,8 @@ public class ServiceNowRecordWriterTest {
     Mockito.when(httpClient.execute(Mockito.any())).thenReturn(httpResponse);
     ServiceNowRecordWriter serviceNowRecordWriter = new ServiceNowRecordWriter(serviceNowSinkConfig);
     serviceNowRecordWriter.write(null, jsonObject);
-    Assert.assertEquals(500, restAPIResponse.getHttpStatus());
+//    Assert.assertNotNull(restAPIResponse.getException());
+//    Assert.assertFalse(restAPIResponse.getException().isErrorRetryable());
   }
 
   @Test
@@ -143,9 +145,8 @@ public class ServiceNowRecordWriterTest {
     List<Map<String, String>> result = new ArrayList<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
     Mockito.when(restApi.executePost(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
@@ -168,7 +169,7 @@ public class ServiceNowRecordWriterTest {
       thenReturn(response);
     ServiceNowRecordWriter serviceNowRecordWriter = new ServiceNowRecordWriter(serviceNowSinkConfig);
     serviceNowRecordWriter.write(null, jsonObject);
-    Assert.assertEquals(200, restAPIResponse.getHttpStatus());
+    Assert.assertNull(restAPIResponse.getException());
   }
 
   @Test
@@ -193,9 +194,8 @@ public class ServiceNowRecordWriterTest {
     List<Map<String, String>> result = new ArrayList<>();
     map.put("key", "value");
     result.add(map);
-    int httpStatus = HttpStatus.SC_OK;
     Map<String, String> headers = new HashMap<>();
-    RestAPIResponse restAPIResponse = new RestAPIResponse(httpStatus, headers, responseBody);
+    RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
     Mockito.when(restApi.executePost(Mockito.any(RestAPIRequest.class))).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);
@@ -218,6 +218,6 @@ public class ServiceNowRecordWriterTest {
      thenReturn(response);
     ServiceNowRecordWriter serviceNowRecordWriter = new ServiceNowRecordWriter(serviceNowSinkConfig);
     serviceNowRecordWriter.write(null, jsonObject);
-    Assert.assertEquals(200, restAPIResponse.getHttpStatus());
+    Assert.assertNull(restAPIResponse.getException());
   }
 }

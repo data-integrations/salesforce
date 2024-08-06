@@ -18,6 +18,7 @@ package io.cdap.plugin.servicenow.source;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowRecordConverter;
 import io.cdap.plugin.servicenow.util.ServiceNowTableInfo;
@@ -102,7 +103,7 @@ public class ServiceNowRecordReader extends ServiceNowBaseRecordReader {
     return recordBuilder.build();
   }
 
-  private void fetchData() throws IOException {
+  private void fetchData() throws ServiceNowAPIException {
     // Get the table data
     results = restApi.fetchTableRecordsRetryableMode(tableName, pluginConf.getValueType(), pluginConf.getStartDate(),
                                                      pluginConf.getEndDate(), split.getOffset(),

@@ -18,6 +18,7 @@ package io.cdap.plugin.servicenow.source;
 
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
@@ -104,7 +105,7 @@ public class ServiceNowInputFormat extends InputFormat<NullWritable, StructuredR
     try {
       schema = restApi.fetchTableSchema(tableName);
       recordCount = restApi.getTableRecordCount(tableName);
-    } catch (OAuthProblemException | OAuthSystemException | IOException e) {
+    } catch (ServiceNowAPIException e) {
       throw new RuntimeException(String.format("Error in fetching table metadata due to reason: %s", e.getMessage()),
                                  e);
     }

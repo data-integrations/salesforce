@@ -19,6 +19,7 @@ package io.cdap.plugin.servicenow.source;
 import com.google.common.annotations.VisibleForTesting;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowRecordConverter;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
@@ -94,7 +95,7 @@ public class ServiceNowMultiRecordReader extends ServiceNowBaseRecordReader {
   }
 
   @VisibleForTesting
-  void fetchData() throws IOException {
+  void fetchData() throws ServiceNowAPIException {
     // Get the table data
     results = restApi.fetchTableRecordsRetryableMode(tableName, multiSourcePluginConf.getValueType(),
                                                      multiSourcePluginConf.getStartDate(),
@@ -112,7 +113,7 @@ public class ServiceNowMultiRecordReader extends ServiceNowBaseRecordReader {
       List<Schema.Field> schemaFields = new ArrayList<>(tableFields);
       schemaFields.add(Schema.Field.of(tableNameField, Schema.of(Schema.Type.STRING)));
       schema = Schema.recordOf(tableName, schemaFields);
-    } catch (OAuthProblemException | OAuthSystemException | IOException e) {
+    } catch (ServiceNowAPIException e) {
       throw new RuntimeException(e);
     }
   }
