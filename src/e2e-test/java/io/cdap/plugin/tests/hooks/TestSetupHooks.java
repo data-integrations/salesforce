@@ -19,6 +19,7 @@ package io.cdap.plugin.tests.hooks;
 import com.google.cloud.bigquery.BigQueryException;
 import io.cdap.e2e.utils.BigQueryClient;
 import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.source.ServiceNowSourceConfig;
 import io.cdap.plugin.utils.enums.ApplicationInReportingMode;
@@ -52,17 +53,17 @@ public class TestSetupHooks {
   public static void initializeServiceNowSourceConfig() {
     BeforeActions.scenario.write("Initialize ServiceNowSourceConfig");
     config = new ServiceNowSourceConfig(
-      "", "", "", "", "",
-      System.getenv("SERVICE_NOW_CLIENT_ID"),
-      System.getenv("SERVICE_NOW_CLIENT_SECRET"),
-      System.getenv("SERVICE_NOW_REST_API_ENDPOINT"),
-      System.getenv("SERVICE_NOW_USERNAME"),
-      System.getenv("SERVICE_NOW_PASSWORD"),
-      "", "", "", null);
+        "", "", "", "", "",
+        System.getenv("SERVICE_NOW_CLIENT_ID"),
+        System.getenv("SERVICE_NOW_CLIENT_SECRET"),
+        System.getenv("SERVICE_NOW_REST_API_ENDPOINT"),
+        System.getenv("SERVICE_NOW_USERNAME"),
+        System.getenv("SERVICE_NOW_PASSWORD"),
+        "", "", "", null);
   }
 
   @Before(order = 2, value = "@SN_PRODUCT_CATALOG_ITEM")
-  public static void createRecordInProductCatalogItemTable() throws IOException {
+  public static void createRecordInProductCatalogItemTable() throws IOException, ServiceNowAPIException {
     BeforeActions.scenario.write("Create new record in Product Catalog Item table");
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     String uniqueId = "TestProductCatalogItem" + RandomStringUtils.randomAlphanumeric(10);
@@ -72,7 +73,8 @@ public class TestSetupHooks {
   }
 
   @Before(order = 2, value = "@SN_RECEIVING_SLIP_LINE")
-  public static void createRecordInReceivingSlipLineTable() throws IOException {
+  public static void createRecordInReceivingSlipLineTable()
+      throws IOException, ServiceNowAPIException {
     BeforeActions.scenario.write("Create new record in Receiving Slip Line table");
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     String uniqueId = "TestReceivingSlipLine" + RandomStringUtils.randomAlphanumeric(10);
@@ -82,7 +84,8 @@ public class TestSetupHooks {
   }
 
   @Before(order = 2, value = "@SN_UPDATE_AGENT_ASSIST_RECOMMENDATION")
-  public static void updateRecordInAgentAssistRecommendationTable() throws IOException {
+  public static void updateRecordInAgentAssistRecommendationTable()
+      throws IOException, ServiceNowAPIException {
     BeforeActions.scenario.write("Create new record in Agent Assist Recommendation table");
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     String uniqueId = "TestAgentAssist" + RandomStringUtils.randomAlphanumeric(10);
@@ -92,7 +95,8 @@ public class TestSetupHooks {
   }
 
   @Before(order = 2, value = "@SN_UPDATE_VENDOR_CATALOG_ITEM")
-  public static void updateRecordInAgentVendorCatalogItem() throws IOException {
+  public static void updateRecordInAgentVendorCatalogItem()
+      throws IOException, ServiceNowAPIException {
     BeforeActions.scenario.write("Create new record in Vendor Catalog Item table");
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     String uniqueId = "TestVendorCatalog" + RandomStringUtils.randomAlphanumeric(10);
@@ -102,12 +106,12 @@ public class TestSetupHooks {
   }
 
   @Before(order = 2, value = "@SN_UPDATE_SERVICE_OFFERING")
-  public static void updateRecordInServiceOffering() throws IOException {
+  public static void updateRecordInServiceOffering() throws IOException, ServiceNowAPIException {
     BeforeActions.scenario.write("Create new record in Service Offering table");
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     String uniqueId = "TestServiceOffering" + RandomStringUtils.randomAlphanumeric(10);
     String recordDetails = "{'purchase_date':'2022-05-28','end_date':'2022-06-05 15:00:00'," +
-      " 'start_date':'2022-05-25 15:00:00','number':'" + uniqueId + "'}";
+        " 'start_date':'2022-05-25 15:00:00','number':'" + uniqueId + "'}";
     StringEntity entity = new StringEntity(recordDetails);
     systemId = tableAPIClient.createRecord(TablesInTableMode.SERVICE_OFFERING.value, entity);
   }
@@ -120,8 +124,8 @@ public class TestSetupHooks {
     receivingSlipLineRecordUniqueNumber = "ProcRecSlip" + stringUniqueId;
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT('" + receivingSlipLineRecordUniqueNumber + "' " +
-                                        "AS number, (DATETIME '2022-06-08 00:00:00')  AS received)])");
+        "SELECT * FROM UNNEST([ STRUCT('" + receivingSlipLineRecordUniqueNumber + "' " +
+        "AS number, (DATETIME '2022-06-08 00:00:00')  AS received)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -133,8 +137,8 @@ public class TestSetupHooks {
     agentAssistRecommendationUniqueName = "Agent" + stringUniqueId;
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT(" + active + " AS active," +
-                                        " '" + agentAssistRecommendationUniqueName + "'  AS name)])");
+        "SELECT * FROM UNNEST([ STRUCT(" + active + " AS active," +
+        " '" + agentAssistRecommendationUniqueName + "'  AS name)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -150,8 +154,8 @@ public class TestSetupHooks {
     vendorCatalogItemUniqueName = "VendorCatalog" + stringUniqueId;
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT(" + outOfStock + " AS out_of_stock,' "
-                                        + vendorCatalogItemUniqueName + " ' AS product_id)])");
+        "SELECT * FROM UNNEST([ STRUCT(" + outOfStock + " AS out_of_stock,' "
+        + vendorCatalogItemUniqueName + " ' AS product_id)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -161,10 +165,10 @@ public class TestSetupHooks {
     bqSourceTable = "testTable" + stringUniqueId;
     serviceOfferingUniqueNumber = "ServiceOffering" + stringUniqueId;
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT( (DATE '2022-06-10') AS purchase_date," +
-                                        " (DATETIME '2022-06-08 16:00:00') AS end_date," +
-                                        " (TIMESTAMP '2022-05-10 15:00:00-00:00') AS start_date,' "
-                                        + serviceOfferingUniqueNumber + " ' AS number)])");
+        "SELECT * FROM UNNEST([ STRUCT( (DATE '2022-06-10') AS purchase_date," +
+        " (DATETIME '2022-06-08 16:00:00') AS end_date," +
+        " (TIMESTAMP '2022-05-10 15:00:00-00:00') AS start_date,' "
+        + serviceOfferingUniqueNumber + " ' AS number)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -177,8 +181,8 @@ public class TestSetupHooks {
     String number = "updatedReceiving" + uniqueId;
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT('" + number + "'  AS number," +
-                                        " '" + systemId + "' AS sys_id )])");
+        "SELECT * FROM UNNEST([ STRUCT('" + number + "'  AS number," +
+        " '" + systemId + "' AS sys_id )])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -190,9 +194,9 @@ public class TestSetupHooks {
     String name = "Agent";
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT(" + active + " AS active," +
-                                        " '" + name + "'  AS name," +
-                                        " '" + systemId + "' AS sys_id)])");
+        "SELECT * FROM UNNEST([ STRUCT(" + active + " AS active," +
+        " '" + name + "'  AS name," +
+        " '" + systemId + "' AS sys_id)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -206,9 +210,9 @@ public class TestSetupHooks {
     String name = "check";
 
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT(" + outOfStock + " AS out_of_stock,'"
-                                        + name + "' AS sys_update_name," +
-                                        " '" + systemId + "' AS sys_id)])");
+        "SELECT * FROM UNNEST([ STRUCT(" + outOfStock + " AS out_of_stock,'"
+        + name + "' AS sys_update_name," +
+        " '" + systemId + "' AS sys_id)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
@@ -218,11 +222,11 @@ public class TestSetupHooks {
     bqSourceTable = "testTable" + stringUniqueId;
     serviceOfferingUniqueNumber = "ServiceOffering" + stringUniqueId;
     BigQueryClient.getSoleQueryResult("create table `" + bqSourceDataset + "." + bqSourceTable + "` as " +
-                                        "SELECT * FROM UNNEST([ STRUCT((DATE '2022-06-10') AS purchase_date," +
-                                        " (DATETIME '2022-06-08 16:00:00') AS end_date," +
-                                        " (TIMESTAMP '2022-05-10 15:00:00-00:00') AS start_date," +
-                                        " '" + systemId + "' AS sys_id,' "
-                                        + serviceOfferingUniqueNumber + " ' AS number)])");
+        "SELECT * FROM UNNEST([ STRUCT((DATE '2022-06-10') AS purchase_date," +
+        " (DATETIME '2022-06-08 16:00:00') AS end_date," +
+        " (TIMESTAMP '2022-05-10 15:00:00-00:00') AS start_date," +
+        " '" + systemId + "' AS sys_id,' "
+        + serviceOfferingUniqueNumber + " ' AS number)])");
     BeforeActions.scenario.write("BQ source Table " + bqSourceTable + " created successfully");
   }
 
