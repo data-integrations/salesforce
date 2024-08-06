@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import io.cdap.e2e.utils.AssertionHelper;
 import io.cdap.e2e.utils.BigQueryClient;
 import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.locators.ServiceNowPropertiesPage;
 import io.cdap.plugin.servicenow.source.ServiceNowSourceConfig;
@@ -50,22 +51,22 @@ public class ServiceNowSinkPropertiesPageActions {
   private static Gson gson = new Gson();
 
   public static void getRecordFromServiceNowTable(String query, String tableName)
-    throws OAuthProblemException, OAuthSystemException, IOException {
+      throws ServiceNowAPIException {
     config = new ServiceNowSourceConfig(
-      "", "", "", "", "",
-      System.getenv("SERVICE_NOW_CLIENT_ID"),
-      System.getenv("SERVICE_NOW_CLIENT_SECRET"),
-      System.getenv("SERVICE_NOW_REST_API_ENDPOINT"),
-      System.getenv("SERVICE_NOW_USERNAME"),
-      System.getenv("SERVICE_NOW_PASSWORD"),
-      "", "", "", null);
+        "", "", "", "", "",
+        System.getenv("SERVICE_NOW_CLIENT_ID"),
+        System.getenv("SERVICE_NOW_CLIENT_SECRET"),
+        System.getenv("SERVICE_NOW_REST_API_ENDPOINT"),
+        System.getenv("SERVICE_NOW_USERNAME"),
+        System.getenv("SERVICE_NOW_PASSWORD"),
+        "", "", "", null);
 
     ServiceNowTableAPIClientImpl tableAPIClient = new ServiceNowTableAPIClientImpl(config.getConnection());
     responseFromServiceNowTable = tableAPIClient.getRecordFromServiceNowTable(tableName, query);
   }
 
   public static void verifyIfRecordCreatedInServiceNowIsCorrect(String query, String tableName)
-    throws IOException, InterruptedException, OAuthProblemException, OAuthSystemException {
+      throws IOException, InterruptedException, ServiceNowAPIException {
 
     getRecordFromServiceNowTable(query, tableName);
     TableResult bigQueryTableData = getBigQueryTableData(TestSetupHooks.bqSourceDataset, TestSetupHooks.bqSourceTable);
@@ -79,7 +80,7 @@ public class ServiceNowSinkPropertiesPageActions {
   }
 
   public static void verifyIfRecordUpdatedInServiceNowIsCorrect(String query, String tableName)
-    throws IOException, InterruptedException, OAuthProblemException, OAuthSystemException {
+      throws IOException, InterruptedException, ServiceNowAPIException {
 
     getRecordFromServiceNowTable(query, tableName);
     TableResult bigQueryTableData = getBigQueryTableData(TestSetupHooks.bqSourceDataset, TestSetupHooks.bqSourceTable);
@@ -96,14 +97,14 @@ public class ServiceNowSinkPropertiesPageActions {
   }
 
   public static TableResult getBigQueryTableData(String dataset, String table)
-    throws IOException, InterruptedException {
+      throws IOException, InterruptedException {
     String projectId = PluginPropertyUtils.pluginProp("projectId");
     String selectQuery = "SELECT TO_JSON(t) result FROM `" + projectId + "." + dataset + "." + table + "` AS t";
     return BigQueryClient.getQueryResult(selectQuery);
   }
 
   public static boolean compareValueOfBothResponses(Map<String, String> serviceNowResponseMap,
-                                                    Map<String, Object> bigQueryResponseMap) {
+      Map<String, Object> bigQueryResponseMap) {
     if (serviceNowResponseMap.isEmpty() || bigQueryResponseMap.isEmpty()) {
       return false;
     }
@@ -116,7 +117,7 @@ public class ServiceNowSinkPropertiesPageActions {
 
       if (bigQueryValue instanceof Double) {
         String bigDecimalValue = new BigDecimal(String.valueOf(bigQueryValue)).setScale(
-          ServiceNowConstants.DEFAULT_SCALE, RoundingMode.HALF_UP).toString();
+            ServiceNowConstants.DEFAULT_SCALE, RoundingMode.HALF_UP).toString();
         result = serviceNowValue.equals(bigDecimalValue);
       } else if (checkBigQueryDateFormat(bigQueryValue.toString()) != null) {
         SimpleDateFormat serviceNowDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");

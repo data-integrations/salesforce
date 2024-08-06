@@ -17,6 +17,7 @@
 package io.cdap.plugin.servicenowsink.stepsdesign;
 
 import io.cdap.e2e.utils.PluginPropertyUtils;
+import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import io.cdap.plugin.servicenowsink.actions.ServiceNowSinkPropertiesPageActions;
 import io.cdap.plugin.tests.hooks.TestSetupHooks;
@@ -36,19 +37,19 @@ public class DesignTimeSteps {
 
   @And("Verify If new record created in ServiceNow application for table {string} is correct")
   public void verifyIfNewRecordCreatedInServiceNowApplicationForTableIsCorrect(String tableName)
-    throws IOException, InterruptedException, OAuthProblemException, OAuthSystemException {
+      throws IOException, InterruptedException, ServiceNowAPIException {
     String tableValueFromPluginPropertiesFile = PluginPropertyUtils.pluginProp(tableName);
 
     switch (tableValueFromPluginPropertiesFile) {
       case "proc_rec_slip_item":
         query = "number=" + TestSetupHooks.receivingSlipLineRecordUniqueNumber;
         ServiceNowSinkPropertiesPageActions.verifyIfRecordCreatedInServiceNowIsCorrect(query,
-                                                          tableValueFromPluginPropertiesFile);
+            tableValueFromPluginPropertiesFile);
         break;
       case "agent_assist_recommendation":
         query = "name=" + TestSetupHooks.agentAssistRecommendationUniqueName;
         ServiceNowSinkPropertiesPageActions.verifyIfRecordCreatedInServiceNowIsCorrect(query,
-                                                          tableValueFromPluginPropertiesFile);
+            tableValueFromPluginPropertiesFile);
         break;
       default:
         throw new IllegalStateException("Unexpected value: " + tableValueFromPluginPropertiesFile);
@@ -57,11 +58,11 @@ public class DesignTimeSteps {
 
   @Then("Verify If an updated record in ServiceNow application for table {string} is correct")
   public void verifyIfAnUpdatedRecordInServiceNowApplicationForTableIsCorrect(String tableName)
-    throws OAuthProblemException, OAuthSystemException, IOException, InterruptedException {
+      throws IOException, InterruptedException, ServiceNowAPIException {
     String tableValueFromPluginPropertiesFile = PluginPropertyUtils.pluginProp(tableName);
     query =  ServiceNowConstants.SYSTEM_ID + "=" + TestSetupHooks.systemId;
     ServiceNowSinkPropertiesPageActions.verifyIfRecordUpdatedInServiceNowIsCorrect(query,
-                                                                                   tableValueFromPluginPropertiesFile);
+        tableValueFromPluginPropertiesFile);
   }
 
   @Then("Verify error in Input Schema for non creatable fields")
