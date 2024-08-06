@@ -30,7 +30,7 @@ public class ServiceNowAPIException extends Exception {
   }
 
   public ServiceNowAPIException(Throwable t, @Nullable HttpResponse httpResponse) {
-    this(null, t, httpResponse, false)
+    this(null, t, httpResponse, false);
   }
 
   public ServiceNowAPIException(String message, Throwable t,
