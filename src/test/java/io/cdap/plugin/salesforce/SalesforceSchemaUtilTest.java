@@ -169,11 +169,11 @@ public class SalesforceSchemaUtilTest {
   }
 
   @Test
-  public void  testSchemaWithSetAllCustomFieldsNullable() {
+  public void testSchemaWithSetAllFieldsNullable() {
     String objectName = "CustomTable";
 
     List<SObjectDescriptor.FieldDescriptor> fieldDescriptors = Stream
-            .of("Name", "Value", "CreatedDate")
+            .of("Name", "Value", "CreatedDate", "UpdatedDate")
             .map(name -> getFieldWithType(name, FieldType.anyType, false))
             .map(SObjectDescriptor.FieldDescriptor::new)
             .collect(Collectors.toList());
@@ -183,19 +183,23 @@ public class SalesforceSchemaUtilTest {
             Collections.singletonList("Value"), null, SalesforceFunctionType.NONE));
     fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
             Collections.singletonList("CreatedDate"), null, SalesforceFunctionType.NONE));
+    fieldDescriptors.add(new SObjectDescriptor.FieldDescriptor(
+        Collections.singletonList("UpdatedDate"), null, SalesforceFunctionType.NONE));
     SObjectDescriptor sObjectDescriptor = new SObjectDescriptor(objectName, fieldDescriptors, ImmutableList.of());
 
     Map<String, Field> objectFields = new LinkedHashMap<>();
     objectFields.put("Name", getCustomFieldWithType("Name", FieldType.string, false));
     objectFields.put("Value", getCustomFieldWithType("Value", FieldType.currency, false));
     objectFields.put("CreatedDate", getCustomFieldWithType("CreatedDate", FieldType.date, false));
+    objectFields.put("UpdatedDate", getCustomFieldWithType("UpdatedDate", FieldType.date, false));
     SObjectsDescribeResult describeResult = SObjectsDescribeResult.of(ImmutableMap.of(objectName, objectFields));
 
     // Testing case with flag setAllCustomFieldsNullable = true
     Schema expectedSchema = Schema.recordOf("output",
             Schema.Field.of("Name", Schema.nullableOf(Schema.of(Schema.Type.STRING))),
             Schema.Field.of("Value", Schema.nullableOf(Schema.of(Schema.Type.DOUBLE))),
-            Schema.Field.of("CreatedDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE)))
+            Schema.Field.of("CreatedDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE))),
+            Schema.Field.of("UpdatedDate", Schema.nullableOf(Schema.of(Schema.LogicalType.DATE)))
     );
 
     Schema actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult, true);
@@ -206,7 +210,8 @@ public class SalesforceSchemaUtilTest {
     expectedSchema = Schema.recordOf("output",
             Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
             Schema.Field.of("Value", Schema.of(Schema.Type.DOUBLE)),
-            Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE))
+            Schema.Field.of("CreatedDate", Schema.of(Schema.LogicalType.DATE)),
+            Schema.Field.of("UpdatedDate", Schema.of(Schema.LogicalType.DATE))
     );
 
     actualSchema = SalesforceSchemaUtil.getSchemaWithFields(sObjectDescriptor, describeResult, false);
