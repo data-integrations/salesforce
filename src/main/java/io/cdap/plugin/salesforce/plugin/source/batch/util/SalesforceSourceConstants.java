@@ -59,6 +59,7 @@ public class SalesforceSourceConstants {
   public static final String CONFIG_RETRY_REQUIRED = "mapred.salesforce.retryOnBackendError";
 
   public static final int WIDE_QUERY_MAX_BATCH_COUNT = 2000;
+  public static final int RETRIEVE_MAX_BATCH_COUNT = 2000;
   // https://developer.salesforce.com/docs/atlas.en-us.api_asynch.meta/api_asynch/
   // async_api_headers_enable_pk_chunking.htm
   public static final int MAX_PK_CHUNK_SIZE = 250000;
