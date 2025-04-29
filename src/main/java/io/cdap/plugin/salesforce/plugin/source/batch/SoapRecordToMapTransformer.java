@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -53,6 +54,9 @@ public class SoapRecordToMapTransformer {
       Iterable<XmlObject> subValues = () -> child.getChildren(SUB_QUERY_FIELDS_PARENT);
 
       List<Map<String, String>> subQueryValues = StreamSupport.stream(subValues.spliterator(), false)
+          // Since null XmlObject instances were encountered in the customer transfer runs, a
+          // validation check is now applied to exclude them during processing.
+          .filter(Objects::nonNull)
         .map(subValue -> transformRowToMap(subValue, childSObjectDescriptor))
         .collect(Collectors.toList());
       result.put(childSObjectDescriptor.getName(), subQueryValues);
