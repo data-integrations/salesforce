@@ -149,7 +149,7 @@ public class SalesforceClient {
     return uniqueRecordId;
   }
 
-  public static List<JsonObject> queryObject(String id, String objectName) {
+  public static JsonObject queryObject(String id, String objectName) {
     getAccessToken();
     HttpClient httpClient = HttpClientBuilder.create().build();
     String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
@@ -167,12 +167,12 @@ public class SalesforceClient {
         String responseString = EntityUtils.toString(response.getEntity());
         Gson gson = new Gson();
         JsonObject objectResponseInJson = gson.fromJson(responseString, JsonObject.class);
-        sfobjectResponse.add(objectResponseInJson);
+        return objectResponseInJson;
       }
     } catch (IOException ioException) {
       logger.info("Error in establishing connection to Salesforce: " + ioException);
     }
-    return sfobjectResponse;
+    return null;
   }
 
   public static void deletePushTopic(String pushTopicName) {
@@ -233,10 +233,11 @@ public class SalesforceClient {
     }
   }
 
-  public static String queryObjectId(String objectName) {
+  public static List<String> queryObjectId(String objectName) {
     getAccessToken();
     HttpClient httpClient = HttpClientBuilder.create().build();
     String baseUri = loginInstanceUrl + REST_ENDPOINT + API_VERSION;
+    List<String> idList = new ArrayList<>();
 
     try {
       String query = "SELECT Id FROM " + objectName;
@@ -259,14 +260,15 @@ public class SalesforceClient {
         JsonArray records = queryResponse.getAsJsonArray("records");
         for (JsonElement record : records) {
           JsonObject recordObject = record.getAsJsonObject();
-          uniqueRecordId = recordObject.get("Id").getAsString();
-          logger.info("Queried Object id from response: " + uniqueRecordId);
+          String id = recordObject.get("Id").getAsString();
+          idList.add(id);
+          logger.info("Queried Object id from response: " + id);
         }
       }
     } catch (IOException ioException) {
       logger.info("Error in establishing connection to Salesforce: " + ioException);
     }
-    return uniqueRecordId;
+    return idList;
   }
 
     public static void updateObject(String id, String objectName) {

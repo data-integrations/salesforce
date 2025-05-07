@@ -35,6 +35,7 @@ import org.openqa.selenium.support.ui.Select;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 /**
  * Design-time steps of Salesforce Streaming plugins.
@@ -70,8 +71,10 @@ public class DesignTimeSteps {
 
   @Then("Update existing salesforce records")
   public void updateExistingSalesforceRecords() {
-    String uniqueRecordId = SalesforceClient.queryObjectId(customObject);
-    SalesforceClient.updateObject(uniqueRecordId, customObject);
+    List<String> uniqueRecordIds = SalesforceClient.queryObjectId(customObject);
+    for (String recordId : uniqueRecordIds) {
+      SalesforceClient.updateObject(recordId, customObject);
+    }
   }
 
 
