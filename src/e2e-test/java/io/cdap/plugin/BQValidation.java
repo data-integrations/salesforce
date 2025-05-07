@@ -51,7 +51,7 @@ public class BQValidation {
 
   public static boolean validateSalesforceAndBQRecordValues(String objectName, String bqTable) throws
     IOException, InterruptedException {
-    String uniqueRecordId = SalesforceClient.queryObjectId(objectName);
+    List<String> uniqueRecordIds = SalesforceClient.queryObjectId(objectName);
 
     List<JsonObject> bigQueryResponse = new ArrayList<>();
     List<Object> bigQueryRows = new ArrayList<>();
@@ -60,8 +60,11 @@ public class BQValidation {
       JsonObject jsonData = gson.fromJson(String.valueOf(rows), JsonObject.class);
       bigQueryResponse.add(jsonData);
     }
-    List<JsonObject> sObjectResponse;
-    sObjectResponse = SalesforceClient.queryObject(uniqueRecordId, objectName);
+    List<JsonObject> sObjectResponse = new ArrayList<>();
+    for (String recordId : uniqueRecordIds) {
+      JsonObject record = SalesforceClient.queryObject(recordId, objectName);
+      sObjectResponse.add(record);
+    }
     return compareSalesforceAndJsonData(sObjectResponse, bigQueryResponse, bqTable);
   }
 
@@ -82,9 +85,12 @@ public class BQValidation {
         JsonObject jsonData = gson.fromJson(String.valueOf(row), JsonObject.class);
         bigQueryResponse.add(jsonData);
       }
-      String uniqueRecordId = SalesforceClient.queryObjectId(currentObject);
-      List<JsonObject> sObjectResponse;
-      sObjectResponse = SalesforceClient.queryObject(uniqueRecordId, currentObject);
+      List<String> uniqueRecordIds = SalesforceClient.queryObjectId(currentObject);
+      List<JsonObject> sObjectResponse = new ArrayList<>();
+      for (String recordId : uniqueRecordIds) {
+        JsonObject record = SalesforceClient.queryObject(recordId, currentObject);
+        sObjectResponse.add(record);
+      }
       boolean isValid = compareSalesforceAndJsonData(
         sObjectResponse, bigQueryResponse, currentTargetTable);
 
@@ -141,14 +147,9 @@ public class BQValidation {
       Assert.fail("bigQueryData is null");
       return result;
     }
-    int jsonObjectIdx = 0;
-    if (salesforceData.size() > 0) {
-      salesforceData.get(jsonObjectIdx).entrySet().size();
-    }
-    // Get the column count of the first JsonObject in bigQueryData
-    int columnCountSource = 0;
-    if (bigQueryData.size() > 0) {
-      columnCountSource = bigQueryData.get(jsonObjectIdx).entrySet().size();
+    if (salesforceData.isEmpty() || bigQueryData.isEmpty()) {
+      Assert.fail("One or both datasets are empty");
+      return result;
     }
 
     BigQuery bigQuery = BigQueryOptions.getDefaultInstance().getService();
@@ -158,9 +159,11 @@ public class BQValidation {
     TableId tableRef = TableId.of(projectId, dataset, tableName);
     // Get the table schema
     Schema schema = bigQuery.getTable(tableRef).getDefinition().getSchema();
-    // Iterate over the fields
-    int currentColumnCount = 1;
-    while (currentColumnCount <= columnCountSource) {
+
+    for (int rowIndex = 0; rowIndex < salesforceData.size(); rowIndex++) {
+      JsonObject salesforceRow = salesforceData.get(rowIndex);
+      JsonObject bigQueryRow = bigQueryData.get(rowIndex);
+
       for (Field field : schema.getFields()) {
         String columnName = field.getName();
         String columnType = field.getType().toString();
@@ -168,29 +171,27 @@ public class BQValidation {
         switch (columnType) {
 
           case "BOOLEAN":
-            boolean sourceAsBoolean = salesforceData.get(jsonObjectIdx).get(columnName).getAsBoolean();
-            boolean targetAsBoolean = bigQueryData.get(jsonObjectIdx).get(columnName).getAsBoolean();
+            boolean sourceAsBoolean = salesforceRow.get(columnName).getAsBoolean();
+            boolean targetAsBoolean = bigQueryRow.get(columnName).getAsBoolean();
             Assert.assertEquals("Different values found for column : %s", sourceAsBoolean, targetAsBoolean);
             break;
 
           case "FLOAT":
-            double sourceVal = salesforceData.get(jsonObjectIdx).get(columnName).getAsDouble();
-            double targetVal = bigQueryData.get(jsonObjectIdx).get(columnName).getAsDouble();
+            double sourceVal = salesforceRow.get(columnName).getAsDouble();
+            double targetVal = bigQueryRow.get(columnName).getAsDouble();
             Assert.assertEquals(String.format("Different values found for column: %s", columnName), 0,
                                 Double.compare(sourceVal, targetVal));
             break;
 
           case "TIMESTAMP":
             OffsetDateTime sourceTimestamp = OffsetDateTime.parse(
-              salesforceData.get(jsonObjectIdx)
-                .get(columnName)
+              salesforceRow.get(columnName)
                 .getAsString(),
               DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
             );
 
             OffsetDateTime targetTimestamp = OffsetDateTime.parse(
-              bigQueryData.get(jsonObjectIdx)
-                .get(columnName)
+              bigQueryRow.get(columnName)
                 .getAsString()
             );
             Assert.assertEquals("Different values found for column : %s", sourceTimestamp, targetTimestamp);
@@ -200,23 +201,21 @@ public class BQValidation {
             DateTimeFormatter formatterSource = DateTimeFormatter.ofPattern("HH:mm:ss.SSSX");
             DateTimeFormatter formatterTarget = DateTimeFormatter.ofPattern("HH:mm:ss");
             LocalTime sourceTime = LocalTime.parse(
-              salesforceData.get(jsonObjectIdx)
-                .get(columnName)
+              salesforceRow.get(columnName)
                 .getAsString(), formatterSource
             );
             LocalTime targetTime = LocalTime.parse(
-              bigQueryData.get(jsonObjectIdx)
-                .get(columnName)
+              bigQueryRow.get(columnName)
                 .getAsString(), formatterTarget
             );
             Assert.assertEquals("Different values found for column : %s", sourceTime, targetTime);
             break;
 
           case "DATE":
-            JsonElement jsonElementSource = salesforceData.get(jsonObjectIdx).get(columnName);
+            JsonElement jsonElementSource = salesforceRow.get(columnName);
             Date sourceDate = (jsonElementSource != null && !jsonElementSource.isJsonNull()) ? Date.valueOf(
               jsonElementSource.getAsString()) : null;
-            JsonElement jsonElementTarget = bigQueryData.get(jsonObjectIdx).get(columnName);
+            JsonElement jsonElementTarget = bigQueryRow.get(columnName);
             Date targetDate = (jsonElementTarget != null && !jsonElementTarget.isJsonNull()) ? Date.valueOf(
               jsonElementTarget.getAsString()) : null;
             Assert.assertEquals("Different values found for column : %s", sourceDate, targetDate);
@@ -231,21 +230,19 @@ public class BQValidation {
             if (columnName.equals("Col_GeoLocation__c")) {
               break;
             } else {
-              JsonElement sourceElement = salesforceData.get(jsonObjectIdx).get(columnName);
+              JsonElement sourceElement = salesforceRow.get(columnName);
               String sourceString = (sourceElement != null && !sourceElement.isJsonNull())
                 ? sourceElement.getAsString() : null;
-              JsonElement targetElement = bigQueryData.get(jsonObjectIdx).get(columnName);
+              JsonElement targetElement = bigQueryRow.get(columnName);
               String targetString = (targetElement != null && !targetElement.isJsonNull())
                 ? targetElement.getAsString() : null;
               Assert.assertEquals(String.format("Different  values found for column : %s", columnName),
                                   String.valueOf(sourceString), String.valueOf(targetString));
-              break;
+            }
+            break;
             }
         }
-        currentColumnCount++;
       }
-      jsonObjectIdx++;
-    }
     Assert.assertFalse("Number of rows in Source table is greater than the number of rows in Target table",
                        salesforceData.size() > bigQueryData.size());
     return true;
