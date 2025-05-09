@@ -15,11 +15,12 @@
 @SalesforceSalesCloud
 @SFMultiObjectsBatchSource
 @Smoke
+# Skipping these tests due to permission issues for creating custom fields in sObjects. Will Run it once it get resolves.
 @Regression
 
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios with Macro
 
-  @MULTIBATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
+  @MULTIBATCH-TS-SF-RNTM-MACRO-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2 @Plugin-1890
   Scenario: Verify user should be able to preview, deploy a pipeline when plugin is configured with macros for WhiteList
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"

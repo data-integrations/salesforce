@@ -27,6 +27,7 @@ Feature: Salesforce Streaming Source - Design time scenarios
     And Navigate to the properties page of plugin: "Salesforce"
     And fill Authentication properties for Salesforce Admin user
     And Enter input plugin property: "pushTopicName" with value: "topic.name"
+    And Enter input plugin property: "sObjectName" with value: "sobject.Automation_custom_c"
     And Select dropdown plugin property: "pushTopicNotifyCreate" with option value: "Enabled"
     And Select dropdown plugin property: "pushTopicNotifyUpdate" with option value: "Enabled"
     And Select dropdown plugin property: "pushTopicNotifyDelete" with option value: "Enabled"

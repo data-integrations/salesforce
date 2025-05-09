@@ -15,11 +15,12 @@
 @SalesforceSalesCloud
 @SFMultiObjectsBatchSource
 @Smoke
+# Skipping these tests due to permission issues for creating custom fields in sObjects. Will Run it once it get resolves.
 @Regression
 
 Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
 
-  @MULTIBATCH-TS-SF-RNTM-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
+  @MULTIBATCH-TS-SF-RNTM-01 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2 @Plugin-1890
   Scenario: Verify user should be able to preview, deploy and run pipeline for valid White List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -58,7 +59,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
 
-  @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
+  @MULTIBATCH-TS-SF-RNTM-02 @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2 @Plugin-1890
   Scenario: Verify user should be able to preview, deploy and run pipeline for valid Black List
     When Open Datafusion Project to configure pipeline
     And Select data pipeline type as: "Batch"
@@ -99,7 +100,7 @@ Feature: Salesforce Multi Objects Batch Source - Run time Scenarios
     Then Validate the values of records transferred to target Big Query table is equal to the values from multi object source table
 
 
-  @MULTIBATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2
+  @MULTIBATCH-TS-SF-RNTM-03 @CONNECTION @BQ_SINK_MULTI_TEST @CREATE_TEST_DATA @CREATE_TEST_DATA2 @DELETE_TEST_DATA @DELETE_TEST_DATA2 @Plugin-1890
   Scenario: Verify user should be able to deploy and run the pipeline using connection manager functionality
     When Open Datafusion Project to configure pipeline
     And Select plugin: "Salesforce Multi Objects" from the plugins list as: "Source"

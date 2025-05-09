@@ -37,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -65,16 +66,20 @@ public class TestSetupHooks {
 
   @After(order = 2, value = "@DELETE_TEST_DATA")
   public static void deleteTestObject() {
-    String uniqueRecordId = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM__C.value);
-    SalesforceClient.deleteId(uniqueRecordId, SObjects.AUTOMATION_CUSTOM__C.value);
-    BeforeActions.scenario.write("Record - " + uniqueRecordId + " deleted successfully");
+    List<String> uniqueRecordIds = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM__C.value);
+    for (String recordId : uniqueRecordIds) {
+    SalesforceClient.deleteId(recordId, SObjects.AUTOMATION_CUSTOM__C.value);
+    BeforeActions.scenario.write("Record - " + recordId + " deleted successfully");
+    }
   }
 
   @After(order = 2, value = "@DELETE_TEST_DATA2")
   public static void deleteTestObject2() {
-    String uniqueRecordId = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM2__C.value);
-    SalesforceClient.deleteId(uniqueRecordId, SObjects.AUTOMATION_CUSTOM2__C.value);
-    BeforeActions.scenario.write("Record - " + uniqueRecordId + " deleted successfully");
+    List<String> uniqueRecordIds = SalesforceClient.queryObjectId(SObjects.AUTOMATION_CUSTOM2__C.value);
+    for (String recordId : uniqueRecordIds) {
+      SalesforceClient.deleteId(recordId, SObjects.AUTOMATION_CUSTOM__C.value);
+      BeforeActions.scenario.write("Record - " + recordId + " deleted successfully");
+    }
   }
 
 
