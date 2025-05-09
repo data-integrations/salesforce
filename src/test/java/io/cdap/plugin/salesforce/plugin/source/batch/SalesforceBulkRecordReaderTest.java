@@ -562,4 +562,46 @@ public class SalesforceBulkRecordReaderTest {
     assertRecordReaderOutputRecords(new String[] {csvString1, csvString2}, schema, expectedRecords);
   }
 
+  @Test
+  public void testCaseIntTypeWithDecimalDataInResults() throws Exception {
+    String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"TotalRevenue\"\n" +
+      "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"1234.56\"\n";
+    String csvString2 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"TotalRevenue\"\n" +
+      "\"0061i000003XNcCAAW\",\"false\",\"112500.0\",\"1234.56\"\n" +
+      "\"0061i000003XNcDAAW\",\"false\",\"220000.0\",\"1234.56\"\n";
+
+    Schema schema = Schema.recordOf("output",
+                                    Schema.Field.of("id", Schema.of(Schema.Type.STRING)),
+                                    Schema.Field.of("isDeleted", Schema.of(Schema.Type.BOOLEAN)),
+                                    Schema.Field.of("ExpectedRevenue", Schema.of(Schema.Type.INT)),
+                                    Schema.Field.of("TotalRevenue", Schema.of(Schema.Type.DOUBLE))
+    );
+
+    List<Map<String, Object>> expectedRecords = new ImmutableList.Builder<Map<String, Object>>()
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcBAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 1500)
+             .put("TotalRevenue", 1234.56)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcCAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 112500)
+             .put("TotalRevenue", 1234.56)
+             .build()
+      )
+      .add(new ImmutableMap.Builder<String, Object>()
+             .put("id", "0061i000003XNcDAAW")
+             .put("isDeleted", false)
+             .put("ExpectedRevenue", 220000)
+             .put("TotalRevenue", 1234.56)
+             .build()
+      )
+      .build();
+
+    assertRecordReaderOutputRecords(new String[] {csvString1, csvString2}, schema, expectedRecords);
+  }
+
 }
