@@ -22,6 +22,7 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
 import io.cdap.plugin.salesforce.SalesforceTransformUtil;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -78,7 +79,11 @@ public class MapToRecordTransformer {
       case BOOLEAN:
         return Boolean.parseBoolean(castValue(value, fieldName, String.class));
       case INT:
-        return Integer.parseInt(castValue(value, fieldName, String.class));
+        // 'Number' field in 'Site' sObject is defined as INT in schema,
+        // however, the actual data is received as a Decimal (e.g., 0.0)
+        // Wrapping as BigDecimal to safely extract the int value and avoid cast exceptions.
+        String data = castValue(value, fieldName, String.class);
+        return new BigDecimal(data).intValue();
       case LONG:
         return Long.parseLong(castValue(value, fieldName, String.class));
       case FLOAT:
