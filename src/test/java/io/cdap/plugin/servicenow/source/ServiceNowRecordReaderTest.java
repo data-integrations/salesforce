@@ -42,6 +42,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +131,101 @@ public class ServiceNowRecordReaderTest {
     map.put("TimeField", "value");
     thrown.expect(IllegalStateException.class);
     ServiceNowRecordConverter.convertToValue("TimeField", fieldSchema, map, recordBuilder);
+  }
+
+  @Test
+  public void testConvertToDateTimeValue() {
+    Schema recordSchema = Schema.recordOf(
+        "record",
+        Schema.Field.of("DateTimeField", Schema.of(Schema.LogicalType.DATETIME))
+    );
+    Schema fieldSchema = recordSchema.getField("DateTimeField").getSchema();
+
+    List<String> dateTimeValues = Arrays.asList(
+        "2025-05-14 13:45:30",
+        "2025-05-14 13:45",
+        "14-04-2025 13.45.32",
+        "14-04-25 13.45.34",
+        "14/05/2025 13:45:30",
+        "14.05.2025 01.45.30 PM",
+        "14.05.2025 01:45:30 PM",
+        "28/10/2017 01:00:01"
+    );
+
+    for (String value : dateTimeValues) {
+      Map<String, String> inputMap = new HashMap<>();
+      inputMap.put("DateTimeField", value);
+
+      StructuredRecord.Builder recordBuilder = StructuredRecord.builder(recordSchema);
+      try {
+        ServiceNowRecordConverter.convertToValue("DateTimeField", fieldSchema, inputMap, recordBuilder);
+        StructuredRecord record = recordBuilder.build();
+        Assert.assertNotNull("Parsed datetime should not be null for input: " + value,
+            record.get("DateTimeField"));
+      } catch (UnexpectedFormatException e) {
+        Assert.fail("Failed to parse valid datetime format: " + value + " - " + e.getMessage());
+      }
+    }
+  }
+
+  @Test
+  public void testConvertToDateValue() {
+    Schema recordSchema = Schema.recordOf(
+        "record",
+        Schema.Field.of("DateField", Schema.of(Schema.LogicalType.DATE))
+    );
+    Schema fieldSchema = recordSchema.getField("DateField").getSchema();
+
+    List<String> dateValues = Arrays.asList(
+        "2025-05-14",
+        "14/05/2025",
+        "14.05.2025",
+        "02/10/2017"
+    );
+
+    for (String value : dateValues) {
+      Map<String, String> inputMap = new HashMap<>();
+      inputMap.put("DateField", value);
+
+      StructuredRecord.Builder recordBuilder = StructuredRecord.builder(recordSchema);
+      try {
+        ServiceNowRecordConverter.convertToValue("DateField", fieldSchema, inputMap, recordBuilder);
+        StructuredRecord record = recordBuilder.build();
+        Assert.assertNotNull("Parsed date should not be null for input: " + value,
+            record.get("DateField"));
+      } catch (UnexpectedFormatException e) {
+        Assert.fail("Failed to parse valid date format: " + value + " - " + e.getMessage());
+      }
+    }
+  }
+
+  @Test
+  public void testConvertToTimeValue() {
+    Schema recordSchema = Schema.recordOf(
+        "record",
+        Schema.Field.of("TimeField", Schema.of(Schema.LogicalType.TIME_MICROS))
+    );
+    Schema fieldSchema = recordSchema.getField("TimeField").getSchema();
+
+    List<String> timeValues = Arrays.asList(
+        "13:45:30",
+        "13:45"
+    );
+
+    for (String value : timeValues) {
+      Map<String, String> inputMap = new HashMap<>();
+      inputMap.put("TimeField", value);
+
+      StructuredRecord.Builder recordBuilder = StructuredRecord.builder(recordSchema);
+      try {
+        ServiceNowRecordConverter.convertToValue("TimeField", fieldSchema, inputMap, recordBuilder);
+        StructuredRecord record = recordBuilder.build();
+        Assert.assertNotNull("Parsed date should not be null for input: " + value,
+            record.get("TimeField"));
+      } catch (UnexpectedFormatException e) {
+        Assert.fail("Failed to parse valid date format: " + value + " - " + e.getMessage());
+      }
+    }
   }
 
   @Test

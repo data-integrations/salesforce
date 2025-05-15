@@ -27,6 +27,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,9 +37,50 @@ import java.util.Map;
  * Utility class for converting the record from ServiceNow data type to CDAP schema data types
  */
 public class ServiceNowRecordConverter {
-  private static final String DATE_PATTERN = "yyyy-MM-dd";
-  private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-  private static final String TIME_PATTERN = "HH:mm:ss";
+
+  // supported date and time formats.
+  // ref: https://www.servicenow.com/docs/bundle/yokohama-api-reference/page/app-store/
+  // dev_portal/API_reference/GlideDateTime/concept/c_GlideDateTimeAPI.html
+  // Instead of using DateTimeFormatterBuilder.appendOptional(...), we maintain a List<DateTimeFormatter>
+  // and attempt to parse the input with each formatter in order. This approach is more reliable because
+  // DateTimeFormatterBuilder processes patterns sequentially and may partially match an incorrect format.
+  // For example, if "MM/dd/yyyy HH:mm:ss" is tried before "dd/MM/yyyy HH:mm:ss", an input like
+  // "14/06/2025 13:00:00" would fail, as 14 is not a valid month.
+  // By explicitly trying each formatter, we avoid such ambiguities and ensure correct parsing of
+  // date formats with overlapping patterns.
+  private static final List<DateTimeFormatter> DATE_TIME_FORMATTER = Collections.unmodifiableList(
+      Arrays.asList(
+        DateTimeFormatter.ofPattern("dd.MM.yyyy hh:mm:ss a"),
+        DateTimeFormatter.ofPattern("dd.MM.yyyy hh.mm.ss a"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"),
+        DateTimeFormatter.ofPattern("dd.MM.yyyy HH.mm.ss"),
+        DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"),
+        DateTimeFormatter.ofPattern("dd-MM-yyyy HH.mm.ss"),
+        DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss"),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"),
+        DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"),
+        DateTimeFormatter.ofPattern("dd-MM-yy HH.mm.ss"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+        DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm"),
+        DateTimeFormatter.ofPattern("dd-MM-yyyy HH.mm")
+      ));
+
+  private static final List<DateTimeFormatter> DATE_FORMATTER = Collections.unmodifiableList(
+    Arrays.asList(
+      DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+      DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+      DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+      DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+      DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+      DateTimeFormatter.ofPattern("MM-dd-yyyy")
+    ));
+
+  private static final List<DateTimeFormatter> TIME_FORMATTER = Collections.unmodifiableList(
+    Arrays.asList(
+      DateTimeFormatter.ofPattern("HH:mm:ss"),
+      DateTimeFormatter.ofPattern("HH:mm")
+    ));
 
   public static void convertToValue(String fieldName, Schema fieldSchema, Map<String, String> record,
                                     StructuredRecord.Builder recordBuilder) {
@@ -53,34 +97,16 @@ public class ServiceNowRecordConverter {
     if (fieldLogicalType != null) {
       switch (fieldLogicalType) {
         case DATETIME:
-          DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
-          try {
-            recordBuilder.setDateTime(fieldName, LocalDateTime.parse(fieldValue, dateTimeFormatter));
-          } catch (DateTimeParseException exception) {
-            throw new UnexpectedFormatException(
-              String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
-                            fieldName, fieldSchema.getDisplayName(), fieldValue), exception);
-          }
+          recordBuilder.setDateTime(fieldName,
+            parseDateTimeFormat(fieldValue, fieldName, fieldSchema.getDisplayName()));
           return;
         case DATE:
-          DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
-          try {
-            recordBuilder.setDate(fieldName, LocalDate.parse(fieldValue, dateFormatter));
-          } catch (DateTimeParseException exception) {
-            throw new UnexpectedFormatException(
-              String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
-                            fieldName, fieldSchema.getDisplayName(), fieldValue), exception);
-          }
+          recordBuilder.setDate(fieldName,
+            parseDateFormat(fieldValue, fieldName, fieldSchema.getDisplayName()));
           return;
         case TIME_MICROS:
-          DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(TIME_PATTERN);
-          try {
-            recordBuilder.setTime(fieldName, LocalTime.parse(fieldValue, timeFormatter));
-          } catch (DateTimeParseException exception) {
-            throw new UnexpectedFormatException(
-              String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
-                            fieldName, fieldSchema.getDisplayName(), fieldValue), exception);
-          }
+          recordBuilder.setTime(fieldName,
+            parseTimeFormat(fieldValue, fieldName, fieldSchema.getDisplayName()));
           return;
         default:
           throw new IllegalStateException(String.format("Field '%s' is of unsupported type '%s'", fieldName,
@@ -138,5 +164,44 @@ public class ServiceNowRecordConverter {
     throw new UnexpectedFormatException(
       String.format("Field with value '%s' is not in valid format.", fieldValue));
     
+  }
+
+  private static LocalDateTime parseDateTimeFormat(String fieldValue, String fieldName, String displayName) {
+    for (DateTimeFormatter dateTimeFormatter : DATE_TIME_FORMATTER) {
+      try {
+        return LocalDateTime.parse(fieldValue, dateTimeFormatter);
+      } catch (DateTimeParseException e) {
+        // Only throw exception once all the formats are checked.
+      }
+    }
+    throw new UnexpectedFormatException(
+      String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
+        fieldName, displayName, fieldValue));
+  }
+
+  private static LocalDate parseDateFormat(String fieldValue, String fieldName, String displayName) {
+    for (DateTimeFormatter dateFormatter : DATE_FORMATTER) {
+      try {
+        return LocalDate.parse(fieldValue, dateFormatter);
+      } catch (DateTimeParseException e) {
+        // Only throw exception once all the formats are checked.
+      }
+    }
+    throw new UnexpectedFormatException(
+      String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
+        fieldName, displayName, fieldValue));
+  }
+
+  private static LocalTime parseTimeFormat(String fieldValue, String fieldName, String displayName) {
+    for (DateTimeFormatter timeFormatter : TIME_FORMATTER) {
+      try {
+        return LocalTime.parse(fieldValue, timeFormatter);
+      } catch (DateTimeParseException e) {
+        // Only throw exception once all the formats are checked.
+      }
+    }
+    throw new UnexpectedFormatException(
+      String.format("Field '%s' of type '%s' with value '%s' is not in ISO-8601 format.",
+        fieldName, displayName, fieldValue));
   }
 }
