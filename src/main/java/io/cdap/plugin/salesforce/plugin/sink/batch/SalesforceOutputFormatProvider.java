@@ -27,6 +27,8 @@ import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +57,11 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_MAX_BYTES_PER_BATCH, config.getMaxBytesPerBatch().toString())
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
       .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString())
-      .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString());
+      .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString())
+      .put(SalesforceSourceConstants.CONFIG_INITIAL_RETRY_DURATION, Long.toString(config.getInitialRetryDuration()))
+      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_DURATION, Long.toString(config.getMaxRetryDuration()))
+      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_COUNT, Integer.toString(config.getMaxRetryCount()))
+      .put(SalesforceSourceConstants.CONFIG_RETRY_REQUIRED, Boolean.toString(config.isRetryRequired()));
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
@@ -83,7 +89,9 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
 
     try {
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, config.getSObject(), config.getOperationEnum(),
+      BulkConnectionRetryWrapper retryWrapper = new BulkConnectionRetryWrapper(bulkConnection, config.isRetryRequired(),
+        config.getInitialRetryDuration(), config.getMaxRetryDuration(), config.getMaxRetryCount());
+      JobInfo job = SalesforceBulkUtil.createJob(retryWrapper, config.getSObject(), config.getOperationEnum(),
                                                  config.getExternalIdField(), config.getConcurrencyModeEnum(),
                                                  ContentType.ZIP_CSV);
       configBuilder.put(SalesforceSinkConstants.CONFIG_JOB_ID, job.getId());

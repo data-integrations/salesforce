@@ -39,6 +39,7 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 
 import java.util.ArrayList;
@@ -103,8 +104,11 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     String sObjectNameField = config.getSObjectNameField();
     authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    BulkConnectionRetryWrapper bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection,
+      config.isRetryRequired(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
+      config.getMaxRetryCount());
     List<SalesforceSplit> querySplits = queries.parallelStream()
-      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnection, false, config.getOperation(),
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper, false, config.getOperation(),
                                                        config.getInitialRetryDuration(), config.getMaxRetryDuration(),
                                                        config.getMaxRetryCount(), config.isRetryRequired()))
       .flatMap(Collection::stream).collect(Collectors.toList());
