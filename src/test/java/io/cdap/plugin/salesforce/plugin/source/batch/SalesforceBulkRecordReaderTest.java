@@ -292,8 +292,8 @@ public class SalesforceBulkRecordReaderTest {
       resultIds[i] = String.format("result%d", i);
     }
 
-    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
     BulkConnection mock = Mockito.mock(BulkConnection.class);
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds, mock);
     FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
     for (int i = 0; i < csvStrings.length; i++) {
       Mockito.when(mock.getQueryResultStream(jobId, batchId, resultIds[i]))
@@ -354,8 +354,8 @@ public class SalesforceBulkRecordReaderTest {
       resultIds[i] = String.format("result%d", i);
     }
 
-    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
     BulkConnection mock = Mockito.mock(BulkConnection.class);
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds, mock);
     FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
     for (int i = 0; i < csvStrings.length; i++) {
       AsyncApiException salesforceQueryExecutionException =
@@ -370,7 +370,7 @@ public class SalesforceBulkRecordReaderTest {
     reader.setupParser();
   }
 
-  @Test (expected = AsyncApiException.class)
+  @Test (expected = FailsafeException.class)
   public void testSetupParserWithoutRetry() throws Exception {
     String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
@@ -398,8 +398,8 @@ public class SalesforceBulkRecordReaderTest {
       resultIds[i] = String.format("result%d", i);
     }
 
-    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds);
     BulkConnection mock = Mockito.mock(BulkConnection.class);
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds, mock);
     FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
     for (int i = 0; i < csvStrings.length; i++) {
         AsyncApiException salesforceQueryExecutionException =
@@ -480,8 +480,9 @@ public class SalesforceBulkRecordReaderTest {
       resultIds[i] = String.format("result%d", i);
     }
 
-    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, new String[]{resultId});
     BulkConnection mockConnection = Mockito.mock(BulkConnection.class);
+    SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, new String[]{resultId},
+        mockConnection);
     AsyncApiException salesforceQueryExecutionException =
       Mockito.mock(AsyncApiException.class);
     Mockito.when(mockConnection.getQueryResultStream(jobId, batchId, resultId))

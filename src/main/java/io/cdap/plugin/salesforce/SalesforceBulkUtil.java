@@ -32,6 +32,7 @@ import com.sforce.soap.partner.SessionHeader_element;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 import com.sforce.ws.SessionRenewer;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.awaitility.Awaitility;
 import org.slf4j.Logger;
@@ -65,8 +66,8 @@ public final class SalesforceBulkUtil {
    * @throws AsyncApiException if there is an issue creating the job
    */
 
-  public static JobInfo createJob(BulkConnection bulkConnection, String sObject, OperationEnum operationEnum,
-                                  @Nullable String externalIdField,
+  public static JobInfo createJob(BulkConnectionRetryWrapper bulkConnection, String sObject,
+                                  OperationEnum operationEnum, @Nullable String externalIdField,
                                   ConcurrencyMode concurrencyMode, ContentType contentType) throws AsyncApiException {
     JobInfo job = new JobInfo();
     job.setObject(sObject);

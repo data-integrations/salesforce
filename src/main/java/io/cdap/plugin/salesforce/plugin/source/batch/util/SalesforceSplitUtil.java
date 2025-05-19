@@ -65,7 +65,7 @@ public final class SalesforceSplitUtil {
    * @param enablePKChunk  indicates if pk chunking is enabled
    * @return list of salesforce splits
    */
-  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnection bulkConnection,
+  public static List<SalesforceSplit> getQuerySplits(String query, BulkConnectionRetryWrapper bulkConnection,
                                                      boolean enablePKChunk, String operation,
                                                      Long initialRetryDuration, Long maxRetryDuration,
                                                      Integer maxRetryCount, Boolean retryOnBackendError) {
@@ -85,7 +85,7 @@ public final class SalesforceSplitUtil {
    * @param enablePKChunk  enable PK Chunking
    * @return array of batch info
    */
-  private static BatchInfo[] getBatches(String query, BulkConnection bulkConnection,
+  private static BatchInfo[] getBatches(String query, BulkConnectionRetryWrapper bulkConnection,
                                         boolean enablePKChunk, String operation,
                                         Long initialRetryDuration, Long maxRetryDuration,
                                         Integer maxRetryCount, Boolean retryOnBackendError) {
@@ -114,7 +114,7 @@ public final class SalesforceSplitUtil {
    * @throws AsyncApiException if there is an issue creating the job
    * @throws IOException       failed to close the query
    */
-  private static BatchInfo[] runBulkQuery(BulkConnection bulkConnection, String query,
+  private static BatchInfo[] runBulkQuery(BulkConnectionRetryWrapper bulkConnection, String query,
                                           boolean enablePKChunk, String operation,
                                           Long initialRetryDuration, Long maxRetryDuration,
                                           Integer maxRetryCount, Boolean retryOnBackendError)
@@ -123,17 +123,9 @@ public final class SalesforceSplitUtil {
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), getOperationEnum(operation),
       null, ConcurrencyMode.Parallel, ContentType.CSV);
-    final BatchInfo batchInfo;
+    BatchInfo batchInfo;
     try {
-      if (retryOnBackendError) {
-        batchInfo =
-          Failsafe.with(getRetryPolicy(initialRetryDuration, maxRetryDuration, maxRetryCount))
-            .get(() -> createBatchFromStream(bulkConnection, query, job));
-      } else {
-        try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
-          batchInfo = bulkConnection.createBatchFromStream(job, bout);
-        }
-      }
+      batchInfo = bulkConnection.createBatchFromStream(query, job);
       if (enablePKChunk) {
         LOG.debug("PKChunking is enabled");
         return waitForBatchChunks(bulkConnection, job.getId(), batchInfo.getId());
@@ -155,23 +147,11 @@ public final class SalesforceSplitUtil {
         throw (AsyncApiException) e.getCause();
       }
       throw e;
+    } catch (SalesforceQueryExecutionException e) {
+      throw new RuntimeException(e);
     }
   }
 
-  private static BatchInfo createBatchFromStream(BulkConnection bulkConnection, String query, JobInfo job) throws
-    SalesforceQueryExecutionException, IOException, AsyncApiException {
-    BatchInfo batchInfo = null;
-    try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
-      batchInfo = bulkConnection.createBatchFromStream(job, bout);
-    } catch (AsyncApiException exception) {
-      LOG.warn("The bulk query job {} failed. Job State: {}", job.getId(), job.getState());
-      if (SalesforceBulkRecordReader.RETRY_ON_REASON.contains(exception.getExceptionCode())) {
-        throw new SalesforceQueryExecutionException(exception);
-      }
-      throw exception;
-    }
-    return batchInfo;
-  }
 
   /**
    * Initializes bulk connection based on given Hadoop credentials configuration.
@@ -198,7 +178,8 @@ public final class SalesforceSplitUtil {
    * @return Array with Batches created by Salesforce API
    * @throws AsyncApiException if there is an issue creating the job
    */
-  private static BatchInfo[] waitForBatchChunks(BulkConnection bulkConnection, String jobId, String initialBatchId)
+  private static BatchInfo[] waitForBatchChunks(BulkConnectionRetryWrapper bulkConnection,
+                                                String jobId, String initialBatchId)
     throws AsyncApiException {
     BatchInfo initialBatchInfo = null;
     for (int i = 0; i < SalesforceSourceConstants.GET_BATCH_RESULTS_TRIES; i++) {
@@ -269,8 +250,11 @@ public final class SalesforceSplitUtil {
       .handle(SalesforceQueryExecutionException.class)
       .withBackoff(Duration.ofSeconds(initialRetryDuration), Duration.ofSeconds(maxRetryDuration), 2)
       .withMaxRetries(maxRetryCount)
-      .onRetry(event -> LOG.debug("Retrying Salesforce Bulk Query. Retry count: {}", event
-        .getAttemptCount()))
+      .onRetry(event -> {
+        Throwable t = event.getLastException();
+        LOG.warn("Attempt #{} failed while executing job with error: {}", event.getAttemptCount(), t.getMessage(), t);
+        LOG.debug("Retrying Salesforce Bulk Query. Retry count: {}", event.getAttemptCount());
+      })
       .onSuccess(event -> LOG.debug("Salesforce Bulk Query executed successfully."))
       .onRetriesExceeded(event -> LOG.error("Retry limit reached for Salesforce Bulk Query."))
       .build();

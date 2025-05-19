@@ -28,9 +28,9 @@ import dev.failsafe.TimeoutExceededException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
-import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceQueryExecutionException;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
@@ -78,13 +78,15 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
   private String batchId;
   private String[] resultIds;
   private int resultIdIndex;
+  private BulkConnectionRetryWrapper bulkConnectionRetryWrapper;
 
   public SalesforceBulkRecordReader(Schema schema) {
-    this(schema, null, null, null);
+    this(schema, null, null, null, null);
   }
 
   @VisibleForTesting
-  SalesforceBulkRecordReader(Schema schema, String jobId, String batchId, String[] resultIds) {
+  SalesforceBulkRecordReader(Schema schema, String jobId, String batchId, String[] resultIds,
+      BulkConnection bulkConnection) {
     this.schema = schema;
     this.resultIdIndex = 0;
     this.jobId = jobId;
@@ -94,6 +96,8 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     maxRetryDuration = SalesforceSourceConstants.DEFULT_MAX_RETRY_DURATION_SECONDS;
     maxRetryCount = SalesforceSourceConstants.DEFAULT_MAX_RETRY_COUNT;
     isRetryRequired = true;
+    bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection, isRetryRequired, initialRetryDuration,
+        maxRetryDuration, maxRetryCount);
   }
 
   /**
@@ -128,6 +132,8 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
 
     try {
       bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection, isRetryRequired, initialRetryDuration,
+        maxRetryDuration, maxRetryCount);
       resultIds = waitForBatchResults(bulkConnection);
       LOG.debug("Batch {} returned {} results", batchId, resultIds.length);
       setupParser();
@@ -205,15 +211,8 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
         resultIdIndex, resultIds.length));
     }
     try {
-      final InputStream queryResponseStream;
-      if (isRetryRequired) {
-        queryResponseStream =
-          Failsafe.with(SalesforceSplitUtil.getRetryPolicy(initialRetryDuration, maxRetryDuration, maxRetryCount))
-            .get(() -> getQueryResultStream(bulkConnection));
-      } else {
-        queryResponseStream = bulkConnection.getQueryResultStream(jobId, batchId, resultIds[resultIdIndex]);
-      }
-
+      final InputStream queryResponseStream = bulkConnectionRetryWrapper
+          .getQueryResultStream(jobId, batchId, resultIds[resultIdIndex]);
         CSVFormat csvFormat = CSVFormat.DEFAULT
           .withHeader()
           .withQuoteMode(QuoteMode.ALL)
