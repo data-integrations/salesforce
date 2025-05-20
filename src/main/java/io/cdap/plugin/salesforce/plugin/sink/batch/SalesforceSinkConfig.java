@@ -41,6 +41,7 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
 import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,6 +152,26 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
   @Macro
   @Description("Whether to validate the field data types of the input schema as per Salesforce specific data types")
   private final Boolean datatypeValidation;
+
+  @Name(SalesforceSourceConstants.PROPERTY_INITIAL_RETRY_DURATION)
+  @Description("Time taken for the first retry. Default is 5 seconds.")
+  @Nullable
+  private Long initialRetryDuration;
+
+  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_DURATION)
+  @Description("Maximum time in seconds retries can take. Default is 80 seconds.")
+  @Nullable
+  private Long maxRetryDuration;
+
+  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_COUNT)
+  @Description("Maximum number of retries allowed. Default is 5.")
+  @Nullable
+  private Integer maxRetryCount;
+
+  @Name(SalesforceSourceConstants.PROPERTY_RETRY_REQUIRED)
+  @Description("Retry is required or not for some of the internal call failures.")
+  @Nullable
+  private Boolean retryOnBackendError;
 
   public SalesforceSinkConfig(String referenceName,
                               @Nullable String clientId,
@@ -275,6 +296,23 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection
       (credentials);
     return partnerConnection.getUserInfo().getOrganizationId();
+  }
+
+  public boolean isRetryRequired() {
+    return retryOnBackendError == null || retryOnBackendError;
+  }
+
+  public long getInitialRetryDuration() {
+    return initialRetryDuration == null ? SalesforceSourceConstants.DEFAULT_INITIAL_RETRY_DURATION_SECONDS :
+        initialRetryDuration;
+  }
+
+  public long getMaxRetryDuration() {
+    return maxRetryDuration == null ? SalesforceSourceConstants.DEFULT_MAX_RETRY_DURATION_SECONDS : maxRetryDuration;
+  }
+
+  public int getMaxRetryCount() {
+    return maxRetryCount == null ? SalesforceSourceConstants.DEFAULT_MAX_RETRY_COUNT : maxRetryCount;
   }
 
   public void validate(Schema schema, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
