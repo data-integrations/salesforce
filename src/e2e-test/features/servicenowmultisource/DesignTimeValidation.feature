@@ -36,7 +36,7 @@ Feature: ServiceNow Multi Source - Design time validation scenarios
       | INVALID_TABLE |
     And fill Credentials section for pipeline user
     And Click on the Validate button
-    Then Verify that the Plugin Property: "tableNames" is displaying an in-line error message: "invalid.property.tablename"
+    Then Verify that the Plugin is displaying an error message: "invalid.property.tablename" on the header
 
   @TS-SN-MULTI-DSGN-ERROR-03
   Scenario: Verify validation message for Start date and End date in invalid format

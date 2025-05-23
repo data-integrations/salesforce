@@ -36,7 +36,7 @@ public class BigQueryCommonSteps {
   public void configureBqSinkPlugin() {
     String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
     CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
-    CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqTargetDataset);
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(PluginPropertyUtils.pluginProp("dataset"));
     CdfBigQueryPropertiesActions.enterBigQueryTable(TestSetupHooks.bqTargetTable);
   }
 
@@ -44,12 +44,13 @@ public class BigQueryCommonSteps {
   public void configureBqMultiTableSinkPlugin() {
     String referenceName = "Test" + RandomStringUtils.randomAlphanumeric(10);
     CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
-    CdfBigQueryPropertiesActions.enterBigQueryDataset(PluginPropertyUtils.pluginProp("bq.target.dataset2"));
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(PluginPropertyUtils.pluginProp("dataset"));
   }
 
   @Then("Verify count of no of records transferred to the target BigQuery Table")
   public void getCountOfNoOfRecordsTransferredToTargetBigQueryTable() throws IOException, InterruptedException {
-    int countRecords = BigQueryClient.countBqQuery(TestSetupHooks.bqTargetDataset, TestSetupHooks.bqTargetTable);
+    int countRecords = BigQueryClient.countBqQuery(PluginPropertyUtils.pluginProp("dataset"),
+                                                   TestSetupHooks.bqTargetTable);
     Assert.assertEquals("Number of records transferred to BigQuery should be equal to " +
                           "records out count displayed on the Source plugin: ",
                         countRecords, CdfPipelineRunAction.getCountDisplayedOnSourcePluginAsRecordsOut());
@@ -67,7 +68,7 @@ public class BigQueryCommonSteps {
     CdfBigQueryPropertiesActions.enterDatasetProjectId(datasetProjectId);
     CdfBigQueryPropertiesActions.enterProjectId(projectId);
     CdfBigQueryPropertiesActions.enterBigQueryReferenceName(referenceName);
-    CdfBigQueryPropertiesActions.enterBigQueryDataset(TestSetupHooks.bqSourceDataset);
+    CdfBigQueryPropertiesActions.enterBigQueryDataset(PluginPropertyUtils.pluginProp("dataset"));
     CdfBigQueryPropertiesActions.enterBigQueryTable(TestSetupHooks.bqSourceTable);
   }
 }

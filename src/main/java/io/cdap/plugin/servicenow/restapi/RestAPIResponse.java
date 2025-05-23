@@ -43,7 +43,8 @@ public class RestAPIResponse {
   private static final Gson GSON = new Gson();
   private static final String HTTP_ERROR_MESSAGE = "Http call to ServiceNow instance returned status code %d.";
   private static final String REST_ERROR_MESSAGE = "Rest Api response has errors. Error message: %s.";
-  private static final Set<Integer> SUCCESS_CODES = new HashSet<>(Collections.singletonList(HttpStatus.SC_OK));
+  private static final Set<Integer> SUCCESS_CODES = new HashSet<>(Arrays.asList(HttpStatus.SC_CREATED,
+                                                                                HttpStatus.SC_OK));
   private final Map<String, String> headers;
   private final String responseBody;
   @Nullable private final ServiceNowAPIException exception;
