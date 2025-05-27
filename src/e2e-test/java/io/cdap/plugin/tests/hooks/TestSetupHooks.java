@@ -81,6 +81,7 @@ public class TestSetupHooks {
     String recordDetails = "{'number':'" + uniqueId + "'}";
     StringEntity entity = new StringEntity(recordDetails);
     systemId = tableAPIClient.createRecord(TablesInTableMode.RECEIVING_SLIP_LINE.value, entity);
+    BeforeActions.scenario.write("New Record in Receiving Slip Line table: " + systemId + " created successfully");
   }
 
   @Before(order = 2, value = "@SN_UPDATE_AGENT_ASSIST_RECOMMENDATION")
@@ -234,6 +235,7 @@ public class TestSetupHooks {
   public static void setTempTargetBQTable() {
     bqTargetTable = "TestSN_table" + RandomStringUtils.randomAlphanumeric(10);
     BeforeActions.scenario.write("BigQuery Target table name: " + bqTargetTable);
+    PluginPropertyUtils.addPluginProp("bqTargetTable", bqTargetTable);
   }
 
   @Before(order = 1, value = "@CONNECTION")

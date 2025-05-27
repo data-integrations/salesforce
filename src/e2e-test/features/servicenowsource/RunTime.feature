@@ -19,28 +19,29 @@
 Feature: ServiceNow Source - Run time scenarios
 
   @TS-SN-RNTM-1 @SN_SOURCE_CONFIG @SN_RECEIVING_SLIP_LINE @BQ_SINK
-  Scenario: Verify user should be able to preview the pipeline where ServiceNow source is configured for Table mode
+  Scenario: Verify user should be able to preview the pipeline where ServiceNow source is configured for Table mode with value type display
     When Open Datafusion Project to configure pipeline
     And Select plugin: "ServiceNow" from the plugins list as: "Source"
     And Navigate to the properties page of plugin: "ServiceNow"
     And configure ServiceNow source plugin for table: "RECEIVING_SLIP_LINE" in the Table mode
     And fill Credentials section for pipeline user
+    And Select dropdown plugin property: "valueType" with option value: "Display"
     And Enter input plugin property: "startDate" with value: "start.date"
     And Enter input plugin property: "endDate" with value: "end.date"
     Then Validate "ServiceNow" plugin properties
     And Capture the generated Output Schema
     And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
-    And Connect source as "ServiceNow" and sink as "BigQuery" to establish connection
+    And Connect source as "ServiceNow" and sink as "BigQueryTable" to establish connection
     And Navigate to the properties page of plugin: "BigQuery"
     And Replace input plugin property: "project" with value: "projectId"
-    And Enter input plugin property: "datasetProject" with value: "datasetprojectId"
+    Then Enter input plugin property: "datasetProject" with value: "datasetprojectId"
     And Configure BigQuery sink plugin for Dataset and Table
     Then Validate "BigQuery" plugin properties
     And Close the Plugin Properties page
     And Preview and run the pipeline
     Then Verify the preview of pipeline is "success"
-    And Click on the Preview Data link on the Sink plugin node: "BigQueryTable"
+    And Click on the Preview Data link on the Sink plugin node: "BigQuery"
     Then Verify sink plugin's Preview Data for Input Records table and the Input Schema matches the Output Schema of Source plugin
 
   @TS-SN-RNTM-2 @SN_SOURCE_CONFIG @SN_RECEIVING_SLIP_LINE @BQ_SINK
@@ -55,7 +56,7 @@ Feature: ServiceNow Source - Run time scenarios
     Then Validate "ServiceNow" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
-    And Connect source as "ServiceNow" and sink as "BigQuery" to establish connection
+    And Connect source as "ServiceNow" and sink as "BigQueryTable" to establish connection
     And Navigate to the properties page of plugin: "BigQuery"
     And Replace input plugin property: "project" with value: "projectId"
     And Enter input plugin property: "datasetProject" with value: "datasetprojectId"
@@ -88,7 +89,7 @@ Feature: ServiceNow Source - Run time scenarios
     Then Validate "ServiceNow" plugin properties
     And Close the Plugin Properties page
     And Select Sink plugin: "BigQueryTable" from the plugins list
-    And Connect source as "ServiceNow" and sink as "BigQuery" to establish connection
+    And Connect source as "ServiceNow" and sink as "BigQueryTable" to establish connection
     And Navigate to the properties page of plugin: "BigQuery"
     And Replace input plugin property: "project" with value: "projectId"
     And Enter input plugin property: "datasetProject" with value: "datasetprojectId"

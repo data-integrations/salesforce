@@ -106,7 +106,7 @@ Feature: ServiceNow Multi Source - Run time scenarios (macro)
     And Verify the pipeline status is "Failed"
     Then Open Pipeline logs and verify Log entries having below listed Level and Message:
       | Level | Message                                   |
-      | ERROR | invalid.tablenames.logsmessage            |
+      | ERROR | invalid.tablename.logsmessage            |
 
   @TS-SN-RNTM-MACRO-04 @BQ_SINK
   Scenario: Verify pipeline failure message in logs when user provides invalid Advanced Properties with Macros
