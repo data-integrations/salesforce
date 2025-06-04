@@ -87,3 +87,36 @@ Data Types Mapping
     | journal                        | string                                                                    
     | string                         | string                                                                    
 
+
+Supported Formats
+----------
+As per servicenow, the supported date time formats are as follows
+
+[Refer for documentation](https://www.servicenow.com/docs/bundle/washingtondc-api-reference/page/app-store/dev_portal/API_reference/GlideDateTime/concept/c_GlideDateTimeAPI.html)
+
+### Supported Date Time formats
+* yyyy-MM-dd HH:mm:ss
+* MM/dd/yyyy HH:mm:ss
+* MM-dd-yyyy HH:mm:ss
+* MM-dd-yyyy HH:mm
+* dd-MM-yyyy HH:mm:ss
+* dd-MM-yyyy HH.mm.ss
+* dd-MM-yyyy HH.mm
+* dd-MM-yy HH.mm.ss
+* yyyy-MM-dd HH:mm
+* dd.MM.yyyy HH:mm:ss
+* dd.MM.yyyy HH.mm.ss
+* dd.MM.yyyy hh:mm:ss a
+* dd.MM.yyyy hh.mm.ss a
+
+### Supported Date formats
+* MM-dd-yyyy
+* MM/dd/yyyy
+* dd/MM/yyyy
+* dd-MM-yyyy
+* yyyy-MM-dd
+* dd.MM.yyyy
+
+### Supported Time formats
+* HH:mm:ss
+* HH:mm
