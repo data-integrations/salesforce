@@ -28,6 +28,7 @@ import io.cdap.plugin.servicenow.connector.ServiceNowRecordConverter;
 import io.cdap.plugin.servicenow.util.ServiceNowColumn;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import io.cdap.plugin.servicenow.util.SourceQueryMode;
+import io.cdap.plugin.servicenow.util.SourceValueType;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -252,6 +253,7 @@ public class ServiceNowRecordReaderTest {
   @Test
   public void testFetchData() throws Exception {
     String tableName = serviceNowSourceConfig.getTableName();
+    SourceValueType valueType = serviceNowSourceConfig.getValueType();
     ServiceNowTableAPIClientImpl restApi = Mockito.mock(ServiceNowTableAPIClientImpl.class);
     ServiceNowInputSplit split = new ServiceNowInputSplit(tableName, 1);
     ServiceNowRecordReader serviceNowRecordReader = new ServiceNowRecordReader(serviceNowSourceConfig);
@@ -281,7 +283,7 @@ public class ServiceNowRecordReaderTest {
                                                         serviceNowSourceConfig.getStartDate(), serviceNowSourceConfig.
                                                           getEndDate(), split.getOffset(),
                                                         serviceNowSourceConfig.getPageSize())).thenReturn(results);
-    Mockito.when(restApi.fetchTableSchema(tableName))
+    Mockito.when(restApi.fetchTableSchema(tableName, valueType))
       .thenReturn(Schema.recordOf(Schema.Field.of("calendar_integration", Schema.of(Schema.Type.STRING))));
     serviceNowRecordReader.initialize(split);
     Assert.assertTrue(serviceNowRecordReader.nextKeyValue());
@@ -335,7 +337,7 @@ public class ServiceNowRecordReaderTest {
                                                         serviceNowSourceConfig.getStartDate(),
                                                         serviceNowSourceConfig.getEndDate(), split.getOffset(),
                                                         serviceNowSourceConfig.getPageSize())).thenReturn(results);
-    Mockito.when(restApi.fetchTableSchema(tableName))
+    Mockito.when(restApi.fetchTableSchema(tableName, serviceNowSourceConfig.getValueType()))
       .thenReturn(Schema.recordOf(Schema.Field.of("calendar_integration", Schema.of(Schema.Type.STRING))));
     serviceNowRecordReader.initialize(split);
     Assert.assertTrue(serviceNowRecordReader.nextKeyValue());
@@ -370,7 +372,7 @@ public class ServiceNowRecordReaderTest {
                                            serviceNowSourceConfig.getPageSize())).thenReturn(results);
     ServiceNowTableDataResponse response = new ServiceNowTableDataResponse();
     response.setResult(results);
-    Mockito.when(restApi.fetchTableSchema(tableName))
+    Mockito.when(restApi.fetchTableSchema(tableName, serviceNowSourceConfig.getValueType()))
       .thenReturn(Schema.recordOf(Schema.Field.of("calendar_integration", Schema.of(Schema.Type.STRING))));
     serviceNowRecordReader.initialize(split);
     Assert.assertFalse(serviceNowRecordReader.nextKeyValue());

@@ -141,7 +141,7 @@ public class ServiceNowMultiRecordReaderTest {
     response.setResult(results);
     ServiceNowTableAPIClientImpl restApi = Mockito.mock(ServiceNowTableAPIClientImpl.class);
     try {
-      Mockito.when(restApi.fetchTableSchema(tableName))
+      Mockito.when(restApi.fetchTableSchema(tableName, serviceNowMultiSourceConfig.getValueType()))
         .thenReturn(Schema.recordOf(Schema.Field.of("calendar_integration", Schema.of(Schema.Type.STRING))));
       serviceNowMultiRecordReader.initialize(split, null);
     } catch (RuntimeException
@@ -196,7 +196,7 @@ public class ServiceNowMultiRecordReaderTest {
     ServiceNowTableDataResponse response = new ServiceNowTableDataResponse();
     response.setResult(results);
     try {
-      Mockito.when(restApi.fetchTableSchema(tableName))
+      Mockito.when(restApi.fetchTableSchema(tableName, serviceNowMultiSourceConfig.getValueType()))
         .thenReturn(Schema.recordOf(Schema.Field.of("calendar_integration", Schema.of(Schema.Type.STRING))));
       serviceNowMultiRecordReader.initialize(split, null);
     } catch (RuntimeException e) {

@@ -24,6 +24,7 @@ import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import io.cdap.plugin.servicenow.util.ServiceNowTableInfo;
+import io.cdap.plugin.servicenow.util.SourceValueType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -96,7 +97,10 @@ public class ServiceNowMultiInputFormat extends InputFormat<NullWritable, Struct
     Schema schema;
     int recordCount;
     try {
-      schema = restApi.fetchTableSchema(tableName);
+      // Use actual value type as connector config does not have an option to select value type
+      // This is used for ServiceNowMultiSource and provides structure of the table and being dependent on
+      // connector config, makes it a read only function
+      schema = restApi.fetchTableSchema(tableName, SourceValueType.SHOW_ACTUAL_VALUE);
       recordCount = restApi.getTableRecordCount(tableName);
     } catch (ServiceNowAPIException e) {
       throw new RuntimeException(e);

@@ -16,20 +16,18 @@
 
 package io.cdap.plugin.servicenow.sink.model;
 
-import java.util.List;
-
 /**
  * Model class for Schema Response from Schema API
  */
 public class SchemaResponse {
 
-  private final List<ServiceNowSchemaField> result;
+  private final ServiceNowSchemaResult result;
 
-  public SchemaResponse(List<ServiceNowSchemaField> result) {
+  public SchemaResponse(ServiceNowSchemaResult result) {
     this.result = result;
   }
 
-  public List<ServiceNowSchemaField> getResult() {
+  public ServiceNowSchemaResult getResult() {
     return result;
   }
   

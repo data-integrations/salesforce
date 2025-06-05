@@ -171,7 +171,7 @@ public class ServiceNowSourceTest {
       "}";
     PowerMockito.mockStatic(ServiceNowInputFormat.class);
     Mockito.when(ServiceNowInputFormat.fetchTableInfo(Mockito.any(), Mockito.any(), Mockito.anyString(),
-      Mockito.any())).thenReturn(tableInfo);
+      Mockito.any(), Mockito.any())).thenReturn(tableInfo);
     RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
     Mockito.when(restApi.executeGetWithRetries(Mockito.any())).thenReturn(restAPIResponse);
     Mockito.when(restApi.parseResponseToResultListOfMap(restAPIResponse.getResponseBody())).thenReturn(result);

@@ -16,7 +16,6 @@
 package io.cdap.plugin.servicenow.connector;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Name;
 import io.cdap.cdap.api.annotation.Plugin;
@@ -206,8 +205,14 @@ public class ServiceNowConnector implements DirectConnector {
   @Nullable
   private Schema getSchema(String tableName) {
     SourceQueryMode mode = SourceQueryMode.TABLE;
-    List<ServiceNowTableInfo> tableInfo = ServiceNowInputFormat.fetchTableInfo(mode, config, tableName,
-                                                                               null);
+    // Use display type schema as connector shows a limited number of values
+    // and display value type provides easy to read values
+    List<ServiceNowTableInfo> tableInfo = ServiceNowInputFormat.fetchTableInfo(
+      mode,
+      config,
+      tableName,
+      null,
+      SourceValueType.SHOW_DISPLAY_VALUE);
     Schema schema = tableInfo.stream().findFirst().isPresent() ? tableInfo.stream().findFirst().get().getSchema() :
       null;
     return schema;

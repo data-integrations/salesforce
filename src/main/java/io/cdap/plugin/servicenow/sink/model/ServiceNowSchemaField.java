@@ -16,28 +16,27 @@
 
 package io.cdap.plugin.servicenow.sink.model;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * Model class for Schema Field from Schema API
  */
 public class ServiceNowSchemaField {
   private final String label;
-  private final String exampleValue;
+  @SerializedName("internal_type")
   private final String internalType;
   private final String name;
+  private final String type;
 
-  public ServiceNowSchemaField(String label, String exampleValue, String internalType, String name) {
+  public ServiceNowSchemaField(String label, String internalType, String name, String type) {
     this.label = label;
-    this.exampleValue = exampleValue;
     this.internalType = internalType;
     this.name = name;
+    this.type = type;
   }
 
   public String getLabel() {
     return label;
-  }
-
-  public String getExampleValue() {
-    return exampleValue;
   }
 
   public String getInternalType() {
@@ -46,5 +45,9 @@ public class ServiceNowSchemaField {
 
   public String getName() {
     return name;
+  }
+
+  public String getType() {
+    return type;
   }
 }

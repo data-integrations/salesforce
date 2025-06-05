@@ -43,9 +43,14 @@ public class ServiceNowTableAPIRequestBuilder extends RestAPIRequest.Builder {
    */
   private static final String SCHEMA_API_URL_TEMPLATE = "%s/api/now/doc/table/schema/%s";
 
+  /**
+   * ServiceNow API URL to fetch column metadata
+   */
+  private static final String METADATA_API_URL_TEMPLATE = "%s/api/now/ui/meta/%s";
+
   public ServiceNowTableAPIRequestBuilder(String instanceBaseUrl, String tableName, boolean isSchemaRequired) {
     if (isSchemaRequired) {
-      this.setUrl(String.format(SCHEMA_API_URL_TEMPLATE, instanceBaseUrl, tableName));
+      this.setUrl(String.format(METADATA_API_URL_TEMPLATE, instanceBaseUrl, tableName));
     } else {
       this.setUrl(String.format(TABLE_API_URL_TEMPLATE, instanceBaseUrl, tableName));
     }

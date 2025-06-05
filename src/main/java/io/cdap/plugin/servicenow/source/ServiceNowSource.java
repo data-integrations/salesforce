@@ -82,7 +82,8 @@ public class ServiceNowSource extends BatchSource<NullWritable, StructuredRecord
       List<ServiceNowTableInfo> tableInfo = ServiceNowInputFormat.fetchTableInfo(conf.getQueryMode(collector),
                                                                                  conf.getConnection(),
                                                                                  conf.getTableName(),
-                                                                                 conf.getApplicationName());
+                                                                                 conf.getApplicationName(),
+                                                                                 conf.getValueType());
       stageConfigurer.setOutputSchema(tableInfo.stream().findFirst().get().getSchema());
     } else if (conf.getQueryMode() == SourceQueryMode.REPORTING) {
       stageConfigurer.setOutputSchema(null);
