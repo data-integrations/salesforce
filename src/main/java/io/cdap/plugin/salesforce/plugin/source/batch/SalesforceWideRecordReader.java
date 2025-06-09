@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,10 +49,17 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
 
   private final String query;
   private final SoapRecordToMapTransformer transformer;
+  private Iterator<List<Map<String, ?>>> batchIterator;
 
   private List<Map<String, ?>> results;
   private Map<String, ?> value;
   private int index;
+  private AuthenticatorCredentials credentials;
+  private PartnerConnection partnerConnection;
+  private SObjectDescriptor sObjectDescriptor;
+  private List<String> fieldsNames;
+  private String fields;
+  private String sObjectName;
 
   public SalesforceWideRecordReader(Schema schema, String query, SoapRecordToMapTransformer transformer) {
     super(schema);
@@ -63,7 +71,7 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
   public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext) throws IOException,
     InterruptedException {
     Configuration conf = taskAttemptContext.getConfiguration();
-    AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
+    credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
     initialize(inputSplit, credentials);
   }
 
@@ -73,48 +81,61 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
     // Use default configurations of BulkRecordReader.
     super.initialize(inputSplit, credentials);
 
+    this.credentials = credentials;
+
     List<Map<String, ?>> fetchedIdList = fetchBulkQueryIds();
     LOG.debug("Number of records received from batch job for wide object: '{}'", fetchedIdList.size());
 
-    try {
-      PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
-      SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
-      List<String> fieldsNames = sObjectDescriptor.getFieldsNames();
-      String fields = String.join(",", fieldsNames);
-      String sObjectName = sObjectDescriptor.getName();
-
-      List<List<Map<String, ?>>> partitions =
+    List<List<Map<String, ?>>> partitions =
         Lists.partition(fetchedIdList, SalesforceSourceConstants.WIDE_QUERY_MAX_BATCH_COUNT);
-      LOG.debug("Number of partitions to be fetched for wide object: '{}'", partitions.size());
+    LOG.debug("Number of partitions to be fetched for wide object: '{}'", partitions.size());
 
-      // Process partitions with batches sized to adhere to API limits and optimize memory usage.
-      // [CDAP]TODO: Address issues while handling large datasets.
-      results = partitions.parallelStream()
-          .flatMap(partition -> processPartition(partnerConnection, fields, sObjectName,
-              partition, sObjectDescriptor).stream())
-          .collect(Collectors.toList());
-
-      if (results == null) {
-        LOG.warn("Result list is null after processing partitions.");
-        results = new ArrayList<>();
-      }
-
-      return this;
+    try {
+      partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+      sObjectDescriptor = SObjectDescriptor.fromQuery(query);
+      fieldsNames = sObjectDescriptor.getFieldsNames();
+      fields = String.join(",", fieldsNames);
+      sObjectName = sObjectDescriptor.getName();
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new RuntimeException(
-        String.format(
-          "Failed to create a Salesforce SOAP connection during the init for reads: %s",
-          errorMessage),
-        e);
+          String.format(
+              "Failed to create a Salesforce SOAP connection during the init for reads: %s",
+              errorMessage),
+          e);
     }
+
+    batchIterator = partitions.iterator();
+
+    // initialize the 1st batch
+    results = fetchBatchRecords();
+
+    return this;
+  }
+
+  private List<Map<String, ?>> fetchBatchRecords() {
+    List<Map<String, ?>> idList = batchIterator.next();
+    LOG.info("Fetching batch of {} records from {}.", idList.size(), sObjectName);
+    return processPartition(partnerConnection, fields, sObjectName, idList, sObjectDescriptor);
   }
 
   @Override
   public boolean nextKeyValue() {
-    if (results.size() == index) {
-      return false;
+
+    // If all current results are consumed, try to load the next batch
+    if (index >= results.size()) {
+      if (!batchIterator.hasNext()) {
+        return false;
+      }
+
+      results = fetchBatchRecords();
+      index = 0;
+
+      if (results.isEmpty()) {
+        return false;
+      }
     }
+
     value = results.get(index++);
     return true;
   }
