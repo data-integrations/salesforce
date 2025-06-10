@@ -305,7 +305,7 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
       SObjectFilterDescriptor filterDescriptor = getSObjectFilterDescriptor(logicalStartTime);
       String sObjectQuery = SalesforceQueryUtil.createSObjectQuery(fieldNames, sObjectName, filterDescriptor);
       LOG.debug("Generated SObject query: '{}'", sObjectQuery);
-      return addAliasToQuery(sObjectQuery);
+      return sObjectQuery;
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       throw new IllegalStateException(
@@ -417,15 +417,5 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
 
   public String getOperation() {
     return operation == null ? DEFAULT_OPERATION : operation;
-  }
-
-  private String addAliasToQuery(String query) {
-    int aliasCharCount = 20000 - query.length();
-    StringBuilder sb = new StringBuilder(query);
-    sb.append(" ");
-    for (int i = 0; i < aliasCharCount; i++) {
-      sb.append("a");
-    }
-    return sb.toString();
   }
 }
