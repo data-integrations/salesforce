@@ -23,6 +23,7 @@ import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.hadoop.conf.Configuration;
@@ -78,7 +79,8 @@ public class SalesforceRecordWriter extends RecordWriter<NullWritable, Structure
     csvBufferSizeCheck = new CSVBuffer(false);
 
     AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
-    bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+    bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials,
+      SalesforceConstants.API_VERSION));
     jobInfo = bulkConnection.getJobStatus(jobId);
     isFileUploadObject = FileUploadSobject.isFileUploadSobject(jobInfo.getObject());
     if (isFileUploadObject) {

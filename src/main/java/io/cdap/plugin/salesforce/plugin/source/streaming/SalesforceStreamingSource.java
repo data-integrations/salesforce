@@ -134,7 +134,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   public Schema outputSchema(SalesforceStreamingSourceConfig config) throws Exception {
     AuthenticatorCredentials authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     PartnerConnection partnerConnection = new PartnerConnection(
-      Authenticator.createConnectorConfig(authenticatorCredentials));
+      Authenticator.createConnectorConfig(authenticatorCredentials, SalesforceConstants.API_VERSION));
     SObject pushTopic =
       SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, config.getPushTopicName());
 

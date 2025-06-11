@@ -33,6 +33,7 @@ import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
@@ -68,10 +69,11 @@ public final class SalesforceSplitUtil {
   public static List<SalesforceSplit> getQuerySplits(String query, BulkConnectionRetryWrapper bulkConnection,
                                                      boolean enablePKChunk, String operation,
                                                      Long initialRetryDuration, Long maxRetryDuration,
-                                                     Integer maxRetryCount, Boolean retryOnBackendError) {
+                                                     Integer maxRetryCount, Boolean retryOnBackendError,
+                                                     String apiVersion) {
     return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation, initialRetryDuration, maxRetryDuration,
                                 maxRetryCount, retryOnBackendError))
-      .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
+      .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query, apiVersion))
       .collect(Collectors.toList());
   }
 
@@ -158,9 +160,10 @@ public final class SalesforceSplitUtil {
    *
    * @return bulk connection instance
    */
-  public static BulkConnection getBulkConnection(AuthenticatorCredentials authenticatorCredentials) {
+  public static BulkConnection getBulkConnection(AuthenticatorCredentials authenticatorCredentials, String apiVersion) {
     try {
-      return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials));
+      return new BulkConnection(Authenticator.createConnectorConfig(authenticatorCredentials,
+        apiVersion));
     } catch (AsyncApiException e) {
       throw new RuntimeException(
         String.format("Failed to create a connection to Salesforce bulk API: %s", e.getMessage()),
@@ -215,8 +218,9 @@ public final class SalesforceSplitUtil {
     throw new BulkAPIBatchException("Timeout waiting for batch results", initialBatchInfo);
   }
 
-  public static void closeJobs(Set<String> jobIds, AuthenticatorCredentials authenticatorCredentials) {
-    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+  public static void closeJobs(Set<String> jobIds, AuthenticatorCredentials authenticatorCredentials,
+                               String apiVersion) {
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials, apiVersion);
     RuntimeException runtimeException = null;
     for (String jobId : jobIds) {
       try {

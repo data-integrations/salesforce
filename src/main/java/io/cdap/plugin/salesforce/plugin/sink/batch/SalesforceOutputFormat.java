@@ -20,6 +20,7 @@ import com.sforce.async.BulkConnection;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import org.apache.hadoop.conf.Configuration;
@@ -76,7 +77,8 @@ public class SalesforceOutputFormat extends OutputFormat<NullWritable, Structure
         AuthenticatorCredentials credentials = SalesforceConnectionUtil.getAuthenticatorCredentials(conf);
 
         try {
-          BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+          BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials,
+            SalesforceConstants.API_VERSION));
           String jobId = conf.get(SalesforceSinkConstants.CONFIG_JOB_ID);
           SalesforceBulkUtil.closeJob(bulkConnection, jobId);
         } catch (AsyncApiException e) {

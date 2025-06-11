@@ -473,7 +473,8 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                                                                         this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());
     try {
-      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
+      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials,
+        SalesforceConstants.API_VERSION));
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(this.getSObject(), credentials);
       return SObjectsDescribeResult.of(partnerConnection,
                                        sObjectDescriptor.getName(), sObjectDescriptor.getFeaturedSObjects());

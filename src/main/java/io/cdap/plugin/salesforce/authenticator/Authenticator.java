@@ -44,14 +44,16 @@ public class Authenticator {
    * @param credentials information to log in
    * @return ConnectorConfig which can be used to create BulkConnection and PartnerConnection
    */
-  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials) {
+  public static ConnectorConfig createConnectorConfig(AuthenticatorCredentials credentials, String apiVersion) {
     try {
       OAuthInfo oAuthInfo = getOAuthInfo(credentials);
       ConnectorConfig connectorConfig = new ConnectorConfig();
       connectorConfig.setSessionId(oAuthInfo.getAccessToken());
-      String apiVersion = SalesforceConstants.API_VERSION;
-      String restEndpoint = String.format("%s/services/async/%s", oAuthInfo.getInstanceURL(), apiVersion);
-      String serviceEndPoint = String.format("%s/services/Soap/u/%s", oAuthInfo.getInstanceURL(), apiVersion);
+      String updatedApiVersion = !Strings.isNullOrEmpty(apiVersion)
+        ? apiVersion : SalesforceConstants.API_VERSION;
+
+      String restEndpoint = String.format("%s/services/async/%s", oAuthInfo.getInstanceURL(), updatedApiVersion);
+      String serviceEndPoint = String.format("%s/services/Soap/u/%s", oAuthInfo.getInstanceURL(), updatedApiVersion);
       connectorConfig.setRestEndpoint(restEndpoint);
       connectorConfig.setServiceEndpoint(serviceEndPoint);
       // set proxy if proxy server details are available

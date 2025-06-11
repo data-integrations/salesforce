@@ -181,7 +181,7 @@ public class SalesforceClient {
         Authenticator.createConnectorConfig(AuthenticatorCredentials.fromParameters(USERNAME, PASSWORD + SECURITYTOKEN,
                                                                          CLIENTID, CLIENTSECRET, PluginPropertyUtils.
                                                                            pluginProp("login.url"),
-                                                                         30000, 3600, "")));
+                                                                         30000, 3600, ""), null));
 
       QueryResult queryResult = SalesforceStreamingSourceConfig.runQuery(
         partnerConnection,

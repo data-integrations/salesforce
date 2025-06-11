@@ -236,7 +236,8 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
         Authenticator.createConnectorConfig(AuthenticatorCredentials.fromParameters(oAuthInfo,
                                                                          this.getConnection().getConnectTimeout(),
                                                                          this.getConnection().getReadTimeout(),
-                                                                         this.connection.getProxyUrl())));
+                                                                         this.connection.getProxyUrl()),
+                                                                         SalesforceConstants.API_VERSION));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();

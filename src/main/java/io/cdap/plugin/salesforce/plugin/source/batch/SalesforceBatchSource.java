@@ -151,7 +151,8 @@ public class SalesforceBatchSource extends
       SalesforceSourceConfig config, AuthenticatorCredentials authenticatorCredentials,
       long logicStartTime, OAuthInfo oAuthInfo) {
     String query = config.getQuery(logicStartTime, oAuthInfo);
-    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials,
+      SalesforceConstants.API_VERSION);
     boolean enablePKChunk = config.getEnablePKChunk();
     if (enablePKChunk) {
       String parent = config.getParent();
@@ -171,7 +172,7 @@ public class SalesforceBatchSource extends
       config.getMaxRetryCount());
     List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper,
         enablePKChunk, config.getOperation(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-          config.getMaxRetryCount(), config.isRetryRequired());
+          config.getMaxRetryCount(), config.isRetryRequired(), SalesforceConstants.API_VERSION);
     return querySplits;
   }
 
@@ -184,7 +185,7 @@ public class SalesforceBatchSource extends
   @Override
   public void onRunFinish(boolean succeeded, BatchSourceContext context) {
     super.onRunFinish(succeeded, context);
-    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials);
+    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials, SalesforceConstants.API_VERSION);
   }
 
   @Override

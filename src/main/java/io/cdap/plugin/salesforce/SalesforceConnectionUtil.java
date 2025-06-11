@@ -41,7 +41,7 @@ public class SalesforceConnectionUtil {
    */
   public static PartnerConnection getPartnerConnection(AuthenticatorCredentials credentials)
     throws ConnectionException {
-    ConnectorConfig connectorConfig = Authenticator.createConnectorConfig(credentials);
+    ConnectorConfig connectorConfig = Authenticator.createConnectorConfig(credentials, SalesforceConstants.API_VERSION);
     return new PartnerConnection(connectorConfig);
   }
 

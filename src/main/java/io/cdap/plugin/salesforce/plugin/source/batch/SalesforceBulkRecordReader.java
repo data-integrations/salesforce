@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.AsyncExceptionCode;
@@ -28,6 +29,7 @@ import dev.failsafe.TimeoutExceededException;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
@@ -131,7 +133,8 @@ public class SalesforceBulkRecordReader extends RecordReader<Schema, Map<String,
     LOG.debug("Executing Salesforce Batch Id: '{}' for Job Id: '{}'", batchId, jobId);
 
     try {
-      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials,
+        salesforceSplit.getApiVersion()));
       bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection, isRetryRequired, initialRetryDuration,
         maxRetryDuration, maxRetryCount);
       resultIds = waitForBatchResults(bulkConnection);

@@ -337,7 +337,8 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                                                         this.getConnection().getReadTimeout(),
                                                                         this.getConnection().getProxyUrl());
     try {
-      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
+      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials,
+        SalesforceConstants.API_VERSION));
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

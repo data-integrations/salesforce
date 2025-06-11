@@ -88,7 +88,8 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
     AuthenticatorCredentials credentials = config.getConnection().getAuthenticatorCredentials();
 
     try {
-      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
+      BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials,
+        SalesforceConstants.API_VERSION));
       BulkConnectionRetryWrapper retryWrapper = new BulkConnectionRetryWrapper(bulkConnection, config.isRetryRequired(),
         config.getInitialRetryDuration(), config.getMaxRetryDuration(), config.getMaxRetryCount());
       JobInfo job = SalesforceBulkUtil.createJob(retryWrapper, config.getSObject(), config.getOperationEnum(),

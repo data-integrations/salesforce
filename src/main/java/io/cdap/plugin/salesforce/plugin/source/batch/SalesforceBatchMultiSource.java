@@ -103,14 +103,16 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
       (sObjectName, sObjectSchema) -> arguments.set(MULTI_SINK_PREFIX + sObjectName, sObjectSchema.toString()));
     String sObjectNameField = config.getSObjectNameField();
     authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
-    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+    BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials,
+      SalesforceConstants.API_VERSION);
     BulkConnectionRetryWrapper bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection,
       config.isRetryRequired(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
       config.getMaxRetryCount());
     List<SalesforceSplit> querySplits = queries.parallelStream()
       .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper, false, config.getOperation(),
                                                        config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-                                                       config.getMaxRetryCount(), config.isRetryRequired()))
+                                                       config.getMaxRetryCount(), config.isRetryRequired(),
+                                                       SalesforceConstants.API_VERSION))
       .flatMap(Collection::stream).collect(Collectors.toList());
     // store the jobIds so be used in onRunFinish() to close the connections
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
@@ -130,7 +132,7 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
   @Override
   public void onRunFinish(boolean succeeded, BatchSourceContext context) {
     super.onRunFinish(succeeded, context);
-    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials);
+    SalesforceSplitUtil.closeJobs(jobIds, authenticatorCredentials, SalesforceConstants.API_VERSION);
   }
 
   @Override

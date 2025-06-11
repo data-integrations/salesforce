@@ -31,16 +31,19 @@ public class SalesforceSplit extends InputSplit implements Writable {
   private String jobId;
   private String batchId;
   private String query;
+  private String apiVersion;
 
   @SuppressWarnings("unused")
   public SalesforceSplit() {
     // For serialization
   }
 
-  public SalesforceSplit(String jobId, String batchId, String query) {
+  public SalesforceSplit(String jobId, String batchId, String query, String apiVersion) {
     this.jobId = jobId;
     this.batchId = batchId;
     this.query = query;
+    this.apiVersion = apiVersion;
+
   }
   
   @Override
@@ -48,6 +51,7 @@ public class SalesforceSplit extends InputSplit implements Writable {
     jobId = dataInput.readUTF();
     batchId = dataInput.readUTF();
     query = dataInput.readUTF();
+    apiVersion = dataInput.readUTF();
   }
 
   @Override
@@ -55,6 +59,7 @@ public class SalesforceSplit extends InputSplit implements Writable {
     dataOutput.writeUTF(jobId);
     dataOutput.writeUTF(batchId);
     dataOutput.writeUTF(query);
+    dataOutput.writeUTF(apiVersion);
   }
 
   @Override
@@ -77,5 +82,9 @@ public class SalesforceSplit extends InputSplit implements Writable {
 
   public String getQuery() {
     return query;
+  }
+
+  public String getApiVersion() {
+    return apiVersion;
   }
 }
