@@ -29,6 +29,7 @@ import io.cdap.plugin.servicenow.restapi.RestAPIRequest;
 import io.cdap.plugin.servicenow.restapi.RestAPIResponse;
 import io.cdap.plugin.servicenow.sink.model.SchemaResponse;
 import io.cdap.plugin.servicenow.sink.model.ServiceNowSchemaField;
+import io.cdap.plugin.servicenow.sink.model.ServiceNowSchemaResult;
 import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -299,9 +300,10 @@ public class ServiceNowSinkConfigTest {
       "}";
     ServiceNowSchemaField schemaField = new ServiceNowSchemaField("Class", "sys_class_name",
                                                                   "sys_class_name", "sys_class_name");
-    List<ServiceNowSchemaField> schemaFields = new ArrayList<>();
-    schemaFields.add(schemaField);
-    SchemaResponse schemaResponse = new SchemaResponse(schemaFields);
+    Map<String, ServiceNowSchemaField> columns = new HashMap<>();
+    columns.put("sys_class_name", schemaField);
+    ServiceNowSchemaResult schemaResult = new ServiceNowSchemaResult(columns);
+    SchemaResponse schemaResponse = new SchemaResponse(schemaResult);
     HttpResponse mockResponse = Mockito.mock(HttpResponse.class);
     Mockito.when(mockResponse.getStatusLine()).thenReturn(Mockito.mock(StatusLine.class));
     Mockito.when(mockResponse.getStatusLine().getStatusCode()).thenReturn(httpStatus);
@@ -357,14 +359,16 @@ public class ServiceNowSinkConfigTest {
     result.add(map);
     Map<String, String> headers = new HashMap<>();
     String responseBody = "{\n" +
-      "    \"result\": [\n" +
-      "        {\n" +
-      "            \"label\": \"Class\",\n" +
-      "            \"internalType\": \"sys_class_name\",\n" +
-      "            \"exampleValue\": \"\",\n" +
-      "            \"name\": \"sys_class_name\"\n" +
-      "        }\n" +
-      "    ]\n" +
+      "  \"result\": {\n" +
+      "    \"columns\": {\n" +
+      "      \"sys_class_name\": {\n" +
+      "        \"label\": \"Class\",\n" +
+      "        \"internal_type\": \"sys_class_name\",\n" +
+      "        \"name\": \"sys_class_name\",\n" +
+      "        \"type\": \"sys_class_name\"\n" +
+      "      }\n" +
+      "    }\n" +
+      "  }\n" +
       "}";
     RestAPIResponse restAPIResponse = new RestAPIResponse(headers, responseBody, null);
     OAuthClient oAuthClient = Mockito.mock(OAuthClient.class);

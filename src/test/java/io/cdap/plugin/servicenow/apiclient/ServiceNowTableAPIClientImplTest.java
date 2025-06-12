@@ -1,6 +1,8 @@
 package io.cdap.plugin.servicenow.apiclient;
 
+import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
+import io.cdap.plugin.servicenow.restapi.RestAPIResponse;
 import io.cdap.plugin.servicenow.util.SourceValueType;
 
 import org.apache.http.HttpResponse;
@@ -12,8 +14,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,5 +80,75 @@ public class ServiceNowTableAPIClientImplTest {
     exceptionRule.expectMessage("Data Recovery failed for batch 0 to 0.");
     implSpy.fetchTableRecordsRetryableMode(
         "test", SourceValueType.SHOW_DISPLAY_VALUE, "", "", 0, 0);
+  }
+
+  @Test
+  public void testFetchTableSchema_ActualValueType() throws Exception {
+    ServiceNowConnectorConfig mockConfig = Mockito.mock(ServiceNowConnectorConfig.class);
+    ServiceNowTableAPIClientImpl impl = new ServiceNowTableAPIClientImpl(mockConfig);
+    ServiceNowTableAPIClientImpl implSpy = Mockito.spy(impl);
+    String jsonResponse = "{\n" +
+      "  \"result\": {\n" +
+      "    \"columns\": {\n" +
+      "      \"active\": {\n" +
+      "        \"label\": \"Active\",\n" +
+      "        \"name\": \"active\",\n" +
+      "        \"type\": \"string\",\n" +
+      "        \"internal_type\": \"boolean\"\n" +
+      "      },\n" +
+      "      \"user_name\": {\n" +
+      "        \"label\": \"Username\",\n" +
+      "        \"name\": \"user_name\",\n" +
+      "        \"type\": \"string\",\n" +
+      "        \"internal_type\": \"string\"\n" +
+      "      }\n" +
+      "    }\n" +
+      "  }\n" +
+      "}";
+    RestAPIResponse mockResponse = new RestAPIResponse(Collections.emptyMap(), jsonResponse, null);
+    Mockito.doReturn(mockResponse).when(implSpy).executeGetWithRetries(Mockito.any());
+    Schema schema = implSpy.fetchTableSchema("sys_user", "dummy-access-token", SourceValueType.SHOW_ACTUAL_VALUE);
+    Assert.assertNotNull(schema);
+    Assert.assertEquals("record", schema.getDisplayName());
+    Assert.assertEquals(2, schema.getFields().size());
+    Assert.assertEquals(Schema.Type.BOOLEAN,
+      schema.getField("active").getSchema().getUnionSchemas().get(0).getType());
+    Assert.assertEquals(Schema.Type.STRING,
+      schema.getField("user_name").getSchema().getUnionSchemas().get(0).getType());
+  }
+
+  @Test
+  public void testFetchTableSchema_DisplayValueType() throws Exception {
+    ServiceNowConnectorConfig mockConfig = Mockito.mock(ServiceNowConnectorConfig.class);
+    ServiceNowTableAPIClientImpl impl = new ServiceNowTableAPIClientImpl(mockConfig);
+    ServiceNowTableAPIClientImpl implSpy = Mockito.spy(impl);
+    String jsonResponse = "{\n" +
+      "  \"result\": {\n" +
+      "    \"columns\": {\n" +
+      "      \"active\": {\n" +
+      "        \"label\": \"Active\",\n" +
+      "        \"name\": \"active\",\n" +
+      "        \"type\": \"string\",\n" +
+      "        \"internal_type\": \"boolean\"\n" +
+      "      },\n" +
+      "      \"user_name\": {\n" +
+      "        \"label\": \"Username\",\n" +
+      "        \"name\": \"user_name\",\n" +
+      "        \"type\": \"string\",\n" +
+      "        \"internal_type\": \"string\"\n" +
+      "      }\n" +
+      "    }\n" +
+      "  }\n" +
+      "}";
+    RestAPIResponse mockResponse = new RestAPIResponse(Collections.emptyMap(), jsonResponse, null);
+    Mockito.doReturn(mockResponse).when(implSpy).executeGetWithRetries(Mockito.any());
+    Schema schema = implSpy.fetchTableSchema("sys_user", "dummy-access-token", SourceValueType.SHOW_DISPLAY_VALUE);
+    Assert.assertNotNull(schema);
+    Assert.assertEquals("record", schema.getDisplayName());
+    Assert.assertEquals(2, schema.getFields().size());
+    Assert.assertEquals(Schema.Type.STRING,
+      schema.getField("active").getSchema().getUnionSchemas().get(0).getType());
+    Assert.assertEquals(Schema.Type.STRING,
+      schema.getField("user_name").getSchema().getUnionSchemas().get(0).getType());
   }
 }

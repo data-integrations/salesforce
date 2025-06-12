@@ -48,15 +48,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 /**
@@ -247,6 +246,7 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
   }
 
   /**
+   * Fetch schema for actual value type
    * @param tableName ServiceNow table name for which schema is getting fetched
    * @param collector FailureCollector
    * @return schema for given ServiceNow table
@@ -255,7 +255,7 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
   public Schema fetchTableSchema(String tableName, FailureCollector collector) {
     Schema schema = null;
     try {
-      schema = fetchTableSchema(tableName);
+      schema = fetchTableSchema(tableName, SourceValueType.SHOW_ACTUAL_VALUE);
     } catch (Exception e) {
       LOG.error("Failed to fetch schema on table {}", tableName, e);
       collector.addFailure(String.format("Connection failed. Unable to fetch schema for table: %s. Cause: %s",
@@ -276,9 +276,9 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
    * @return schema for given ServiceNow table
    * @throws ServiceNowAPIException
    */
-  public Schema fetchTableSchema(String tableName)
+  public Schema fetchTableSchema(String tableName, SourceValueType valueType)
       throws ServiceNowAPIException {
-      return fetchTableSchema(tableName, getAccessToken());
+      return fetchTableSchema(tableName, getAccessToken(), valueType);
   }
 
   /**
@@ -286,25 +286,32 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
    *
    * @param tableName ServiceNow table name for which schema is getting fetched
    * @param accessToken Access Token to use
+   * @param valueType Type of value (Actual/Display)
    * @return schema for given ServiceNow table
    */
-  public Schema fetchTableSchema(String tableName, String accessToken)
+  public Schema fetchTableSchema(String tableName, String accessToken, SourceValueType valueType)
       throws ServiceNowAPIException {
     ServiceNowTableAPIRequestBuilder requestBuilder = new ServiceNowTableAPIRequestBuilder(
       this.conf.getRestApiEndpoint(), tableName, true)
       .setExcludeReferenceLink(true);
 
-    RestAPIResponse apiResponse;
+    RestAPIResponse restAPIResponse;
     requestBuilder.setAuthHeader(accessToken);
-    apiResponse = executeGetWithRetries(requestBuilder.build());
-    SchemaResponse response = parseSchemaResponse(apiResponse.getResponseBody());
+    restAPIResponse = executeGetWithRetries(requestBuilder.build());
+    SchemaResponse schemaResponse = parseSchemaResponse(restAPIResponse.getResponseBody());
     List<ServiceNowColumn> columns = new ArrayList<>();
 
-    if (response.getResult() == null && response.getResult().isEmpty()) {
+    if (schemaResponse.getResult() == null && schemaResponse.getResult().getColumns().isEmpty()) {
       throw new RuntimeException("Error - Schema Response does not contain any result");
     }
-    for (ServiceNowSchemaField field : response.getResult()) {
-      columns.add(new ServiceNowColumn(field.getName(), field.getInternalType()));
+
+    for (ServiceNowSchemaField field : schemaResponse.getResult().getColumns().values()) {
+      if (valueType.equals(SourceValueType.SHOW_DISPLAY_VALUE) &&
+        !Objects.equals(field.getType(), field.getInternalType())) {
+        columns.add(new ServiceNowColumn(field.getName(), field.getType()));
+      } else {
+        columns.add(new ServiceNowColumn(field.getName(), field.getInternalType()));
+      }
     }
     return SchemaBuilder.constructSchema(tableName, columns);
   }

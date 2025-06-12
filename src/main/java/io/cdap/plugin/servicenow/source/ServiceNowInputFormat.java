@@ -21,10 +21,10 @@ import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowAPIException;
 import io.cdap.plugin.servicenow.apiclient.ServiceNowTableAPIClientImpl;
 import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
-import io.cdap.plugin.servicenow.util.ServiceNowConstants;
 import io.cdap.plugin.servicenow.util.ServiceNowTableInfo;
 import io.cdap.plugin.servicenow.util.SourceApplication;
 import io.cdap.plugin.servicenow.util.SourceQueryMode;
+import io.cdap.plugin.servicenow.util.SourceValueType;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputFormat;
@@ -32,8 +32,6 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
-import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +63,7 @@ public class ServiceNowInputFormat extends InputFormat<NullWritable, StructuredR
     // Depending on conf value fetch the list of fields for each table and create schema object
     // return the schema object for each table as ServiceNowTableInfo
     List<ServiceNowTableInfo> tableInfos = fetchTableInfo(mode, conf.getConnection(), conf.getTableName(),
-                                                          conf.getApplicationName());
+                                                          conf.getApplicationName(), conf.getValueType());
     jobConf.setTableInfos(tableInfos);
 
     return tableInfos;
@@ -73,10 +71,11 @@ public class ServiceNowInputFormat extends InputFormat<NullWritable, StructuredR
 
   public static List<ServiceNowTableInfo> fetchTableInfo(SourceQueryMode mode, ServiceNowConnectorConfig conf,
                                                          @Nullable String tableName,
-                                                         @Nullable SourceApplication application) {
+                                                         @Nullable SourceApplication application,
+                                                         @Nullable SourceValueType valueType) {
     // When mode = Table, fetch details from the table name provided in plugin config
     if (mode == SourceQueryMode.TABLE) {
-      ServiceNowTableInfo tableInfo = getTableMetaData(tableName, conf);
+      ServiceNowTableInfo tableInfo = getTableMetaData(tableName, conf, valueType);
       return (tableInfo == null) ? Collections.emptyList() : Collections.singletonList(tableInfo);
     }
 
@@ -86,7 +85,7 @@ public class ServiceNowInputFormat extends InputFormat<NullWritable, StructuredR
 
     List<String> tableNames = application.getTableNames();
     for (String table : tableNames) {
-      ServiceNowTableInfo tableInfo = getTableMetaData(table, conf);
+      ServiceNowTableInfo tableInfo = getTableMetaData(table, conf, valueType);
       if (tableInfo == null) {
         continue;
       }
@@ -96,14 +95,16 @@ public class ServiceNowInputFormat extends InputFormat<NullWritable, StructuredR
     return tableInfos;
   }
 
-  private static ServiceNowTableInfo getTableMetaData(String tableName, ServiceNowConnectorConfig conf) {
+  private static ServiceNowTableInfo getTableMetaData(String tableName,
+                                                      ServiceNowConnectorConfig conf,
+                                                      SourceValueType valueType) {
     // Call API to fetch first record from the table
     ServiceNowTableAPIClientImpl restApi = new ServiceNowTableAPIClientImpl(conf);
 
     Schema schema = null;
     int recordCount = 0;
     try {
-      schema = restApi.fetchTableSchema(tableName);
+      schema = restApi.fetchTableSchema(tableName, valueType);
       recordCount = restApi.getTableRecordCount(tableName);
     } catch (ServiceNowAPIException e) {
       throw new RuntimeException(String.format("Error in fetching table metadata due to reason: %s", e.getMessage()),

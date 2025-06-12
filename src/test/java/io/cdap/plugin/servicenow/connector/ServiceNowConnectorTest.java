@@ -163,7 +163,7 @@ public class ServiceNowConnectorTest {
     SourceValueType valueType = SourceValueType.SHOW_DISPLAY_VALUE;
     Mockito.when(ServiceNowInputFormat.fetchTableInfo(mode, serviceNowSourceConfig.getConnection(),
                                                       serviceNowSourceConfig.getTableName(),
-                                                      null)).thenReturn(list);
+                                                      null, valueType)).thenReturn(list);
 
     ConnectorSpec connectorSpec = serviceNowConnector.generateSpec(new MockConnectorContext
                                                                      (new MockConnectorConfigurer()),

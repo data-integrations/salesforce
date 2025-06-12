@@ -22,6 +22,7 @@ import io.cdap.plugin.servicenow.connector.ServiceNowConnectorConfig;
 import io.cdap.plugin.servicenow.restapi.RestAPIResponse;
 import io.cdap.plugin.servicenow.util.SourceApplication;
 import io.cdap.plugin.servicenow.util.SourceQueryMode;
+import io.cdap.plugin.servicenow.util.SourceValueType;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -160,8 +161,9 @@ public class ServiceNowInputFormatTest {
     PowerMockito.when(RestAPIResponse.parse(ArgumentMatchers.any(), ArgumentMatchers.anyString())).
       thenReturn(response);
     SourceApplication application = SourceApplication.PROCUREMENT;
+    SourceValueType valueType = SourceValueType.SHOW_ACTUAL_VALUE;
     Assert.assertEquals(1, ServiceNowInputFormat.fetchTableInfo(mode, connectorConfig, "table",
-                                                                application).size());
+                                                                application, valueType).size());
   }
 
   @Test
@@ -259,8 +261,9 @@ public class ServiceNowInputFormatTest {
     PowerMockito.when(RestAPIResponse.parse(ArgumentMatchers.any(), ArgumentMatchers.anyString())).
       thenReturn(response);
     SourceApplication application = SourceApplication.PROCUREMENT;
+    SourceValueType valueType = SourceValueType.SHOW_ACTUAL_VALUE;
     Assert.assertEquals(4, ServiceNowInputFormat.fetchTableInfo(mode, connectorConfig, "table",
-                                                                application).size());
+                                                                application, valueType).size());
   }
 
   @Test
@@ -300,7 +303,8 @@ public class ServiceNowInputFormatTest {
     PowerMockito.when(RestAPIResponse.parse(ArgumentMatchers.any(), ArgumentMatchers.anyString())).
       thenReturn(response);
     SourceApplication application = SourceApplication.PROCUREMENT;
+    SourceValueType valueType = SourceValueType.SHOW_ACTUAL_VALUE;
     Assert.assertTrue(ServiceNowInputFormat.fetchTableInfo(mode, connectorConfig, "table",
-                                                           application).isEmpty());
+                                                           application, valueType).isEmpty());
   }
 }

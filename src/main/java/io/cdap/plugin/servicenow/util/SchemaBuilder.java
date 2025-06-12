@@ -86,6 +86,7 @@ public class SchemaBuilder {
       case "guid":
       case "translated_html":
       case "journal":
+      case "choice":
       case "string":
       default:
         return Schema.of(Schema.Type.STRING);
