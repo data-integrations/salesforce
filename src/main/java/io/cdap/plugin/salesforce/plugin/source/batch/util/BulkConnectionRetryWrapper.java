@@ -59,14 +59,21 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return bulkConnection.createJob(jobInfo);
     }
-    Object resultJobInfo = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while creating job."))
-        .get(() -> {
-          try {
-            return bulkConnection.createJob(jobInfo);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object resultJobInfo;
+    try {
+      resultJobInfo = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while creating job.")).get(() -> {
+        try {
+          return bulkConnection.createJob(jobInfo);
+        } catch (AsyncApiException e) {
+          throw new SalesforceQueryExecutionException(e);
+        }
+      });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (JobInfo) resultJobInfo;
   }
 
@@ -74,15 +81,23 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return bulkConnection.getJobStatus(jobId);
     }
-    Object resultJobInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting job status."))
-        .get(() -> {
-          try {
-            return bulkConnection.getJobStatus(jobId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object resultJobInfo;
+    try {
+      resultJobInfo  = Failsafe.with(retryPolicy)
+          .onFailure(event -> LOG.info("Failed while getting job status."))
+          .get(() -> {
+            try {
+              return bulkConnection.getJobStatus(jobId);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (JobInfo) resultJobInfo;
   }
 
@@ -91,30 +106,44 @@ public class BulkConnectionRetryWrapper {
       bulkConnection.updateJob(jobInfo);
       return;
     }
-    Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while updating job."))
-        .get(() -> {
-          try {
-            return bulkConnection.updateJob(jobInfo);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    try {
+      Failsafe.with(retryPolicy)
+          .onFailure(event -> LOG.info("Failed while updating job."))
+          .get(() -> {
+            try {
+              return bulkConnection.updateJob(jobInfo);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
   }
 
   public BatchInfoList getBatchInfoList(String jobId) throws AsyncApiException {
     if (!retryOnBackendError) {
       return bulkConnection.getBatchInfoList(jobId);
     }
-    Object batchInfoList = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch info list."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchInfoList(jobId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object batchInfoList;
+    try {
+      batchInfoList = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while getting batch info list."))
+          .get(() -> {
+            try {
+              return bulkConnection.getBatchInfoList(jobId);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (BatchInfoList) batchInfoList;
   }
 
@@ -122,15 +151,22 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return bulkConnection.getBatchInfo(jobId, batchId);
     }
-    Object batchInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch status."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchInfo(jobId, batchId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object batchInfo;
+    try {
+      batchInfo = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while getting batch status."))
+          .get(() -> {
+            try {
+              return bulkConnection.getBatchInfo(jobId, batchId);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (BatchInfo) batchInfo;
   }
 
@@ -138,15 +174,22 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return bulkConnection.getBatchResultStream(jobId, batchId);
     }
-    Object inputStream = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch result stream."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchResultStream(jobId, batchId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object inputStream;
+    try {
+      inputStream = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while getting batch result stream."))
+          .get(() -> {
+            try {
+              return bulkConnection.getBatchResultStream(jobId, batchId);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (InputStream) inputStream;
   }
 
@@ -154,15 +197,22 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
     }
-    Object inputStream = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting query result stream."))
-        .get(() -> {
-          try {
-            return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object inputStream;
+    try {
+      inputStream = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while getting query result stream."))
+          .get(() -> {
+            try {
+              return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (InputStream) inputStream;
   }
 
@@ -171,16 +221,41 @@ public class BulkConnectionRetryWrapper {
     if (!retryOnBackendError) {
       return createBatchFromStreamI(query, job);
     }
-    Object batchInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while creating batch from stream."))
-        .get(() -> {
-          try {
-            return createBatchFromStreamI(query, job);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    Object batchInfo;
+    try {
+      batchInfo = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while creating batch from stream."))
+          .get(() -> {
+            try {
+              return createBatchFromStreamI(query, job);
+            } catch (AsyncApiException e) {
+              throw new SalesforceQueryExecutionException(e);
+            }
+          });
+    } catch (FailsafeException fse) {
+      if (unwrapFailsafeException(fse) instanceof AsyncApiException) {
+        throw (AsyncApiException) unwrapFailsafeException(fse);
+      }
+      throw new RuntimeException(unwrapFailsafeException(fse)); // wrap as RuntimeException if not AsyncApiException
+    }
     return (BatchInfo) batchInfo;
+  }
+
+  private static Exception unwrapFailsafeException(FailsafeException e) {
+    if (e.getCause() instanceof Exception) {
+      Exception innerException = (Exception) e.getCause();
+      if (innerException instanceof SalesforceQueryExecutionException) {
+        return unwrapSalesforceQueryExecutionException((SalesforceQueryExecutionException) innerException);
+      }
+      return innerException;
+    }
+    return e;
+  }
+
+  private static Exception unwrapSalesforceQueryExecutionException(SalesforceQueryExecutionException e) {
+    if (e.getCause() instanceof AsyncApiException) {
+      return (AsyncApiException) e.getCause();
+    }
+    return e;
   }
 
   private BatchInfo createBatchFromStreamI(String query, JobInfo job) throws

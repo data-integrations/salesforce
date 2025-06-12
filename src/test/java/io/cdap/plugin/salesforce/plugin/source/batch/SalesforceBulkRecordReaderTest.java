@@ -321,7 +321,7 @@ public class SalesforceBulkRecordReaderTest {
    * The FailsafeException is thrown as retry limit gets exceeded.
    * The retry policy is correctly configured with the specified configurations.
    */
-  @Test(expected = FailsafeException.class)
+  @Test(expected = AsyncApiException.class)
   public void testRetryMechanism() throws Exception {
     Long initialRetryDuration = 5L;
     Long maxRetryDuration = 10L;
@@ -370,7 +370,7 @@ public class SalesforceBulkRecordReaderTest {
     reader.setupParser();
   }
 
-  @Test (expected = FailsafeException.class)
+  @Test (expected = AsyncApiException.class)
   public void testSetupParserWithoutRetry() throws Exception {
     String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";
