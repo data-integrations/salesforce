@@ -68,6 +68,8 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
   private static final String FIELD_CREATED_ON = "sys_created_on";
   private static final String FIELD_UPDATED_ON = "sys_updated_on";
   private static final String OAUTH_URL_TEMPLATE = "%s/oauth_token.do";
+  private static final String GLIDE_TIME_DATATYPE = "glide_time";
+  private static final String GLIDE_DATE_TIME_DATATYPE = "glide_date_time";
   private static final Gson GSON = new Gson();
   private final ServiceNowConnectorConfig conf;
   public static JsonArray serviceNowJsonResultArray;
@@ -309,6 +311,9 @@ public class ServiceNowTableAPIClientImpl extends RestAPIClient {
       if (valueType.equals(SourceValueType.SHOW_DISPLAY_VALUE) &&
         !Objects.equals(field.getType(), field.getInternalType())) {
         columns.add(new ServiceNowColumn(field.getName(), field.getType()));
+      } else if (valueType.equals(SourceValueType.SHOW_ACTUAL_VALUE) &&
+        GLIDE_TIME_DATATYPE.equalsIgnoreCase(field.getInternalType())) {
+        columns.add(new ServiceNowColumn(field.getName(), GLIDE_DATE_TIME_DATATYPE));
       } else {
         columns.add(new ServiceNowColumn(field.getName(), field.getInternalType()));
       }
