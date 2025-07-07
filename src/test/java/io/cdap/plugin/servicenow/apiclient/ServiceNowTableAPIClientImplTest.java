@@ -118,6 +118,42 @@ public class ServiceNowTableAPIClientImplTest {
   }
 
   @Test
+  public void testFetchTableSchema_GlideTimeFieldWithActualValueType() throws Exception {
+    ServiceNowConnectorConfig mockConfig = Mockito.mock(ServiceNowConnectorConfig.class);
+    ServiceNowTableAPIClientImpl impl = new ServiceNowTableAPIClientImpl(mockConfig);
+    ServiceNowTableAPIClientImpl implSpy = Mockito.spy(impl);
+
+    String jsonResponse = "{\n" +
+      "  \"result\": {\n" +
+      "    \"columns\": {\n" +
+      "      \"u_start_time\": {\n" +
+      "        \"label\": \"Start Time\",\n" +
+      "        \"name\": \"u_start_time\",\n" +
+      "        \"type\": \"string\",\n" +
+      "        \"internal_type\": \"glide_time\"\n" +
+      "      }\n" +
+      "    }\n" +
+      "  }\n" +
+      "}";
+
+    RestAPIResponse mockResponse = new RestAPIResponse(Collections.emptyMap(), jsonResponse, null);
+    Mockito.doReturn(mockResponse).when(implSpy).executeGetWithRetries(Mockito.any());
+
+    Schema schema = implSpy.fetchTableSchema("u_custom_table", "dummy-access-token",
+      SourceValueType.SHOW_ACTUAL_VALUE);
+
+    Assert.assertNotNull(schema);
+    Assert.assertEquals("record", schema.getDisplayName());
+    Assert.assertEquals(1, schema.getFields().size());
+
+    Schema.Field field = schema.getField("u_start_time");
+    Assert.assertNotNull(field);
+
+    Schema fieldSchema = field.getSchema().getUnionSchemas().get(0);
+    Assert.assertEquals(Schema.LogicalType.DATETIME, fieldSchema.getLogicalType());
+  }
+
+  @Test
   public void testFetchTableSchema_DisplayValueType() throws Exception {
     ServiceNowConnectorConfig mockConfig = Mockito.mock(ServiceNowConnectorConfig.class);
     ServiceNowTableAPIClientImpl impl = new ServiceNowTableAPIClientImpl(mockConfig);
