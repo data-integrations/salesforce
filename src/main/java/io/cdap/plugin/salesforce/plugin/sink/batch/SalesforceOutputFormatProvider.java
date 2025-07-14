@@ -28,7 +28,6 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
-import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +57,14 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceSinkConstants.CONFIG_MAX_RECORDS_PER_BATCH, config.getMaxRecordsPerBatch().toString())
       .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString())
       .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString())
-      .put(SalesforceSourceConstants.CONFIG_INITIAL_RETRY_DURATION, Long.toString(config.getInitialRetryDuration()))
-      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_DURATION, Long.toString(config.getMaxRetryDuration()))
-      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_COUNT, Integer.toString(config.getMaxRetryCount()))
-      .put(SalesforceSourceConstants.CONFIG_RETRY_REQUIRED, Boolean.toString(config.isRetryRequired()));
+      .put(SalesforceConstants.CONFIG_INITIAL_RETRY_DURATION,
+           Long.toString(config.getConnection().getInitialRetryDuration()))
+      .put(SalesforceConstants.CONFIG_MAX_RETRY_DURATION,
+           Long.toString(config.getConnection().getMaxRetryDuration()))
+      .put(SalesforceConstants.CONFIG_MAX_RETRY_COUNT,
+           Integer.toString(config.getConnection().getMaxRetryCount()))
+      .put(SalesforceConstants.CONFIG_RETRY_REQUIRED, Boolean.toString(config.getConnection()
+                                                                         .isRetryOnBackendError()));
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
@@ -89,8 +92,12 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
 
     try {
       BulkConnection bulkConnection = new BulkConnection(Authenticator.createConnectorConfig(credentials));
-      BulkConnectionRetryWrapper retryWrapper = new BulkConnectionRetryWrapper(bulkConnection, config.isRetryRequired(),
-        config.getInitialRetryDuration(), config.getMaxRetryDuration(), config.getMaxRetryCount());
+      BulkConnectionRetryWrapper retryWrapper =
+        new BulkConnectionRetryWrapper(bulkConnection,
+                                       config.getConnection().isRetryOnBackendError(),
+                                       config.getConnection().getInitialRetryDuration(),
+                                       config.getConnection().getMaxRetryDuration(),
+                                       config.getConnection().getMaxRetryCount());
       JobInfo job = SalesforceBulkUtil.createJob(retryWrapper, config.getSObject(), config.getOperationEnum(),
                                                  config.getExternalIdField(), config.getConcurrencyModeEnum(),
                                                  ContentType.ZIP_CSV);

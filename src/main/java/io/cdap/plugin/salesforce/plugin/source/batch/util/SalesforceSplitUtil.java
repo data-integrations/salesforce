@@ -25,7 +25,6 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
-import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import dev.failsafe.TimeoutExceededException;
@@ -36,12 +35,10 @@ import io.cdap.plugin.salesforce.SalesforceBulkUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
-import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBulkRecordReader;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
@@ -49,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * Utility class which provides methods to generate Salesforce splits for a query.
@@ -66,11 +64,8 @@ public final class SalesforceSplitUtil {
    * @return list of salesforce splits
    */
   public static List<SalesforceSplit> getQuerySplits(String query, BulkConnectionRetryWrapper bulkConnection,
-                                                     boolean enablePKChunk, String operation,
-                                                     Long initialRetryDuration, Long maxRetryDuration,
-                                                     Integer maxRetryCount, Boolean retryOnBackendError) {
-    return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation, initialRetryDuration, maxRetryDuration,
-                                maxRetryCount, retryOnBackendError))
+                                                     boolean enablePKChunk, String operation) {
+    return Stream.of(getBatches(query, bulkConnection, enablePKChunk, operation))
       .map(batch -> new SalesforceSplit(batch.getJobId(), batch.getId(), query))
       .collect(Collectors.toList());
   }
@@ -86,16 +81,13 @@ public final class SalesforceSplitUtil {
    * @return array of batch info
    */
   private static BatchInfo[] getBatches(String query, BulkConnectionRetryWrapper bulkConnection,
-                                        boolean enablePKChunk, String operation,
-                                        Long initialRetryDuration, Long maxRetryDuration,
-                                        Integer maxRetryCount, Boolean retryOnBackendError) {
+                                        boolean enablePKChunk, String operation) {
     try {
       if (!SalesforceQueryUtil.isQueryUnderLengthLimit(query)) {
         LOG.debug("Wide object query detected. Query length '{}'", query.length());
         query = SalesforceQueryUtil.createSObjectIdQuery(query);
       }
-      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk, operation, initialRetryDuration,
-                                         maxRetryDuration, maxRetryCount, retryOnBackendError);
+      BatchInfo[] batches = runBulkQuery(bulkConnection, query, enablePKChunk, operation);
       LOG.debug("Number of batches received from Salesforce: '{}'", batches.length);
       return batches;
     } catch (AsyncApiException | IOException | InterruptedException e) {
@@ -115,14 +107,12 @@ public final class SalesforceSplitUtil {
    * @throws IOException       failed to close the query
    */
   private static BatchInfo[] runBulkQuery(BulkConnectionRetryWrapper bulkConnection, String query,
-                                          boolean enablePKChunk, String operation,
-                                          Long initialRetryDuration, Long maxRetryDuration,
-                                          Integer maxRetryCount, Boolean retryOnBackendError)
+                                          boolean enablePKChunk, String operation)
     throws AsyncApiException, IOException, InterruptedException {
 
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     JobInfo job = SalesforceBulkUtil.createJob(bulkConnection, sObjectDescriptor.getName(), getOperationEnum(operation),
-      null, ConcurrencyMode.Parallel, ContentType.CSV);
+                                               null, ConcurrencyMode.Parallel, ContentType.CSV);
     BatchInfo batchInfo;
     try {
       batchInfo = bulkConnection.createBatchFromStream(query, job);
@@ -244,19 +234,22 @@ public final class SalesforceSplitUtil {
   }
 
   public static RetryPolicy<Object> getRetryPolicy(Long initialRetryDuration, Long maxRetryDuration,
-                                                    Integer maxRetryCount) {
+                                                   Integer maxRetryCount, Boolean retryOnBackendError) {
     // Exponential backoff with initial retry of 5 seconds and max retry of 80 seconds.
-    return RetryPolicy.builder()
-      .handle(SalesforceQueryExecutionException.class)
-      .withBackoff(Duration.ofSeconds(initialRetryDuration), Duration.ofSeconds(maxRetryDuration), 2)
-      .withMaxRetries(maxRetryCount)
-      .onRetry(event -> {
-        Throwable t = event.getLastException();
-        LOG.warn("Attempt #{} failed while executing job with error: {}", event.getAttemptCount(), t.getMessage(), t);
-        LOG.debug("Retrying Salesforce Bulk Query. Retry count: {}", event.getAttemptCount());
-      })
-      .onSuccess(event -> LOG.debug("Salesforce Bulk Query executed successfully."))
-      .onRetriesExceeded(event -> LOG.error("Retry limit reached for Salesforce Bulk Query."))
-      .build();
+    if (retryOnBackendError) {
+      return RetryPolicy.builder()
+        .handle(SalesforceQueryExecutionException.class)
+        .withBackoff(Duration.ofSeconds(initialRetryDuration), Duration.ofSeconds(maxRetryDuration), 2)
+        .withMaxRetries(maxRetryCount)
+        .onRetry(event -> {
+          Throwable t = event.getLastException();
+          LOG.warn("Attempt #{} failed while executing job with error: {}", event.getAttemptCount(), t.getMessage(), t);
+          LOG.debug("Retrying Salesforce Bulk Query. Retry count: {}", event.getAttemptCount());
+        })
+        .onRetriesExceeded(event -> LOG.error("Retry limit reached for Salesforce Bulk Query."))
+        .build();
+    } else {
+      return RetryPolicy.builder().withMaxRetries(0).build();
+    }
   }
 }
