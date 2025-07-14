@@ -63,7 +63,7 @@ public class SObjectsDescribeResult {
       DescribeSObjectResult[] describeSObjectResults = connection.describeSObjects(partition.toArray(new String[0]));
       Stream.of(describeSObjectResults)
         .forEach(result -> addSObjectDescribe(result.getName(), result.getFields(), objectToFieldMap));
-    }
+      }
     return new SObjectsDescribeResult(objectToFieldMap);
   }
 
@@ -213,11 +213,7 @@ public class SObjectsDescribeResult {
     // if SObject describe result is absent in cache, try to obtain it from Salesforce
     if (describe == null) {
       describe = connection.describeSObject(name);
-      if (describe == null) {
-        throw new IllegalArgumentException("Unable to describe SObject: " + name);
-      }
     }
-    // store describe result in cache for future re-use
     cache.put(name.toLowerCase(), describe);
     return describe;
   }

@@ -38,17 +38,25 @@ public class AuthenticatorCredentials implements Serializable {
   private final Integer connectTimeout;
   private final Integer readTimeout;
   private final String proxyUrl;
+  private final Long initialRetryDuration;
+  private final Long maxRetryDuration;
+  private final Integer maxRetryCount;
+  private final Boolean retryOnBackendError;
 
   public AuthenticatorCredentials(@Nullable OAuthInfo oAuthInfo,
-                                   @Nullable String username,
-                                   @Nullable String password,
-                                   @Nullable String consumerKey,
-                                   @Nullable String consumerSecret,
-                                   @Nullable String loginUrl,
-                                   @Nullable GrantType grantType,
-                                   @Nullable Integer connectTimeout,
-                                   @Nullable Integer readTimeout,
-                                   @Nullable String proxyUrl) {
+                                  @Nullable String username,
+                                  @Nullable String password,
+                                  @Nullable String consumerKey,
+                                  @Nullable String consumerSecret,
+                                  @Nullable String loginUrl,
+                                  @Nullable GrantType grantType,
+                                  @Nullable Integer connectTimeout,
+                                  @Nullable Integer readTimeout,
+                                  @Nullable String proxyUrl,
+                                  @Nullable Long initialRetryDuration,
+                                  @Nullable Long maxRetryDuration,
+                                  @Nullable Integer maxRetryCount,
+                                  @Nullable Boolean retryOnBackendError) {
     this.oAuthInfo = oAuthInfo;
     this.username = username;
     this.password = password;
@@ -59,6 +67,10 @@ public class AuthenticatorCredentials implements Serializable {
     this.connectTimeout = connectTimeout;
     this.readTimeout = readTimeout;
     this.proxyUrl = proxyUrl;
+    this.retryOnBackendError = retryOnBackendError;
+    this.initialRetryDuration = initialRetryDuration;
+    this.maxRetryDuration = maxRetryDuration;
+    this.maxRetryCount = maxRetryCount;
   }
 
   @Nullable
@@ -110,6 +122,26 @@ public class AuthenticatorCredentials implements Serializable {
     return proxyUrl;
   }
 
+  @Nullable
+  public Long getInitialRetryDuration() {
+    return initialRetryDuration;
+  }
+
+  @Nullable
+  public Long getMaxRetryDuration() {
+    return maxRetryDuration;
+  }
+
+  @Nullable
+  public Integer getMaxRetryCount() {
+    return maxRetryCount;
+  }
+
+  @Nullable
+  public Boolean isRetryOnBackendError() {
+    return retryOnBackendError;
+  }
+
   /**
    * Builder for {@link AuthenticatorCredentials} with credentials for username-password OAuth flow, where
    * Salesforce OAuth {@link GrantType} is set as "password".
@@ -147,23 +179,37 @@ public class AuthenticatorCredentials implements Serializable {
    */
   public static AuthenticatorCredentials fromParameters(String username, String password,
                                                         String consumerKey, String consumerSecret, String loginUrl,
-                                                        Integer connectTimeout, Integer readTimeout, String proxyUrl) {
+                                                        Integer connectTimeout, Integer readTimeout, String proxyUrl,
+                                                        Long initialRetryDuration, Long maxRetryDuration,
+                                                        Integer maxRetryCount, Boolean retryOnBackendError) {
     AuthenticatorCredentials.Builder builder;
     if (username != null && password != null) {
       builder = AuthenticatorCredentials.getBuilder(username, password, consumerKey, consumerSecret, loginUrl);
     } else {
       builder = AuthenticatorCredentials.getBuilder(consumerKey, consumerSecret, loginUrl);
     }
-    return builder.setConnectTimeout(connectTimeout).setReadTimeout(readTimeout).setProxyUrl(proxyUrl).build();
+    return builder.setConnectTimeout(connectTimeout).setReadTimeout(readTimeout).setProxyUrl(proxyUrl)
+      .setInitialRetryDuration(initialRetryDuration)
+      .setMaxRetryDuration(maxRetryDuration)
+      .setMaxRetryCount(maxRetryCount)
+      .setRetryOnBackendError(retryOnBackendError)
+      .build();
   }
 
   /**
    * Create an instance of {@link AuthenticatorCredentials} from given {@link OAuthInfo} and parameters.
    */
   public static AuthenticatorCredentials fromParameters(OAuthInfo oAuthInfo,
-                                                        Integer connectTimeout, Integer readTimeout, String proxyUrl) {
+                                                        Integer connectTimeout, Integer readTimeout, String proxyUrl,
+                                                        Long initialRetryDuration, Long maxRetryDuration,
+                                                        Integer maxRetryCount, Boolean retryOnBackendError) {
     return AuthenticatorCredentials.getBuilder(oAuthInfo)
-            .setConnectTimeout(connectTimeout).setReadTimeout(readTimeout).setProxyUrl(proxyUrl).build();
+      .setConnectTimeout(connectTimeout).setReadTimeout(readTimeout).setProxyUrl(proxyUrl)
+      .setInitialRetryDuration(initialRetryDuration)
+      .setMaxRetryDuration(maxRetryDuration)
+      .setMaxRetryCount(maxRetryCount)
+      .setRetryOnBackendError(retryOnBackendError)
+      .build();
   }
 
   @Override
@@ -185,13 +231,18 @@ public class AuthenticatorCredentials implements Serializable {
       Objects.equals(connectTimeout, that.connectTimeout) &&
       Objects.equals(readTimeout, that.readTimeout) &&
       Objects.equals(proxyUrl, that.proxyUrl) &&
-      Objects.equals(grantType, that.grantType);
+      Objects.equals(grantType, that.grantType) &&
+      Objects.equals(retryOnBackendError, that.retryOnBackendError) &&
+      Objects.equals(initialRetryDuration, that.initialRetryDuration) &&
+      Objects.equals(maxRetryDuration, that.maxRetryDuration) &&
+      Objects.equals(maxRetryCount, that.maxRetryCount);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(username, password, consumerKey, consumerSecret, loginUrl, connectTimeout, readTimeout,
-                        proxyUrl, grantType);
+                        proxyUrl, grantType, retryOnBackendError, initialRetryDuration, maxRetryDuration,
+                        maxRetryCount);
   }
 
   /**
@@ -208,6 +259,10 @@ public class AuthenticatorCredentials implements Serializable {
     private Integer connectTimeout;
     private Integer readTimeout;
     private String proxyUrl;
+    private Long initialRetryDuration;
+    private Long maxRetryDuration;
+    private Integer maxRetryCount;
+    private Boolean retryOnBackendError;
 
     /**
      * Create an instance of {@link AuthenticatorCredentials} with credentials for username-password OAuth flow, where
@@ -256,9 +311,30 @@ public class AuthenticatorCredentials implements Serializable {
       return this;
     }
 
+    public Builder setInitialRetryDuration(Long initialRetryDuration) {
+      this.initialRetryDuration = initialRetryDuration;
+      return this;
+    }
+
+    public Builder setMaxRetryDuration(Long maxRetryDuration) {
+      this.maxRetryDuration = maxRetryDuration;
+      return this;
+    }
+
+    public Builder setMaxRetryCount(Integer maxRetryCount) {
+      this.maxRetryCount = maxRetryCount;
+      return this;
+    }
+
+    public Builder setRetryOnBackendError(Boolean retryOnBackendError) {
+      this.retryOnBackendError = retryOnBackendError;
+      return this;
+    }
+
     public AuthenticatorCredentials build() {
       return new AuthenticatorCredentials(oAuthInfo, username, password, consumerKey, consumerSecret,
-              loginUrl, grantType, connectTimeout, readTimeout, proxyUrl);
+                                          loginUrl, grantType, connectTimeout, readTimeout, proxyUrl,
+                                          initialRetryDuration, maxRetryDuration, maxRetryCount, retryOnBackendError);
     }
   }
 

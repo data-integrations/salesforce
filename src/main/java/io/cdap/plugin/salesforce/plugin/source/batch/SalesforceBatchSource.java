@@ -165,13 +165,13 @@ public class SalesforceBatchSource extends
       bulkConnection.addHeader(SalesforceSourceConstants.HEADER_ENABLE_PK_CHUNK,
           String.join(";", chunkHeaderValues));
     }
-    BulkConnectionRetryWrapper bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection,
-      config.isRetryRequired(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-      config.getMaxRetryCount());
-    List<SalesforceSplit> querySplits = SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper,
-        enablePKChunk, config.getOperation(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-          config.getMaxRetryCount(), config.isRetryRequired());
-    return querySplits;
+    BulkConnectionRetryWrapper bulkConnectionRetryWrapper =
+      new BulkConnectionRetryWrapper(bulkConnection,
+                                     config.getConnection().isRetryOnBackendError(),
+                                     config.getConnection().getInitialRetryDuration(),
+                                     config.getConnection().getMaxRetryDuration(),
+                                     config.getConnection().getMaxRetryCount());
+    return SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper, enablePKChunk, config.getOperation());
   }
 
   @Override
@@ -215,10 +215,15 @@ public class SalesforceBatchSource extends
     String query = config.getQuery(System.currentTimeMillis(), oAuthInfo);
     SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromQuery(query);
     try {
-      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                          config.getConnection().getConnectTimeout(),
-                                                                          config.getConnection().getReadTimeout(),
-                                                                          config.getConnection().getProxyUrl());
+      AuthenticatorCredentials credentials =
+        AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                config.getConnection().getConnectTimeout(),
+                                                config.getConnection().getReadTimeout(),
+                                                config.getConnection().getProxyUrl(),
+                                                config.getConnection().getInitialRetryDuration(),
+                                                config.getConnection().getMaxRetryDuration(),
+                                                config.getConnection().getMaxRetryCount(),
+                                                config.getConnection().isRetryOnBackendError());
       return SalesforceSchemaUtil.getSchema(credentials, sObjectDescriptor, setAllFieldsNullable);
     } catch (ConnectionException e) {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

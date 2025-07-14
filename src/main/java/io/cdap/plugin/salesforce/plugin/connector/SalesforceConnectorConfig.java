@@ -47,9 +47,13 @@ public class SalesforceConnectorConfig extends SalesforceConnectorBaseConfig {
                                    @Nullable Integer connectTimeout,
                                    @Nullable Integer readTimeout,
                                    @Nullable OAuthInfo oAuthInfo,
-                                   @Nullable String proxyUrl) {
+                                   @Nullable String proxyUrl,
+                                   @Nullable Long initialRetryDuration,
+                                   @Nullable Long maxRetryDuration,
+                                   @Nullable Integer maxRetryCount,
+                                   @Nullable Boolean retryOnBackendError) {
     super(consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout, readTimeout,
-          proxyUrl);
+          proxyUrl, initialRetryDuration, maxRetryDuration, maxRetryCount, retryOnBackendError);
     this.oAuthInfo = oAuthInfo;
   }
 

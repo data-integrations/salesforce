@@ -87,6 +87,22 @@ public class SalesforceConnectorInfo {
     return config.getProxyUrl();
   }
 
+  public Long getInitialRetryDuration() {
+    return config.getInitialRetryDuration();
+  }
+
+  public Long getMaxRetryDuration() {
+    return config.getMaxRetryDuration();
+  }
+
+  public Integer getMaxRetryCount() {
+    return config.getMaxRetryCount();
+  }
+
+  public Boolean isRetryOnBackendError() {
+    return config.isRetryOnBackendError();
+  }
+
   public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     try {
       validateConnection(oAuthInfo);
@@ -102,11 +118,16 @@ public class SalesforceConnectorInfo {
     OAuthInfo oAuthInfo = getOAuthInfo();
     if (oAuthInfo != null) {
       return AuthenticatorCredentials.fromParameters(
-              oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl());
+        oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl(),
+        config.getInitialRetryDuration(), config.getMaxRetryDuration(), config.getMaxRetryCount(),
+        config.isRetryOnBackendError());
     }
     return AuthenticatorCredentials.fromParameters(config.getUsername(), config.getPassword(), config.getConsumerKey(),
                                         config.getConsumerSecret(), config.getLoginUrl(), config.getConnectTimeout(),
-                                        config.getReadTimeoutInMillis(), config.getProxyUrl());
+                                                   config.getReadTimeoutInMillis(), config.getProxyUrl(),
+                                                   config.getInitialRetryDuration(), config.getMaxRetryDuration(),
+                                                   config.getMaxRetryCount(),
+                                                   config.isRetryOnBackendError());
   }
 
   /**
@@ -141,7 +162,9 @@ public class SalesforceConnectorInfo {
       return;
     }
     AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
-            oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl());
+      oAuthInfo, config.getConnectTimeout(), config.getReadTimeoutInMillis(), config.getProxyUrl(),
+      config.getInitialRetryDuration(), config.getMaxRetryDuration(), config.getMaxRetryCount(),
+      config.isRetryOnBackendError());
 
     try {
       SalesforceConnectionUtil.getPartnerConnection(credentials);
