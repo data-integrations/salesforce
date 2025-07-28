@@ -17,6 +17,10 @@ package io.cdap.plugin.salesforce;
 
 import io.cdap.cdap.api.plugin.PluginConfig;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -63,4 +67,17 @@ public class SalesforceConstants {
 
   public static Function<PluginConfig, Boolean> isOAuthMacroFunction = config -> config.containsMacro(
     PROPERTY_OAUTH_INFO);
+
+  // Below is the list of Objects not supported by Bulk API. Attachment, ContentVersion, Document, StaticResource,
+  // SControl, EmailCapture, MailmergeTemplate contains binary fields which will cause the batch read to fail.
+  public static final Set<String> UNSUPPORTED_BULK_API_OBJECTS = Collections.unmodifiableSet(
+    new HashSet<>(Arrays.asList(
+      "Attachment", "ContentVersion", "Document", "StaticResource", "SControl",
+      "EmailCapture", "MailmergeTemplate", "AcceptedEventRelation", "CaseStatus",
+      "ContentFolderItem", "ContractStatus", "DeclinedEventRelation",
+      "FieldSecurityClassification", "OrderStatus", "PartnerRole", "RecentlyViewed",
+      "SolutionStatus", "TaskPriority", "TaskStatus", "UndecidedEventRelation",
+      "UserRecordAccess", "WorkOrderLineItemStatus", "WorkOrderStatus"
+    )));
+
 }

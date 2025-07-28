@@ -122,7 +122,9 @@ public class SalesforceConnector implements DirectConnector {
         boolean isQueryable = dgr.getSobjects()[i].isQueryable();
 
         // Continue in case of returning only queryable sObjects and the current sObject is non-queryable.
-        if (onlyReturnQueryableObjects && !isQueryable) {
+        // Continue if sObject is not supported by Bulk APIs
+        if (onlyReturnQueryableObjects &&
+          (!isQueryable || SalesforceConstants.UNSUPPORTED_BULK_API_OBJECTS.contains(name))) {
           continue;
         }
 
