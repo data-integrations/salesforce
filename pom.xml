@@ -65,7 +65,7 @@
     <hadoop.version>2.10.2</hadoop.version>
     <spark2.version>2.1.3</spark2.version>
     <hydrator.version>2.10.0</hydrator.version>
-    <commons.version>3.8.1</commons.version>
+    <commons.version>3.18.0</commons.version>
     <salesforce.api.version>62.0.0</salesforce.api.version>
     <cometd.java.client.version>4.0.0</cometd.java.client.version>
     <antlr.version>4.7.2</antlr.version>
