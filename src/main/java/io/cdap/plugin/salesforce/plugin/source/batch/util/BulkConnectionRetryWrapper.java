@@ -64,7 +64,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.createJob(jobInfo);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (JobInfo) resultJobInfo;
@@ -80,7 +80,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.getJobStatus(jobId);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (JobInfo) resultJobInfo;
@@ -97,7 +97,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.updateJob(jobInfo);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
   }
@@ -112,7 +112,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.getBatchInfoList(jobId);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (BatchInfoList) batchInfoList;
@@ -128,7 +128,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.getBatchInfo(jobId, batchId);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (BatchInfo) batchInfo;
@@ -144,7 +144,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.getBatchResultStream(jobId, batchId);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (InputStream) inputStream;
@@ -160,7 +160,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (InputStream) inputStream;
@@ -177,7 +177,7 @@ public class BulkConnectionRetryWrapper {
           try {
             return createBatchFromStreamI(query, job);
           } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e.getMessage());
+            throw new SalesforceQueryExecutionException(e);
           }
         });
     return (BatchInfo) batchInfo;
