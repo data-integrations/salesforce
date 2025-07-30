@@ -246,6 +246,12 @@
       <groupId>com.force.api</groupId>
       <artifactId>force-wsc</artifactId>
       <version>${salesforce.api.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.force.api</groupId>
