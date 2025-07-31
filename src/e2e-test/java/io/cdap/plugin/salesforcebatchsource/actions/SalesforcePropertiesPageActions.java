@@ -128,10 +128,11 @@ public class SalesforcePropertiesPageActions {
 
   private static AuthenticatorCredentials setAuthenticationCredentialsOfAdminUser() {
     return new AuthenticatorCredentials(null, PluginPropertyUtils.pluginProp("admin.username"),
-      PluginPropertyUtils.pluginProp("admin.password"),
-      PluginPropertyUtils.pluginProp("admin.consumer.key"),
-      PluginPropertyUtils.pluginProp("admin.consumer.secret"),
-      PluginPropertyUtils.pluginProp("login.url"), null, null, null, null
+                                        PluginPropertyUtils.pluginProp("admin.password"),
+                                        PluginPropertyUtils.pluginProp("admin.consumer.key"),
+                                        PluginPropertyUtils.pluginProp("admin.consumer.secret"),
+                                        PluginPropertyUtils.pluginProp("login.url"), null, null, null, null,
+                                        null, null, null, true
     );
   }
 
