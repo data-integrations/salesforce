@@ -35,7 +35,7 @@ public class AuthenticatorCredentialsTest {
                 USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
 
         AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
-                USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL, null, null, null);
+          USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL, null, null, null, null, null, null, null);
 
         assertEquals(expected, actual);
     }
@@ -46,7 +46,7 @@ public class AuthenticatorCredentialsTest {
                 CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
 
         AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
-                null, null, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL, null, null, null);
+          null, null, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL, null, null, null, null, null, null, null);
 
         assertEquals(expected, actual);
     }
@@ -55,8 +55,8 @@ public class AuthenticatorCredentialsTest {
     public void buildFromParameters_OAuthFlow() {
         AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(O_AUTH_INFO).build();
 
-        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(O_AUTH_INFO, null, null, null);
-
+        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(O_AUTH_INFO, null, null, null, null,
+                                                                                  null, null, null);
         assertEquals(expected, actual);
     }
 }

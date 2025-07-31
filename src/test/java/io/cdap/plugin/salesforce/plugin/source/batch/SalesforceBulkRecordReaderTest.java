@@ -24,6 +24,7 @@ import dev.failsafe.FailsafeException;
 import io.cdap.cdap.api.data.format.StructuredRecord;
 import io.cdap.cdap.api.data.schema.Schema;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -293,10 +294,13 @@ public class SalesforceBulkRecordReaderTest {
     }
 
     BulkConnection mock = Mockito.mock(BulkConnection.class);
+    BulkConnectionRetryWrapper retryWrappermock = Mockito.mock(BulkConnectionRetryWrapper.class);
     SalesforceBulkRecordReader reader = new SalesforceBulkRecordReader(schema, jobId, batchId, resultIds, mock);
     FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnection"), mock);
+    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("bulkConnectionRetryWrapper"),
+                         retryWrappermock);
     for (int i = 0; i < csvStrings.length; i++) {
-      Mockito.when(mock.getQueryResultStream(jobId, batchId, resultIds[i]))
+      Mockito.when(retryWrappermock.getQueryResultStream(jobId, batchId, resultIds[i]))
         .thenReturn(new ByteArrayInputStream(csvStrings[i].getBytes(StandardCharsets.UTF_8)));
     }
     reader.setupParser();
@@ -342,7 +346,7 @@ public class SalesforceBulkRecordReaderTest {
     );
 
     Assert.assertEquals(5, SalesforceSplitUtil.getRetryPolicy
-      (initialRetryDuration, maxRetryDuration, maxRetryCount).getConfig().getMaxRetries());
+      (initialRetryDuration, maxRetryDuration, maxRetryCount, true).getConfig().getMaxRetries());
       assertRecordReaderOutputRecordsRetryMechanism(new String[]{csvString1, csvString2}, schema);
   }
 
@@ -364,13 +368,10 @@ public class SalesforceBulkRecordReaderTest {
         .thenThrow(salesforceQueryExecutionException);
       Mockito.when(salesforceQueryExecutionException.getExceptionCode()).thenReturn(AsyncExceptionCode.Unknown);
     }
-    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("initialRetryDuration")
-      , 1L);
-    FieldSetter.setField(reader, SalesforceBulkRecordReader.class.getDeclaredField("maxRetryDuration"), 10L);
     reader.setupParser();
   }
 
-  @Test (expected = FailsafeException.class)
+  @Test(expected = AsyncApiException.class)
   public void testSetupParserWithoutRetry() throws Exception {
     String csvString1 = "\"Id\",\"IsDeleted\",\"ExpectedRevenue\",\"LastModifiedDate\",\"CloseDate\",\"Time\"\n" +
       "\"0061i000003XNcBAAW\",\"false\",\"1500.0\",\"2019-02-22T07:03:21.000Z\",\"2019-01-01\",\"12:00:30.000Z\"\n";

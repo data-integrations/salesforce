@@ -86,6 +86,26 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   @Nullable
   private final String loginUrl;
 
+  @Name(SalesforceConstants.PROPERTY_INITIAL_RETRY_DURATION)
+  @Description("Time taken for the first retry. Default is 5 seconds.")
+  @Nullable
+  private final Long initialRetryDuration;
+
+  @Name(SalesforceConstants.PROPERTY_MAX_RETRY_DURATION)
+  @Description("Maximum time in seconds retries can take. Default is 80 seconds.")
+  @Nullable
+  private final Long maxRetryDuration;
+
+  @Name(SalesforceConstants.PROPERTY_MAX_RETRY_COUNT)
+  @Description("Maximum number of retries allowed. Default is 5.")
+  @Nullable
+  private final Integer maxRetryCount;
+
+  @Name(SalesforceConstants.PROPERTY_RETRY_REQUIRED)
+  @Description("Retry is required or not for some of the internal call failures")
+  @Nullable
+  private final Boolean retryOnBackendError;
+
   public SalesforceConnectorBaseConfig(@Nullable String consumerKey,
                                        @Nullable String consumerSecret,
                                        @Nullable String username,
@@ -94,7 +114,11 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
                                        @Nullable String securityToken,
                                        @Nullable Integer connectTimeout,
                                        @Nullable Integer readTimeout,
-                                       @Nullable String proxyUrl) {
+                                       @Nullable String proxyUrl,
+                                       @Nullable Long initialRetryDuration,
+                                       @Nullable Long maxRetryDuration,
+                                       @Nullable Integer maxRetryCount,
+                                       @Nullable Boolean retryOnBackendError) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -104,6 +128,10 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     this.connectTimeout = connectTimeout;
     this.readTimeout = readTimeout;
     this.proxyUrl = proxyUrl;
+    this.initialRetryDuration = initialRetryDuration;
+    this.maxRetryDuration = maxRetryDuration;
+    this.retryOnBackendError = retryOnBackendError;
+    this.maxRetryCount = maxRetryCount;
   }
 
   @Nullable
@@ -129,6 +157,23 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   @Nullable
   public String getLoginUrl() {
     return loginUrl;
+  }
+
+  public Long getInitialRetryDuration() {
+    return initialRetryDuration == null ? SalesforceConstants.DEFAULT_INITIAL_RETRY_DURATION_SECONDS :
+      initialRetryDuration;
+  }
+
+  public Long getMaxRetryDuration() {
+    return maxRetryDuration == null ? SalesforceConstants.DEFAULT_MAX_RETRY_DURATION_SECONDS : maxRetryDuration;
+  }
+
+  public Integer getMaxRetryCount() {
+    return maxRetryCount == null ? SalesforceConstants.DEFAULT_MAX_RETRY_COUNT : maxRetryCount;
+  }
+
+  public Boolean isRetryOnBackendError() {
+    return retryOnBackendError == null || retryOnBackendError;
   }
 
   @Nullable
@@ -163,7 +208,8 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
       return;
     }
     AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
-            oAuthInfo, this.getConnectTimeout(), this.getReadTimeoutInMillis(), getProxyUrl());
+      oAuthInfo, this.getConnectTimeout(), this.getReadTimeoutInMillis(), getProxyUrl(),
+      getInitialRetryDuration(), getMaxRetryDuration(), getMaxRetryCount(), isRetryOnBackendError());
     try {
       SalesforceConnectionUtil.getPartnerConnection(credentials);
     } catch (ConnectionException e) {

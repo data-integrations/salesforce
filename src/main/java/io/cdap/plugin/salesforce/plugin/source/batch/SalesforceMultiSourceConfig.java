@@ -176,10 +176,15 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
     }
     DescribeGlobalResult describeGlobalResult;
     try {
-      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                          getConnection().getConnectTimeout(),
-                                                                          this.getConnection().getReadTimeout(),
-                                                                          this.getConnection().getProxyUrl());
+      AuthenticatorCredentials credentials =
+        AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                getConnection().getConnectTimeout(),
+                                                this.getConnection().getReadTimeout(),
+                                                this.getConnection().getProxyUrl(),
+                                                this.getConnection().getInitialRetryDuration(),
+                                                this.getConnection().getMaxRetryDuration(),
+                                                this.getConnection().getMaxRetryCount(),
+                                                this.getConnection().isRetryOnBackendError());
       PartnerConnection partnerConnection =
         SalesforceConnectionUtil.getPartnerConnection(credentials);
       describeGlobalResult = partnerConnection.describeGlobal();

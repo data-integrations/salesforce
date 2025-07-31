@@ -39,6 +39,10 @@ public class SalesforceConstants {
   public static final String PROPERTY_SECURITY_TOKEN = "securityToken";
   public static final String PROPERTY_LOGIN_URL = "loginUrl";
   public static final String PROPERTY_OAUTH_INFO = "oAuthInfo";
+  public static final String PROPERTY_INITIAL_RETRY_DURATION = "initialRetryDuration";
+  public static final String PROPERTY_MAX_RETRY_DURATION = "maxRetryDuration";
+  public static final String PROPERTY_MAX_RETRY_COUNT = "maxRetryCount";
+  public static final String PROPERTY_RETRY_REQUIRED = "retryOnBackendError";
 
   public static final String CONFIG_OAUTH_TOKEN = "mapred.salesforce.oauth.token";
   public static final String CONFIG_OAUTH_INSTANCE_URL = "mapred.salesforce.oauth.instance.url";
@@ -57,6 +61,10 @@ public class SalesforceConstants {
   public static final String PROPERTY_READ_TIMEOUT = "readTimeout";
   public static final String CONFIG_CONNECT_TIMEOUT = "mapred.salesforce.connectTimeout";
   public static final String CONFIG_READ_TIMEOUT = "mapred.salesforce.readTimeout";
+  public static final String CONFIG_INITIAL_RETRY_DURATION = "mapred.salesforce.initialRetryDuration";
+  public static final String CONFIG_MAX_RETRY_DURATION = "mapred.salesforce.maxRetryDuration";
+  public static final String CONFIG_MAX_RETRY_COUNT = "mapred.salesforce.maxRetryCount";
+  public static final String CONFIG_RETRY_REQUIRED = "mapred.salesforce.retryOnBackendError";
 
   public static final String PROPERTY_PROXY_URL = "proxyUrl";
   public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";
@@ -67,6 +75,11 @@ public class SalesforceConstants {
 
   public static Function<PluginConfig, Boolean> isOAuthMacroFunction = config -> config.containsMacro(
     PROPERTY_OAUTH_INFO);
+  public static final long DEFAULT_INITIAL_RETRY_DURATION_SECONDS = 5L;
+
+  public static final long DEFAULT_MAX_RETRY_DURATION_SECONDS = 80L;
+
+  public static final int DEFAULT_MAX_RETRY_COUNT = 5;
 
   // Below is the list of Objects not supported by Bulk API. Attachment, ContentVersion, Document, StaticResource,
   // SControl, EmailCapture, MailmergeTemplate contains binary fields which will cause the batch read to fail.

@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * RecordReader implementation for wide SOQL queries. Reads a single Salesforce batch of SObject Id's from bulk job

@@ -15,7 +15,9 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch.util;
 
+import com.google.common.collect.ImmutableSet;
 import com.sforce.async.AsyncApiException;
+import com.sforce.async.AsyncExceptionCode;
 import com.sforce.async.BatchInfo;
 import com.sforce.async.BatchInfoList;
 import com.sforce.async.BulkConnection;
@@ -24,185 +26,100 @@ import com.sforce.ws.ConnectorConfig;
 import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
-import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceBulkRecordReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * BulkConnectionRetryWrapper class to retry all the salesforce api calls in case of failure.
  */
 public class BulkConnectionRetryWrapper {
-
+  public static final Set<AsyncExceptionCode> RETRY_ON_REASON = ImmutableSet.of(AsyncExceptionCode.Unknown,
+                                                                                AsyncExceptionCode.InternalServerError,
+                                                                                AsyncExceptionCode.ClientInputError,
+                                                                                AsyncExceptionCode.Timeout);
   private final BulkConnection bulkConnection;
-  private final RetryPolicy retryPolicy;
+  private final RetryPolicy<Object> retryPolicy;
   private static final Logger LOG = LoggerFactory.getLogger(BulkConnectionRetryWrapper.class);
-  private final boolean retryOnBackendError;
-  private final long maxRetryDuration;
-  private final int maxRetryCount;
-  private final long initialRetryDuration;
 
-  public BulkConnectionRetryWrapper(BulkConnection bulkConnection, boolean isRetryRequired,
+  public BulkConnectionRetryWrapper(BulkConnection bulkConnection, boolean retryOnBackendError,
                                     long initialRetryDuration, long maxRetryDuration, int maxRetryCount) {
     this.bulkConnection = bulkConnection;
-    this.retryOnBackendError = isRetryRequired;
-    this.initialRetryDuration = initialRetryDuration;
-    this.maxRetryDuration = maxRetryDuration;
-    this.maxRetryCount = maxRetryCount;
-    this.retryPolicy = SalesforceSplitUtil.getRetryPolicy(initialRetryDuration, maxRetryDuration, maxRetryCount);
+    this.retryPolicy = SalesforceSplitUtil.getRetryPolicy(initialRetryDuration, maxRetryDuration, maxRetryCount,
+                                                          retryOnBackendError);
   }
 
   public JobInfo createJob(JobInfo jobInfo) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.createJob(jobInfo);
-    }
-    Object resultJobInfo = Failsafe.with(retryPolicy).onFailure(event -> LOG.info("Failed while creating job."))
-        .get(() -> {
-          try {
-            return bulkConnection.createJob(jobInfo);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (JobInfo) resultJobInfo;
+    return executeWithRetry(() -> bulkConnection.createJob(jobInfo), "Failed while creating job.");
   }
 
   public JobInfo getJobStatus(String jobId) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.getJobStatus(jobId);
-    }
-    Object resultJobInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting job status."))
-        .get(() -> {
-          try {
-            return bulkConnection.getJobStatus(jobId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (JobInfo) resultJobInfo;
-  }
-
-  public void updateJob(JobInfo jobInfo) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      bulkConnection.updateJob(jobInfo);
-      return;
-    }
-    Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while updating job."))
-        .get(() -> {
-          try {
-            return bulkConnection.updateJob(jobInfo);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
+    return executeWithRetry(() -> bulkConnection.getJobStatus(jobId), "Failed while getting job status.");
   }
 
   public BatchInfoList getBatchInfoList(String jobId) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.getBatchInfoList(jobId);
-    }
-    Object batchInfoList = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch info list."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchInfoList(jobId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (BatchInfoList) batchInfoList;
+    return executeWithRetry(() -> bulkConnection.getBatchInfoList(jobId), "Failed while getting batch info list.");
   }
 
   public BatchInfo getBatchInfo(String jobId, String batchId) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.getBatchInfo(jobId, batchId);
-    }
-    Object batchInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch status."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchInfo(jobId, batchId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (BatchInfo) batchInfo;
+    return executeWithRetry(() -> bulkConnection.getBatchInfo(jobId, batchId), "Failed while getting batch status.");
   }
 
   public InputStream getBatchResultStream(String jobId, String batchId) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.getBatchResultStream(jobId, batchId);
-    }
-    Object inputStream = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting batch result stream."))
-        .get(() -> {
-          try {
-            return bulkConnection.getBatchResultStream(jobId, batchId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (InputStream) inputStream;
+    return executeWithRetry(() -> bulkConnection.getBatchResultStream(jobId, batchId),
+                            "Failed while getting batch result stream.");
   }
 
   public InputStream getQueryResultStream(String jobId, String batchId, String resultId) throws AsyncApiException {
-    if (!retryOnBackendError) {
-      return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
-    }
-    Object inputStream = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while getting query result stream."))
-        .get(() -> {
-          try {
-            return bulkConnection.getQueryResultStream(jobId, batchId, resultId);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (InputStream) inputStream;
+    return executeWithRetry(() -> bulkConnection.getQueryResultStream(jobId, batchId, resultId),
+                            "Failed while getting query result stream.");
   }
 
   public BatchInfo createBatchFromStream(String query, JobInfo job) throws AsyncApiException,
     SalesforceQueryExecutionException, IOException {
-    if (!retryOnBackendError) {
-      return createBatchFromStreamI(query, job);
-    }
-    Object batchInfo = Failsafe.with(retryPolicy)
-        .onFailure(event -> LOG.info("Failed while creating batch from stream."))
-        .get(() -> {
-          try {
-            return createBatchFromStreamI(query, job);
-          } catch (AsyncApiException e) {
-            throw new SalesforceQueryExecutionException(e);
-          }
-        });
-    return (BatchInfo) batchInfo;
-  }
-
-  private BatchInfo createBatchFromStreamI(String query, JobInfo job) throws
-    SalesforceQueryExecutionException, IOException, AsyncApiException {
-    BatchInfo batchInfo = null;
     try (ByteArrayInputStream bout = new ByteArrayInputStream(query.getBytes())) {
-      batchInfo = bulkConnection.createBatchFromStream(job, bout);
-    } catch (AsyncApiException exception) {
-      LOG.warn("The bulk query job {} failed. Job State: {}.", job.getId(), job.getState());
-      if (SalesforceBulkRecordReader.RETRY_ON_REASON.contains(exception.getExceptionCode())) {
-        throw new SalesforceQueryExecutionException(exception);
-      }
-      throw exception;
+      return executeWithRetry(() -> bulkConnection.createBatchFromStream(job, bout),
+                              String.format("The bulk query job %s failed. Job State: %s.",
+                                            job.getId(), job.getState()));
     }
-    return batchInfo;
   }
 
   public ConnectorConfig getConfig() {
     return bulkConnection.getConfig();
   }
-  
-  public BulkConnection getBukConnection() {
-    return bulkConnection;
+
+  public String[] getQueryResultList(String jobId, String batchId)
+    throws AsyncApiException {
+    return executeWithRetry(() -> bulkConnection.getQueryResultList(jobId, batchId).getResult(),
+                            String.format("The bulk query job %s failed.", jobId));
+  }
+
+  private <T> T executeWithRetry(Callable<T> operation, String errorContext) throws AsyncApiException {
+    try {
+      return Failsafe.with(retryPolicy).get(() -> {
+        try {
+          T result = operation.call();
+          if (result == null) {
+            throw new IllegalArgumentException(errorContext);
+          }
+          return result;
+        } catch (AsyncApiException e) {
+          if (BulkConnectionRetryWrapper.RETRY_ON_REASON.contains(e.getExceptionCode())) {
+            throw new SalesforceQueryExecutionException(e);
+          }
+          throw e;
+        }
+      });
+    } catch (FailsafeException ex) {
+      if (ex.getCause() instanceof AsyncApiException) {
+        throw (AsyncApiException) ex.getCause();
+      }
+      throw ex;
+    }
   }
 }

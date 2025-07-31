@@ -31,6 +31,7 @@
   <suppress checks="RedundantModifier" files=".*[/\\]src[/\\]test[/\\]java[/\\].*" />
 
   <suppress files="com/sforce/async/BulkConnection\.java" checks=".*"/>
+  <suppress files="com/sforce/soap/partner/PartnerConnectionRetryWrapper\.java" checks=".*"/>
 
   <!-- copied from apache hadoop, won't fix style to keep diff minimal  -->
   <suppress checks=".*" files=".*[/\\]LocalJobRunnerWithFix.java" />

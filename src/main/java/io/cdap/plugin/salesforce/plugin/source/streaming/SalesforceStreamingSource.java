@@ -42,7 +42,6 @@ import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
-import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.spark.streaming.api.java.JavaDStream;
@@ -89,13 +88,22 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_PUSH_TOPIC_QUERY)
         && !config.containsMacro(SalesforceStreamingSourceConfig.PROPERTY_SOBJECT_NAME)
         && oAuthInfo != null) {
-        Schema schema = SalesforceSchemaUtil.getSchema(AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                                    config.getConnection()
-                                                                                      .getConnectTimeout(),
-                                                                                    config.getConnection()
-                                                                                      .getReadTimeout(),
-                                                                                    config.getConnection()
-                                                                                      .getProxyUrl()),
+        Schema schema =
+          SalesforceSchemaUtil.getSchema(AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                                                 config.getConnection()
+                                                                                   .getConnectTimeout(),
+                                                                                 config.getConnection()
+                                                                                   .getReadTimeout(),
+                                                                                 config.getConnection()
+                                                                                   .getProxyUrl(),
+                                                                                 config.getConnection()
+                                                                                   .getInitialRetryDuration(),
+                                                                                 config.getConnection()
+                                                                                   .getMaxRetryDuration(),
+                                                                                 config.getConnection()
+                                                                                   .getMaxRetryCount(),
+                                                                                 config.getConnection()
+                                                                                   .isRetryOnBackendError()),
                                                        SObjectDescriptor.fromQuery(query));
         pipelineConfigurer.getStageConfigurer().setOutputSchema(schema);
       } else {
@@ -133,8 +141,7 @@ public class SalesforceStreamingSource extends StreamingSource<StructuredRecord>
   @Path("outputSchema")
   public Schema outputSchema(SalesforceStreamingSourceConfig config) throws Exception {
     AuthenticatorCredentials authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
-    PartnerConnection partnerConnection = new PartnerConnection(
-      Authenticator.createConnectorConfig(authenticatorCredentials));
+    PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(authenticatorCredentials);
     SObject pushTopic =
       SalesforceStreamingSourceConfig.fetchPushTopicByName(partnerConnection, config.getPushTopicName());
 
