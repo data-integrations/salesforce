@@ -128,7 +128,7 @@ public class SalesforceConnector implements DirectConnector {
         // Continue in case of returning only queryable sObjects and the current sObject is non-queryable.
         // Continue if sObject is not supported by Bulk APIs
         if (onlyReturnQueryableObjects &&
-          (!isQueryable || SalesforceConstants.UNSUPPORTED_BULK_API_OBJECTS.contains(name))) {
+          (!isQueryable || SalesforceConstants.UNSUPPORTED_BULK_API_OBJECTS.contains(name.toLowerCase()))) {
           continue;
         }
 

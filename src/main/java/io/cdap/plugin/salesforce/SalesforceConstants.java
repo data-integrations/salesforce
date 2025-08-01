@@ -85,12 +85,12 @@ public class SalesforceConstants {
   // SControl, EmailCapture, MailmergeTemplate contains binary fields which will cause the batch read to fail.
   public static final Set<String> UNSUPPORTED_BULK_API_OBJECTS = Collections.unmodifiableSet(
     new HashSet<>(Arrays.asList(
-      "Attachment", "ContentVersion", "Document", "StaticResource", "SControl",
-      "EmailCapture", "MailmergeTemplate", "AcceptedEventRelation", "CaseStatus",
-      "ContentFolderItem", "ContractStatus", "DeclinedEventRelation",
-      "FieldSecurityClassification", "OrderStatus", "PartnerRole", "RecentlyViewed",
-      "SolutionStatus", "TaskPriority", "TaskStatus", "UndecidedEventRelation",
-      "UserRecordAccess", "WorkOrderLineItemStatus", "WorkOrderStatus"
+      "attachment", "contentversion", "document", "staticresource", "scontrol",
+      "emailcapture", "mailmergetemplate", "acceptedeventrelation", "casestatus",
+      "contentfolderitem", "contractstatus", "declinedeventrelation",
+      "fieldsecurityclassification", "orderstatus", "partnerrole", "recentlyviewed",
+      "solutionstatus", "taskpriority", "taskstatus", "undecidedeventrelation",
+      "userrecordaccess", "workorderlineitemstatus", "workorderstatus"
     )));
 
 }
