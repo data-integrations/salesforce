@@ -47,10 +47,11 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
     configBuilder.put(SalesforceSourceConstants.CONFIG_QUERY_SPLITS, GSON.toJson(querySplits))
       .put(SalesforceConstants.CONFIG_CONNECT_TIMEOUT, config.getConnection().getConnectTimeout().toString())
       .put(SalesforceConstants.CONFIG_READ_TIMEOUT, config.getConnection().getReadTimeout().toString())
-      .put(SalesforceSourceConstants.CONFIG_INITIAL_RETRY_DURATION, config.getInitialRetryDuration().toString())
-      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_DURATION, config.getMaxRetryDuration().toString())
-      .put(SalesforceSourceConstants.CONFIG_MAX_RETRY_COUNT, config.getMaxRetryCount().toString())
-      .put(SalesforceSourceConstants.CONFIG_RETRY_REQUIRED, config.isRetryRequired().toString());
+      .put(SalesforceConstants.CONFIG_INITIAL_RETRY_DURATION,
+           config.getConnection().getInitialRetryDuration().toString())
+      .put(SalesforceConstants.CONFIG_MAX_RETRY_DURATION, config.getConnection().getMaxRetryDuration().toString())
+      .put(SalesforceConstants.CONFIG_MAX_RETRY_COUNT, config.getConnection().getMaxRetryCount().toString())
+      .put(SalesforceConstants.CONFIG_RETRY_REQUIRED, config.getConnection().isRetryOnBackendError().toString());
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());

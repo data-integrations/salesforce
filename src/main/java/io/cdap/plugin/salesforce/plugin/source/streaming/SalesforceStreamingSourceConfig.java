@@ -35,7 +35,6 @@ import io.cdap.plugin.salesforce.SObjectFilterDescriptor;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
-import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorBaseConfig;
@@ -150,12 +149,18 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          @Nullable Integer readTimeout,
                                          @Nullable OAuthInfo oAuthInfo,
                                          @Nullable String proxyUrl,
-                                         @Nullable String schema) {
+                                         @Nullable String schema,
+                                         @Nullable Long initialRetryDuration,
+                                         @Nullable Long maxRetryDuration,
+                                         @Nullable Integer maxRetryCount,
+                                         @Nullable Boolean retryOnBackendError) {
     super(referenceName);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
+                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl,
+                                                    initialRetryDuration, maxRetryDuration, maxRetryCount,
+                                                    retryOnBackendError);
     this.schema = schema;
   }
 
@@ -232,11 +237,15 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
     }
 
     try {
-      PartnerConnection partnerConnection = new PartnerConnection(
-        Authenticator.createConnectorConfig(AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                         this.getConnection().getConnectTimeout(),
-                                                                         this.getConnection().getReadTimeout(),
-                                                                         this.connection.getProxyUrl())));
+      PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(
+        AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                this.getConnection().getConnectTimeout(),
+                                                this.getConnection().getReadTimeout(),
+                                                this.getConnection().getProxyUrl(),
+                                                this.getConnection().getInitialRetryDuration(),
+                                                this.getConnection().getMaxRetryDuration(),
+                                                this.getConnection().getMaxRetryCount(),
+                                                this.getConnection().isRetryOnBackendError()));
 
       SObject pushTopic = fetchPushTopicByName(partnerConnection, pushTopicName);
       String query = getQuery();

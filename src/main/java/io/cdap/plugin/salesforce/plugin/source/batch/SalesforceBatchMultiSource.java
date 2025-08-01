@@ -104,13 +104,15 @@ public class SalesforceBatchMultiSource extends BatchSource<Schema, Map<String, 
     String sObjectNameField = config.getSObjectNameField();
     authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-    BulkConnectionRetryWrapper bulkConnectionRetryWrapper = new BulkConnectionRetryWrapper(bulkConnection,
-      config.isRetryRequired(), config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-      config.getMaxRetryCount());
+    BulkConnectionRetryWrapper bulkConnectionRetryWrapper =
+      new BulkConnectionRetryWrapper(bulkConnection,
+                                     config.getConnection().isRetryOnBackendError(),
+                                     config.getConnection().getInitialRetryDuration(),
+                                     config.getConnection().getMaxRetryDuration(),
+                                     config.getConnection().getMaxRetryCount());
     List<SalesforceSplit> querySplits = queries.parallelStream()
-      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper, false, config.getOperation(),
-                                                       config.getInitialRetryDuration(), config.getMaxRetryDuration(),
-                                                       config.getMaxRetryCount(), config.isRetryRequired()))
+      .map(query -> SalesforceSplitUtil.getQuerySplits(query, bulkConnectionRetryWrapper, false,
+                                                       config.getOperation()))
       .flatMap(Collection::stream).collect(Collectors.toList());
     // store the jobIds so be used in onRunFinish() to close the connections
     querySplits.parallelStream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));

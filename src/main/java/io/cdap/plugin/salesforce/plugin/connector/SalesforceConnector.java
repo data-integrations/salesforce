@@ -109,7 +109,11 @@ public class SalesforceConnector implements DirectConnector {
                                                                         config.getLoginUrl(),
                                                                         config.getConnectTimeout(),
                                                                         config.getReadTimeoutInMillis(),
-                                                                        config.getProxyUrl());
+                                                                        config.getProxyUrl(),
+                                                                        config.getInitialRetryDuration(),
+                                                                        config.getMaxRetryDuration(),
+                                                                        config.getMaxRetryCount(),
+                                                                        config.isRetryOnBackendError());
     BrowseDetail.Builder browseDetailBuilder = BrowseDetail.builder();
     int count = 0;
     try {
@@ -210,7 +214,6 @@ public class SalesforceConnector implements DirectConnector {
       record = transformer.transform(schema, soapRecordToMapTransformer.transformToMap(sObjects[i], sObjectDescriptor));
       samples.add(record);
     }
-
     return samples;
   }
 

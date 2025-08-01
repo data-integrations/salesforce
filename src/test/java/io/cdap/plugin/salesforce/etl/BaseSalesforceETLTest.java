@@ -74,6 +74,14 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
                                                                      "30000");
   protected static final String READ_TIMEOUT = System.getProperty("salesforce.test.readTimeout",
                                                                   "3600");
+  protected static final String INITIAL_RETRY_DURATION = System.getProperty("salesforce.test.initialRetryDuration",
+                                                                            "5");
+  protected static final String MAX_RETRY_DURATION = System.getProperty("salesforce.test.maxRetryDuration",
+                                                                        "80");
+  protected static final String MAX_RETRY_COUNT = System.getProperty("salesforce.test.maxRetryCount",
+                                                                     "5");
+  protected static final String RETRY_ON_BACKEND_ERROR = System.getProperty("salesforce.test.retryOnBackendError",
+                                                                            "true");
   public static final int SOAP_RECORDS_LIMIT = 200;
 
   @Rule
@@ -92,9 +100,14 @@ public abstract class BaseSalesforceETLTest extends HydratorTestBase {
     }
     Integer connectTimeout = Integer.parseInt(CONNECT_TIMEOUT);
     Integer readTimeout = Integer.parseInt(READ_TIMEOUT);
-    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(USERNAME, PASSWORD, CONSUMER_KEY,
-                                                                        CONSUMER_SECRET, LOGIN_URL, connectTimeout,
-                                                                        readTimeout, null);
+    AuthenticatorCredentials credentials =
+      AuthenticatorCredentials.fromParameters(USERNAME, PASSWORD, CONSUMER_KEY,
+                                              CONSUMER_SECRET, LOGIN_URL, connectTimeout,
+                                              readTimeout, null,
+                                              Long.parseLong(INITIAL_RETRY_DURATION),
+                                              Long.parseLong(MAX_RETRY_DURATION),
+                                              Integer.parseInt(MAX_RETRY_COUNT),
+                                              Boolean.parseBoolean(RETRY_ON_BACKEND_ERROR));
     partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
   }
 

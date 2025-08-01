@@ -30,7 +30,6 @@ import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.SalesforceSchemaUtil;
-import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.parser.SOQLParsingException;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
@@ -226,10 +225,15 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private void validateCompoundFields(String sObjectName, List<String> fieldNames, FailureCollector collector,
                                       OAuthInfo oAuthInfo) {
     try {
-      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                          this.getConnection().getConnectTimeout(),
-                                                                          this.getConnection().getReadTimeout(),
-                                                                          this.getConnection().getProxyUrl());
+      AuthenticatorCredentials credentials =
+        AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                this.getConnection().getConnectTimeout(),
+                                                this.getConnection().getReadTimeout(),
+                                                this.getConnection().getProxyUrl(),
+                                                this.getConnection().getInitialRetryDuration(),
+                                                this.getConnection().getMaxRetryDuration(),
+                                                this.getConnection().getMaxRetryCount(),
+                                                this.getConnection().isRetryOnBackendError());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName, credentials);
       List<String> compoundFieldNames = sObjectDescriptor.getFields().stream()
         .filter(fieldDescriptor -> fieldNames.contains(fieldDescriptor.getName()))
@@ -332,12 +336,17 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   }
 
   private boolean isCustomObject(String sObjectName, FailureCollector collector, OAuthInfo oAuthInfo) {
-    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout(),
-                                                                        this.getConnection().getReadTimeout(),
-                                                                        this.getConnection().getProxyUrl());
+    AuthenticatorCredentials credentials =
+      AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                              this.getConnection().getConnectTimeout(),
+                                              this.getConnection().getReadTimeout(),
+                                              this.getConnection().getProxyUrl(),
+                                              this.getConnection().getInitialRetryDuration(),
+                                              this.getConnection().getMaxRetryDuration(),
+                                              this.getConnection().getMaxRetryCount(),
+                                              this.getConnection().isRetryOnBackendError());
     try {
-      PartnerConnection partnerConnection = new PartnerConnection(Authenticator.createConnectorConfig(credentials));
+      PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
       return SObjectsDescribeResult.isCustomObject(partnerConnection, sObjectName);
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);

@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce;
 
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.PartnerConnectionRetryWrapper;
 import com.sforce.soap.partner.fault.IApiFault;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
@@ -24,6 +25,7 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.SalesforceConnectorInfo;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -42,7 +44,11 @@ public class SalesforceConnectionUtil {
   public static PartnerConnection getPartnerConnection(AuthenticatorCredentials credentials)
     throws ConnectionException {
     ConnectorConfig connectorConfig = Authenticator.createConnectorConfig(credentials);
-    return new PartnerConnection(connectorConfig);
+    return new PartnerConnectionRetryWrapper(new PartnerConnection(connectorConfig),
+                                             SalesforceSplitUtil.getRetryPolicy(credentials.getInitialRetryDuration(),
+                                                                                credentials.getMaxRetryDuration(),
+                                                                                credentials.getMaxRetryCount(),
+                                                                                credentials.isRetryOnBackendError()));
   }
 
   /**
@@ -58,22 +64,42 @@ public class SalesforceConnectionUtil {
     if (conf.get(SalesforceConstants.CONFIG_CONNECT_TIMEOUT) != null) {
       connectTimeout = Integer.parseInt(conf.get(SalesforceConstants.CONFIG_CONNECT_TIMEOUT));
     }
+    Long initialRetryDuration = conf.get(SalesforceConstants.CONFIG_INITIAL_RETRY_DURATION) != null
+      ? Long.parseLong(conf.get(SalesforceConstants.CONFIG_INITIAL_RETRY_DURATION))
+      : SalesforceConstants.DEFAULT_INITIAL_RETRY_DURATION_SECONDS;
+
+    Long maxRetryDuration = conf.get(SalesforceConstants.CONFIG_MAX_RETRY_DURATION) != null
+      ? Long.parseLong(conf.get(SalesforceConstants.CONFIG_MAX_RETRY_DURATION))
+      : SalesforceConstants.DEFAULT_MAX_RETRY_DURATION_SECONDS;
+
+    Integer maxRetryCount = conf.get(SalesforceConstants.CONFIG_MAX_RETRY_COUNT) != null
+      ? Integer.parseInt(conf.get(SalesforceConstants.CONFIG_MAX_RETRY_COUNT))
+      : SalesforceConstants.DEFAULT_MAX_RETRY_COUNT;
+
+    Boolean retryBackendError = conf.get(SalesforceConstants.CONFIG_RETRY_REQUIRED) != null
+      ? Boolean.parseBoolean(conf.get(SalesforceConstants.CONFIG_RETRY_REQUIRED))
+      : Boolean.TRUE;
+
     Integer readTimeout = SalesforceConstants.DEFAULT_READ_TIMEOUT_SEC * 1000;
     if (conf.get(SalesforceConstants.CONFIG_READ_TIMEOUT) != null) {
       readTimeout = Integer.parseInt(conf.get(SalesforceConstants.CONFIG_READ_TIMEOUT));
     }
     String proxyUrl = conf.get(SalesforceConstants.CONFIG_PROXY_URL);
+
     if (oAuthToken != null && instanceURL != null) {
       return AuthenticatorCredentials.fromParameters(
-              new OAuthInfo(oAuthToken, instanceURL), connectTimeout, readTimeout, proxyUrl);
+        new OAuthInfo(oAuthToken, instanceURL), connectTimeout, readTimeout, proxyUrl,
+        initialRetryDuration, maxRetryDuration, maxRetryCount, retryBackendError);
     }
 
     return AuthenticatorCredentials.fromParameters(conf.get(SalesforceConstants.CONFIG_USERNAME),
-                                        conf.get(SalesforceConstants.CONFIG_PASSWORD),
-                                        conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
-                                        conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
-                                        conf.get(SalesforceConstants.CONFIG_LOGIN_URL),
-                                        connectTimeout, readTimeout, proxyUrl);
+                                                   conf.get(SalesforceConstants.CONFIG_PASSWORD),
+                                                   conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
+                                                   conf.get(SalesforceConstants.CONFIG_CONSUMER_SECRET),
+                                                   conf.get(SalesforceConstants.CONFIG_LOGIN_URL),
+                                                   connectTimeout, readTimeout, proxyUrl,
+                                                   initialRetryDuration, maxRetryDuration, maxRetryCount,
+                                                   retryBackendError);
   }
 
   /**

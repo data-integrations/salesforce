@@ -17,6 +17,7 @@ package io.cdap.plugin.salesforce.plugin.source.batch;
 
 import com.google.common.base.Strings;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.GetUserInfoResult;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
@@ -93,26 +94,6 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   @Nullable
   private String operation;
 
-  @Name(SalesforceSourceConstants.PROPERTY_INITIAL_RETRY_DURATION)
-  @Description("Time taken for the first retry. Default is 5 seconds.")
-  @Nullable
-  private Long initialRetryDuration;
-
-  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_DURATION)
-  @Description("Maximum time in seconds retries can take. Default is 80 seconds.")
-  @Nullable
-  private Long maxRetryDuration;
-
-  @Name(SalesforceSourceConstants.PROPERTY_MAX_RETRY_COUNT)
-  @Description("Maximum number of retries allowed. Default is 5.")
-  @Nullable
-  private Integer maxRetryCount;
-
-  @Name(SalesforceSourceConstants.PROPERTY_RETRY_REQUIRED)
-  @Description("Retry is required or not for some of the internal call failures")
-  @Nullable
-  private Boolean retryOnBackendError;
-
   @Name(ConfigUtil.NAME_USE_CONNECTION)
   @Nullable
   @Description("Whether to use an existing connection.")
@@ -151,29 +132,23 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable Long initialRetryDuration,
                                        @Nullable Long maxRetryDuration,
                                        @Nullable Integer maxRetryCount,
-                                       Boolean retryOnBackendError,
+                                       @Nullable Boolean retryOnBackendError,
                                        @Nullable String proxyUrl) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
-                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl);
+                                                    securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl,
+                                                    initialRetryDuration, maxRetryDuration, maxRetryCount,
+                                                    retryOnBackendError);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;
     this.offset = offset;
     this.operation = operation;
-    this.initialRetryDuration = initialRetryDuration;
-    this.maxRetryDuration = maxRetryDuration;
-    this.retryOnBackendError = retryOnBackendError;
-    this.maxRetryCount = maxRetryCount;
   }
 
 
   public Map<ChronoUnit, Integer> getDuration() {
     return extractRangeValue(SalesforceSourceConstants.PROPERTY_DURATION, duration);
-  }
-
-  public Boolean isRetryRequired() {
-    return retryOnBackendError == null || retryOnBackendError;
   }
 
   public Map<ChronoUnit, Integer> getOffset() {
@@ -214,26 +189,22 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
   }
 
   public String getOrgId(OAuthInfo oAuthInfo) throws ConnectionException {
-    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                        this.getConnection().getConnectTimeout(),
-                                                                        this.getConnection().getReadTimeout(),
-                                                                        this.connection.getProxyUrl());
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
+            oAuthInfo,
+            this.getConnection().getConnectTimeout(),
+            this.getConnection().getReadTimeout(),
+            this.connection.getProxyUrl(),
+            this.connection.getInitialRetryDuration(),
+            this.connection.getMaxRetryDuration(),
+            this.connection.getMaxRetryCount(),
+            this.connection.isRetryOnBackendError()
+    );
+
     PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
-    return partnerConnection.getUserInfo().getOrganizationId();
+    GetUserInfoResult userInfo = partnerConnection.getUserInfo();
+    return userInfo.getOrganizationId();
   }
 
-  public Long getInitialRetryDuration() {
-    return initialRetryDuration == null ? SalesforceSourceConstants.DEFAULT_INITIAL_RETRY_DURATION_SECONDS :
-      initialRetryDuration;
-  }
-
-  public Long getMaxRetryDuration() {
-    return maxRetryDuration == null ? SalesforceSourceConstants.DEFULT_MAX_RETRY_DURATION_SECONDS : maxRetryDuration;
-  }
-
-  public Integer getMaxRetryCount() {
-    return maxRetryCount == null ? SalesforceSourceConstants.DEFAULT_MAX_RETRY_COUNT : maxRetryCount;
-  }
 
   public void validateFilters(FailureCollector collector) {
     try {
@@ -277,10 +248,15 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
    */
   protected String getSObjectQuery(String sObjectName, Schema schema, long logicalStartTime, OAuthInfo oAuthInfo) {
     try {
-      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(oAuthInfo,
-                                                                          this.getConnection().getConnectTimeout(),
-                                                                          this.getConnection().getReadTimeout(),
-                                                                          this.connection.getProxyUrl());
+      AuthenticatorCredentials credentials =
+        AuthenticatorCredentials.fromParameters(oAuthInfo,
+                                                this.getConnection().getConnectTimeout(),
+                                                this.getConnection().getReadTimeout(),
+                                                this.connection.getProxyUrl(),
+                                                this.connection.getInitialRetryDuration(),
+                                                this.connection.getMaxRetryDuration(),
+                                                this.connection.getMaxRetryCount(),
+                                                this.connection.isRetryOnBackendError());
       SObjectDescriptor sObjectDescriptor = SObjectDescriptor.fromName(sObjectName,
                                                                        credentials,
                                                                        SalesforceSchemaUtil.COMPOUND_FIELDS);
