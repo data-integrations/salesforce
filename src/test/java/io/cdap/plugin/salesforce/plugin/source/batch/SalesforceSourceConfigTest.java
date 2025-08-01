@@ -249,6 +249,15 @@ public class SalesforceSourceConfigTest {
   }
 
   @Test
+  public void testInvalidSObjectValidation() throws Exception {
+    SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
+        .setReferenceName("Source")
+        .setSObjectName("Attachment")
+        .build();
+    testInvalidSObjectConfig(config, SalesforceSourceConstants.PROPERTY_SOBJECT_NAME);
+  }
+
+  @Test
   public void testPKChunkWithChunkSizeAboveMax() throws Exception {
     SalesforceSourceConfig config = new SalesforceSourceConfigBuilder()
       .setQuery("Select Name from Table")
@@ -297,4 +306,29 @@ public class SalesforceSourceConfigTest {
     }
     Assert.assertEquals(stageConfigName, failure.getCauses().get(0).getAttribute(CauseAttributes.STAGE_CONFIG));
   }
+
+  private void testInvalidSObjectConfig(SalesforceSourceConfig config, String stageConfigName) throws Exception {
+    MockFailureCollector collector = new MockFailureCollector();
+    SalesforceSourceConfig mock = Mockito.spy(config);
+
+    SalesforceConnectorConfig connectorConfig = Mockito.mock(SalesforceConnectorConfig.class);
+    PowerMockito.whenNew(SalesforceConnectorConfig.class).withAnyArguments().thenReturn(connectorConfig);
+
+    SalesforceConnectorInfo salesforceConnectorInfo =
+        new SalesforceConnectorInfo(null, connectorConfig,
+            SalesforceConstants.isOAuthMacroFunction.apply(connectorConfig));
+
+    Mockito.when(mock.getConnection()).thenReturn(salesforceConnectorInfo);
+    PowerMockito.when(salesforceConnectorInfo.canAttemptToEstablishConnection()).thenReturn(false);
+
+    ValidationFailure failure = null;
+      mock.validate(collector, null);
+      failure = collector.getValidationFailures().get(0);
+    Assert.assertEquals(1, collector.getValidationFailures().size());
+    Assert.assertEquals(stageConfigName,
+        failure.getCauses().get(0).getAttribute(CauseAttributes.STAGE_CONFIG));
+    String expectedMessage = "sObject type 'Attachment' is not supported";
+    Assert.assertEquals(expectedMessage, failure.getMessage());
+  }
+
 }
