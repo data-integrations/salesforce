@@ -197,6 +197,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       try {
         boolean isSoql = isSoqlQuery();
         if (!isSoql) {
+          validateSobject(collector);
           validateFilters(collector);
         }
       } catch (InvalidConfigException e) {
@@ -353,6 +354,13 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       collector.addFailure(String.format("There was issue communicating with Salesforce due to error: %s", message),
                            null).withStacktrace(e.getStackTrace());
       throw collector.getOrThrowException();
+    }
+  }
+
+  public void validateSobject(FailureCollector collector) {
+    if (SalesforceConstants.UNSUPPORTED_BULK_API_OBJECTS.contains(sObjectName.toLowerCase())) {
+      collector.addFailure(String.format("sObject type '%s' is not supported", sObjectName), null)
+        .withConfigProperty(SalesforceSourceConstants.PROPERTY_SOBJECT_NAME);
     }
   }
 }
