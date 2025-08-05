@@ -317,7 +317,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
   private void checkForPKSupportedObject(String sObject, FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     if (oAuthInfo != null) {
       if (!isCustomObject(sObject, collector, oAuthInfo)) {
-        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject)) {
+        if (!SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sObject.toLowerCase())) {
           collector.addFailure(String.format("SObject '%s' is not supported with PKChunk enabled.", sObject),
                                "Please check documentation for supported Objects. " +
                                  "If this is a history " +

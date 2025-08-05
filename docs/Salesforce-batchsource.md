@@ -195,74 +195,109 @@ PK chunking works only with queries that don’t include `SELECT` clauses or con
 
 PK chunking only works with the following objects:
 
-| Objects |         
-| ------- | 
-|Account|
-|AccountContactRelation|
-|AccountTeamMember|
-|AiVisitSummary|
-|Asset|
-|B2BMktActivity|
-|B2BMktProspect|
-|Campaign|
-|CampaignMember|
-|CandidateAnswer|
-|Case|
-|CaseArticle|
-|CaseComment|
-|Claim|
-|ClaimParticipant|
-|Contact|
-|ContractLineItem|
-|ConversationEntry|
-|CustomerProperty|
-|EinsteinAnswerFeedback|
-|EmailMessage|
-|EngagementScore|
-|Event|
-|EventRelation|
-|FeedItem|
-|Individual|
-|InsurancePolicy|
-|InsurancePolicyAsset|
-|InsurancePolicyParticipant|
-|Lead|
-|LeadInsight|
-|LiveChatTranscript|
-|LoginHistory|
-|LoyaltyLedger|
-|LoyaltyMemberCurrency|
-|LoyaltyMemberTier|
-|LoyaltyPartnerProduct|
-|LoyaltyProgramMember|
-|LoyaltyProgramPartner|
-|Note|
-|ObjectTerritory2Association|
-|Opportunity|
-|OpportunityContactRole|
-|OpportunityHistory|
-|OpportunityLineItem|
-|OpportunitySplit|
-|OpportunityTeamMember|
-|Pricebook2|
-|PricebookEntry|
-|Product2|
-|ProductConsumed|
-|ProductRequired|
-|QuickText|
-|Quote|
-|QuoteLineItem|
-|ReplyText|
-|ScoreIntelligence|
-|ServiceContract|
-|Task|
-|TermDocumentFrequency|
-|TransactionJournal|
-|User|
-|UserRole|
-|VoiceCall|
-|WorkOrder|
-|WorkOrderLineItem|
+| Objects                        |         
+|--------------------------------| 
+| Account                        |
+| AccountContactRelation         |
+| AccountTeamMember              |
+| AiVisitSummary                 |
+| Asset                          |
+| AssignedResource               |
+| Campaign                       |
+| CampaignMember                 |
+| CandidateAnswer                |
+| Case                           |
+| CaseArticle                    |
+| CaseComment                    |
+| CaseRelatedIssue               |
+| ChangeRequest                  |
+| ChangeRequestRelatedIssue      |
+| ChangeRequestRelatedItem       |
+| Claim                          |
+| ClaimParticipant               |
+| Contact                        |
+| ContentDistribution            |
+| ContentDocument                |
+| ContentNote                    |
+| ContentVersion                 |
+| Contract                       |
+| ContractLineItem               |
+| ConversationDefinitionEventLog |
+| ConversationEntry              |
+| ConversationReason             |
+| ConversationReasonExcerpt      |
+| ConversationReasonGroup        |
+| CustomerProperty               |
+| EinsteinAnswerFeedback         |
+| EmailMessage                   |
+| EngagementScore                |
+| Entitlement                    |
+| Event                          |
+| EventRelation                  |
+| FeedItem                       |
+| Incident                       |
+| IncidentRelatedItem            |
+| Individual                     |
+| InsurancePolicy                |
+| InsurancePolicyAsset           |
+| InsurancePolicyParticipant     |
+| Lead                           |
+| LeadInsight                    |
+| LinkedArticle                  |
+| LiveChatTranscript             |
+| LoginHistory                   |
+| LoyaltyAggrPointExprLedger     |
+| LoyaltyLedger                  |
+| LoyaltyMemberCurrency          |
+| LoyaltyMemberTier              |
+| LoyaltyPartnerProduct          |
+| LoyaltyProgramMbrPromotion     |
+| LoyaltyProgramMember           |
+| LoyaltyProgramPartner          |
+| LoyaltyProgramPartnerLedger    |
+| MessagingSession               |
+| MlRetrainingFeedback           |
+| Note                           |
+| ObjectTerritory2Association    |
+| Opportunity                    |
+| OpportunityContactRole         |
+| OpportunityHistory             |
+| OpportunityLineItem            |
+| OpportunitySplit               |
+| OpportunityTeamMember          |
+| Order                          |
+| OrderItem                      |
+| Pricebook2                     |
+| PricebookEntry                 |
+| Problem                        |
+| ProblemIncident                |
+| ProblemRelatedItem             |
+| Product2                       |
+| ProductConsumed                |
+| ProductRequired                |
+| QuickText                      |
+| Quote                          |
+| QuoteLineItem                  |
+| ReplyText                      |
+| ScoreIntelligence              |
+| ServiceAppointment             |
+| ServiceContract                |
+| Task                           |
+| TaskRelation                   |
+| TermDocumentFrequency          |
+| TimeSheetEntry                 |
+| TransactionJournal             |
+| User                           |
+| UserRole                       |
+| VoiceCall                      |
+| VoiceCallRecording             |
+| Voucher                        |
+| WebCart                        |
+| WorkloadUnit                   |
+| WorkOrder                      |
+| WorkOrderLineItem              |
+| WorkPlan                       |
+| WorkPlanTemplate               |
 
 Support also includes custom objects, and any Sharing and History tables that support standard objects.
 
