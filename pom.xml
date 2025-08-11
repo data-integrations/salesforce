@@ -85,8 +85,16 @@
 
   <repositories>
     <repository>
-      <id>sonatype-snapshots</id>
-      <url>https://central.sonatype.com/repository/maven-snapshots</url>
+      <id>central</id>
+      <name>Maven Central remote repository</name>
+      <url>artifactregistry://us-maven.pkg.dev/artifact-foundry-prod/ah-3p-staging-maven</url>
+      <layout>default</layout>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
     </repository>
   </repositories>
 
