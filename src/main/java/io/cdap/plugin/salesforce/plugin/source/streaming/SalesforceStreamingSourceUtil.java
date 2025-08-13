@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.reflect.ClassTag$;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -145,6 +146,13 @@ final class SalesforceStreamingSourceUtil {
           String.format("Field '%s' is of type '%s', but value found is '%s'",
                         field.getName(), fieldSchemaType, value));
       }
+    }
+
+    // NOTE: org.json >= 20230227 returns BigDecimal for all non-integer JSON numbers.
+    if (value instanceof BigDecimal && fieldSchemaType.equals(Schema.Type.DOUBLE)) {
+      // Avro Schema.Type.DOUBLE expects a Double instance (or primitive double) at serialization time,
+      // so converting BigDecimal → double for compatibility.
+      return ((BigDecimal) value).doubleValue();
     }
 
     return value;
