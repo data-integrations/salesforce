@@ -67,7 +67,8 @@ import java.util.stream.Stream;
 /**
  * {@inheritDoc}
  */
-public abstract class BaseSalesforceBatchSourceETLTest extends BaseSalesforceETLTest {
+public abstract class
+BaseSalesforceBatchSourceETLTest extends BaseSalesforceETLTest {
 
   @ClassRule
   public static final TestConfiguration CONFIG = new TestConfiguration("explore.enabled", false);
