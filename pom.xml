@@ -91,6 +91,7 @@
   </repositories>
 
 
+
   <dependencies>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -519,6 +520,36 @@
     <testSourceDirectory>${testSourceLocation}</testSourceDirectory>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.6.0</version>
+          <executions>
+            <execution>
+              <id>shade-old-guava</id>
+              <!-- run only during test-compile phase -->
+              <phase>test-compile</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <artifactSet>
+                  <includes>
+                    <!-- only shade the old Guava -->
+                    <include>com.google.guava:guava:31.1-jre</include>
+                  </includes>
+                </artifactSet>
+                <relocations>
+                  <relocation>
+                    <pattern>com.google.common</pattern>
+                    <shadedPattern>shadow.guava31.com.google.common</shadedPattern>
+                  </relocation>
+                </relocations>
+                <createDependencyReducedPom>false</createDependencyReducedPom>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
         <plugin>
           <groupId>io.cdap</groupId>
           <artifactId>cdap-maven-plugin</artifactId>
