@@ -608,6 +608,7 @@
           </includes>
           <excludes>
             <exclude>**/*TestRun.java</exclude>
+            <exclude>io/cdap/plugin/salesforce/etl/**</exclude>
           </excludes>
         </configuration>
       </plugin>
