@@ -248,6 +248,7 @@ PK chunking only works with the following objects:
 | LoginHistory                   |
 | LoyaltyAggrPointExprLedger     |
 | LoyaltyLedger                  |
+| LoyaltyLedgerTraceability      |
 | LoyaltyMemberCurrency          |
 | LoyaltyMemberTier              |
 | LoyaltyPartnerProduct          |

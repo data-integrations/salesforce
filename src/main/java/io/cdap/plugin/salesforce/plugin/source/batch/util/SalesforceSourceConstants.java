@@ -108,6 +108,7 @@ public class SalesforceSourceConstants {
                                                                                    "loginhistory",
                                                                                    "loyaltyaggrpointexprledger",
                                                                                    "loyaltyledger",
+                                                                                   "LoyaltyLedgerTraceability",
                                                                                    "loyaltymembercurrency",
                                                                                    "loyaltymembertier",
                                                                                    "loyaltypartnerproduct",
