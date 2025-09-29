@@ -23,6 +23,9 @@ import com.sforce.async.BatchStateEnum;
 import com.sforce.async.BulkConnection;
 import com.sforce.async.ConcurrencyMode;
 import com.sforce.async.JobInfo;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -82,5 +85,26 @@ public class SalesforceBulkUtilTest {
 
     // Call the awaitCompletion method and verify that it completes successfully
     SalesforceBulkUtil.awaitCompletion(bulkConnection, job, Collections.singletonList(batchInfo), true);
+  }
+
+  @Test
+  public void testPKChunkingEnabledForSobjectsWithAllCases() {
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("Account"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("account"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("aCcOuNt"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("Case"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("CONTACT"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("test_custom__c"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("Test_custom__c"));
+    Assert.assertTrue(SalesforceSplitUtil.isPkChunkingSupported("TEST_CUSTOM__C"));
+    Assert.assertFalse(SalesforceSplitUtil.isPkChunkingSupported("Not_Supported"));
+    Assert.assertFalse(SalesforceSplitUtil.isPkChunkingSupported("notsupported"));
+  }
+
+  @Test
+  public void testPKChunkingSupportedListContainsNoUpperCaseValues() {
+    // SUPPORTED_OBJECTS_WITH_PK_CHUNK list must have only lower case values.
+    Assert.assertFalse(SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK.stream()
+      .anyMatch(s -> s.matches(".*[A-Z].*")));
   }
 }

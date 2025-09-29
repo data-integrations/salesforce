@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin.source.batch.util;
 
+import com.google.common.base.Strings;
 import com.sforce.async.AsyncApiException;
 import com.sforce.async.AsyncExceptionCode;
 import com.sforce.async.BatchInfo;
@@ -251,5 +252,19 @@ public final class SalesforceSplitUtil {
     } else {
       return RetryPolicy.builder().withMaxRetries(0).build();
     }
+  }
+
+  // This is added for UCS use case only to identify the objects where PK chunking needs to be enabled by default.
+  public static boolean isPkChunkingSupported(String sobjectName) {
+    if (!Strings.isNullOrEmpty(sobjectName)) {
+      return SalesforceSourceConstants.SUPPORTED_OBJECTS_WITH_PK_CHUNK.contains(sobjectName.toLowerCase())
+        || isCustomObject(sobjectName);
+    }
+    return false;
+  }
+
+  // This is added only for UCS use case.
+  private static boolean isCustomObject(String sobjectName) {
+    return sobjectName.toLowerCase().endsWith("__c");
   }
 }
