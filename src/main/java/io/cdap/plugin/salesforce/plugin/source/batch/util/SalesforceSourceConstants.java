@@ -57,6 +57,8 @@ public class SalesforceSourceConstants {
   public static final int MIN_PK_CHUNK_SIZE = 1;
   // https://developer.salesforce.com/docs/atlas.en-us.252.0.api_asynch.meta/api_asynch/
   // async_api_headers_enable_pk_chunking.htm
+  // **Always use lowercase names** to ensure consistency, especially if the sObject name is manually provided.
+  // Update this list with each API version upgrade.
   public static final List<String> SUPPORTED_OBJECTS_WITH_PK_CHUNK = Arrays.asList("account",
                                                                                    "accountcontactrelation",
                                                                                    "accountteammember",
@@ -108,7 +110,7 @@ public class SalesforceSourceConstants {
                                                                                    "loginhistory",
                                                                                    "loyaltyaggrpointexprledger",
                                                                                    "loyaltyledger",
-                                                                                   "LoyaltyLedgerTraceability",
+                                                                                   "loyaltyledgertraceability",
                                                                                    "loyaltymembercurrency",
                                                                                    "loyaltymembertier",
                                                                                    "loyaltypartnerproduct",
