@@ -22,7 +22,7 @@
   <name>Salesforce plugins</name>
   <groupId>io.cdap.plugin</groupId>
   <artifactId>salesforce-plugins</artifactId>
-  <version>1.7.1</version>
+  <version>1.7.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <description>Salesforce Plugins</description>
   <url>https://github.com/data-integrations/salesforce</url>
@@ -96,6 +96,11 @@
       <artifactId>logback-classic</artifactId>
       <version>1.2.13</version>
     </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-http</artifactId>
+          <version>9.4.52.v20230823</version>
+      </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-api</artifactId>
@@ -256,6 +261,12 @@
       <groupId>org.cometd.java</groupId>
       <artifactId>cometd-java-client</artifactId>
       <version>${cometd.java.client.version}</version>
+        <exclusions>
+            <exclusion>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+            </exclusion>
+        </exclusions>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
