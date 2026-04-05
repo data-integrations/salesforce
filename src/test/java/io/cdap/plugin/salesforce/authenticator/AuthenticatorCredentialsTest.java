@@ -52,6 +52,59 @@ public class AuthenticatorCredentialsTest {
     }
 
     @Test
+    public void buildFromParameters_explicitClientCredentialsGrantType() {
+        // When grantType is explicitly "client_credentials", should use CLIENT_CREDENTIALS flow
+        // even when username and password are provided
+        AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(
+                CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
+
+        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
+          USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL,
+          null, null, null, null, null, null, null, "client_credentials");
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void buildFromParameters_explicitPasswordGrantType() {
+        // When grantType is explicitly "password", should use PASSWORD flow
+        AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(
+                USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
+
+        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
+          USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL,
+          null, null, null, null, null, null, null, "password");
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void buildFromParameters_nullGrantTypeDefaultsToPasswordFlow() {
+        // When grantType is null and username/password are provided, should default to PASSWORD flow
+        AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(
+                USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
+
+        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
+          USERNAME, PASSWORD, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL,
+          null, null, null, null, null, null, null, null);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void buildFromParameters_nullGrantTypeWithoutCredentialsDefaultsToClientCredentials() {
+        // When grantType is null and username/password are not provided, should default to CLIENT_CREDENTIALS flow
+        AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(
+                CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL).build();
+
+        AuthenticatorCredentials actual = AuthenticatorCredentials.fromParameters(
+          null, null, CONSUMER_KEY, CONSUMER_SECRET, LOGIN_URL,
+          null, null, null, null, null, null, null, null);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     public void buildFromParameters_OAuthFlow() {
         AuthenticatorCredentials expected = AuthenticatorCredentials.getBuilder(O_AUTH_INFO).build();
 

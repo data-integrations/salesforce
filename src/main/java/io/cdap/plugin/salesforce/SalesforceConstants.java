@@ -39,6 +39,7 @@ public class SalesforceConstants {
   public static final String PROPERTY_SECURITY_TOKEN = "securityToken";
   public static final String PROPERTY_LOGIN_URL = "loginUrl";
   public static final String PROPERTY_OAUTH_INFO = "oAuthInfo";
+  public static final String PROPERTY_GRANT_TYPE = "grantType";
   public static final String PROPERTY_INITIAL_RETRY_DURATION = "initialRetryDuration";
   public static final String PROPERTY_MAX_RETRY_DURATION = "maxRetryDuration";
   public static final String PROPERTY_MAX_RETRY_COUNT = "maxRetryCount";
@@ -68,6 +69,7 @@ public class SalesforceConstants {
 
   public static final String PROPERTY_PROXY_URL = "proxyUrl";
   public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";
+  public static final String CONFIG_GRANT_TYPE = "mapred.salesforce.grantType";
   public static final String REGEX_PROXY_URL = "^(?i)(https?)://.*$";
 
   public static final String PROPERTY_MAX_RETRY_TIME_IN_MINS = "cdap.streaming.maxRetryTimeInMins";

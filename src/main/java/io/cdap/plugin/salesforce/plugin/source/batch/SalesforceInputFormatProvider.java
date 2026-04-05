@@ -62,13 +62,20 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
         .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
         .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
     } else {
+      String grantType = config.getConnection().getGrantType();
       configBuilder
-        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
-        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()))
         .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConnection().getConsumerKey()))
         .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConnection().
                                                                                   getConsumerSecret()))
         .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      if (Strings.isNullOrEmpty(grantType) || "password".equals(grantType)) {
+        configBuilder
+          .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
+          .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()));
+      }
+      if (!Strings.isNullOrEmpty(grantType)) {
+        configBuilder.put(SalesforceConstants.CONFIG_GRANT_TYPE, grantType);
+      }
     }
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);

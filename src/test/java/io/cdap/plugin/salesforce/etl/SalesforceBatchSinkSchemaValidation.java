@@ -68,7 +68,7 @@ public class SalesforceBatchSinkSchemaValidation {
                                "1000000", "10000",
                                "Fail on Error",
                                BaseSalesforceETLTest.SECURITY_TOKEN,
-                               null, null, true, 5L, 10L, 5, true));
+                               null, null, true, 5L, 10L, 5, true, null));
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Name", Schema.of(Schema.Type.STRING)),
                                     Schema.Field.of("StageName", Schema.of(Schema.Type.STRING)),
@@ -138,7 +138,7 @@ public class SalesforceBatchSinkSchemaValidation {
                                "1000000", "10000",
                                "Fail on Error",
                                BaseSalesforceETLTest.SECURITY_TOKEN,
-                               null, null, true, 5L, 10L, 5, true));
+                               null, null, true, 5L, 10L, 5, true, null));
     Schema schema = Schema.recordOf("output",
                                     Schema.Field.of("Name", Schema.of(Schema.Type.STRING)));
     Field field = new Field();

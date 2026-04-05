@@ -171,6 +171,6 @@ public class SalesforceSourceConfigBuilder {
                                       connectTimeout, readTimeout, query, sObjectName, datetimeAfter, datetimeBefore,
                                       duration, offset, schema, securityToken, operation, initialRetryDuration,
                                       maxRetryDuration, maxRetryCount, retryOnBackendError, null, enablePKChunk,
-                                      chunkSize, parent, proxyUrl);
+                                      chunkSize, parent, proxyUrl, null);
   }
 }

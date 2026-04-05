@@ -182,8 +182,27 @@ public class AuthenticatorCredentials implements Serializable {
                                                         Integer connectTimeout, Integer readTimeout, String proxyUrl,
                                                         Long initialRetryDuration, Long maxRetryDuration,
                                                         Integer maxRetryCount, Boolean retryOnBackendError) {
+    return fromParameters(username, password, consumerKey, consumerSecret, loginUrl,
+                          connectTimeout, readTimeout, proxyUrl,
+                          initialRetryDuration, maxRetryDuration, maxRetryCount, retryOnBackendError, null);
+  }
+
+  /**
+   * Create an instance of {@link AuthenticatorCredentials} from given set of parameters and explicit grant type.
+   * If grantType is "client_credentials", uses client-credentials flow regardless of username/password presence.
+   * If grantType is null or "password", falls back to existing behavior: uses "password" grant type
+   * if username and password are non-null, uses client-credentials grant type otherwise.
+   */
+  public static AuthenticatorCredentials fromParameters(String username, String password,
+                                                        String consumerKey, String consumerSecret, String loginUrl,
+                                                        Integer connectTimeout, Integer readTimeout, String proxyUrl,
+                                                        Long initialRetryDuration, Long maxRetryDuration,
+                                                        Integer maxRetryCount, Boolean retryOnBackendError,
+                                                        String grantType) {
     AuthenticatorCredentials.Builder builder;
-    if (username != null && password != null) {
+    if (GrantType.CLIENT_CREDENTIALS.getType().equals(grantType)) {
+      builder = AuthenticatorCredentials.getBuilder(consumerKey, consumerSecret, loginUrl);
+    } else if (username != null && password != null) {
       builder = AuthenticatorCredentials.getBuilder(username, password, consumerKey, consumerSecret, loginUrl);
     } else {
       builder = AuthenticatorCredentials.getBuilder(consumerKey, consumerSecret, loginUrl);

@@ -16,12 +16,16 @@ You also can use the macro function ${conn(connection-name)}.
 
 **Reference Name:** Name used to uniquely identify this sink for lineage, annotating metadata, etc.
 
-**Username:** Salesforce username.
+**Grant Type:** Grant type to use for OAuth authentication. Supported values are 'password' and
+'client_credentials'. When set to 'client_credentials', only Consumer Key, Consumer Secret, and Login URL
+are required. Username, Password, and Security Token are not needed. Defaults to 'password' if not specified.
 
-**Password:** Salesforce password.
+**Username:** Salesforce username. Required for 'password' grant type.
 
-**Security Token:** Salesforce security token. If the password does not contain the security token, the plugin 
-will append the token before authenticating with Salesforce.
+**Password:** Salesforce password. Required for 'password' grant type.
+
+**Security Token:** Salesforce security token. If the password does not contain the security token, the plugin
+will append the token before authenticating with Salesforce. Only applicable for 'password' grant type.
 
 **Consumer Key:** Application Consumer Key. This is also known as the OAuth client ID.
 A Salesforce connected application must be created in order to get a consumer key.
@@ -29,7 +33,10 @@ A Salesforce connected application must be created in order to get a consumer ke
 **Consumer Secret:** Application Consumer Secret. This is also known as the OAuth client secret.
 A Salesforce connected application must be created in order to get a client secret.
 
-**Login URL:** Salesforce OAuth2 login URL.
+**Login URL:** Salesforce OAuth2 login URL. For the 'password' grant type, the default generic URL
+`https://login.salesforce.com/services/oauth2/token` can be used. For the 'client_credentials' grant type,
+you must provide your Salesforce instance-specific URL, for example
+`https://<your-instance>.my.salesforce.com/services/oauth2/token`.
 
 **Connect Timeout:** Maximum time in milliseconds to wait for connection initialization before it times out.
 

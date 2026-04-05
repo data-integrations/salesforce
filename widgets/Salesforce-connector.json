@@ -13,6 +13,18 @@
           "name": "oAuthInfo"
         },
         {
+          "widget-type": "select",
+          "label": "Grant Type",
+          "name": "grantType",
+          "widget-attributes": {
+            "values": [
+              "password",
+              "client_credentials"
+            ],
+            "default": "password"
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "User Name",
           "name": "username",
@@ -138,5 +150,26 @@
     }
   ],
   "outputs": [],
-  "filters": []
+  "filters": [
+    {
+      "name": "showPasswordFlowProperties",
+      "condition": {
+        "expression": "grantType == 'password' || grantType == ''"
+      },
+      "show": [
+        {
+          "type": "property",
+          "name": "username"
+        },
+        {
+          "type": "property",
+          "name": "password"
+        },
+        {
+          "type": "property",
+          "name": "securityToken"
+        }
+      ]
+    }
+  ]
 }

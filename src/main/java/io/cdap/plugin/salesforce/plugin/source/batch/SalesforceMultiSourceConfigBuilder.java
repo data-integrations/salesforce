@@ -161,6 +161,6 @@ public class SalesforceMultiSourceConfigBuilder {
                                            connectTimeout, readTimeout, datetimeAfter, datetimeBefore, duration,
                                            offset, whiteList, blackList, sObjectNameField, securityToken, oAuthInfo,
                                            operation, initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                           retryOnBackendError, proxyUrl);
+                                           retryOnBackendError, proxyUrl, null);
   }
 }

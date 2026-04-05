@@ -81,10 +81,21 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   private final String securityToken;
 
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
-  @Description("Endpoint to authenticate to")
+  @Description("Salesforce OAuth2 login URL. For the 'password' grant type, the default generic URL " +
+    "'https://login.salesforce.com/services/oauth2/token' can be used. " +
+    "For the 'client_credentials' grant type, you must provide your Salesforce instance-specific URL, " +
+    "for example 'https://<your-instance>.my.salesforce.com/services/oauth2/token'.")
   @Macro
   @Nullable
   private final String loginUrl;
+
+  @Name(SalesforceConstants.PROPERTY_GRANT_TYPE)
+  @Description("Grant type to use for OAuth authentication. " +
+    "Supported values are 'password' and 'client_credentials'. " +
+    "Defaults to 'password' if not specified.")
+  @Macro
+  @Nullable
+  private final String grantType;
 
   @Name(SalesforceConstants.PROPERTY_INITIAL_RETRY_DURATION)
   @Description("Time taken for the first retry. Default is 5 seconds.")
@@ -118,7 +129,8 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
                                        @Nullable Long initialRetryDuration,
                                        @Nullable Long maxRetryDuration,
                                        @Nullable Integer maxRetryCount,
-                                       @Nullable Boolean retryOnBackendError) {
+                                       @Nullable Boolean retryOnBackendError,
+                                       @Nullable String grantType) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -132,6 +144,7 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     this.maxRetryDuration = maxRetryDuration;
     this.retryOnBackendError = retryOnBackendError;
     this.maxRetryCount = maxRetryCount;
+    this.grantType = grantType;
   }
 
   @Nullable
@@ -157,6 +170,11 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   @Nullable
   public String getLoginUrl() {
     return loginUrl;
+  }
+
+  @Nullable
+  public String getGrantType() {
+    return grantType;
   }
 
   public Long getInitialRetryDuration() {
@@ -219,7 +237,10 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     }
   }
 
-  private String constructPasswordWithToken(String password, @Nullable String securityToken) {
+  private String constructPasswordWithToken(@Nullable String password, @Nullable String securityToken) {
+    if (password == null) {
+      return null;
+    }
     if (securityToken != null && !securityToken.isEmpty() && !password.endsWith(securityToken)) {
       return password + securityToken;
     } else {

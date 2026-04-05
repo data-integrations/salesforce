@@ -133,12 +133,13 @@ public abstract class SalesforceBaseSourceConfig extends ReferencePluginConfig {
                                        @Nullable Long maxRetryDuration,
                                        @Nullable Integer maxRetryCount,
                                        @Nullable Boolean retryOnBackendError,
-                                       @Nullable String proxyUrl) {
+                                       @Nullable String proxyUrl,
+                                       @Nullable String grantType) {
     super(referenceName);
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
                                                     securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl,
                                                     initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                                    retryOnBackendError);
+                                                    retryOnBackendError, grantType);
     this.datetimeAfter = datetimeAfter;
     this.datetimeBefore = datetimeBefore;
     this.duration = duration;

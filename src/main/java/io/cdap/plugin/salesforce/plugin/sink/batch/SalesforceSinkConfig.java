@@ -170,12 +170,13 @@ public class SalesforceSinkConfig extends ReferencePluginConfig {
                               @Nullable Long initialRetryDuration,
                               @Nullable Long maxRetryDuration,
                               @Nullable Integer maxRetryCount,
-                              @Nullable Boolean retryOnBackendError) {
+                              @Nullable Boolean retryOnBackendError,
+                              @Nullable String grantType) {
     super(referenceName);
     connection = new SalesforceConnectorConfig(clientId, clientSecret, username, password, loginUrl,
                                                securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl,
                                                initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                               retryOnBackendError);
+                                               retryOnBackendError, grantType);
     this.sObject = sObject;
     this.operation = operation;
     this.externalIdField = externalIdField;

@@ -87,6 +87,11 @@ public class SalesforceConnectorInfo {
     return config.getProxyUrl();
   }
 
+  @Nullable
+  public String getGrantType() {
+    return config.getGrantType();
+  }
+
   public Long getInitialRetryDuration() {
     return config.getInitialRetryDuration();
   }
@@ -127,7 +132,8 @@ public class SalesforceConnectorInfo {
                                                    config.getReadTimeoutInMillis(), config.getProxyUrl(),
                                                    config.getInitialRetryDuration(), config.getMaxRetryDuration(),
                                                    config.getMaxRetryCount(),
-                                                   config.isRetryOnBackendError());
+                                                   config.isRetryOnBackendError(),
+                                                   config.getGrantType());
   }
 
   /**

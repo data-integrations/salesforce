@@ -235,6 +235,7 @@ public abstract class BaseSalesforceBatchSinkETLTest extends BaseSalesforceETLTe
                                     Long.parseLong(INITIAL_RETRY_DURATION),
                                     Long.parseLong(MAX_RETRY_DURATION),
                                     Integer.parseInt(MAX_RETRY_COUNT),
-                                    Boolean.parseBoolean(RETRY_ON_BACKEND_ERROR));
+                                    Boolean.parseBoolean(RETRY_ON_BACKEND_ERROR),
+                                    null);
   }
 }

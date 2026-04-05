@@ -92,6 +92,7 @@ public class SalesforceConnectionUtil {
         initialRetryDuration, maxRetryDuration, maxRetryCount, retryBackendError);
     }
 
+    String grantType = conf.get(SalesforceConstants.CONFIG_GRANT_TYPE);
     return AuthenticatorCredentials.fromParameters(conf.get(SalesforceConstants.CONFIG_USERNAME),
                                                    conf.get(SalesforceConstants.CONFIG_PASSWORD),
                                                    conf.get(SalesforceConstants.CONFIG_CONSUMER_KEY),
@@ -99,7 +100,7 @@ public class SalesforceConnectionUtil {
                                                    conf.get(SalesforceConstants.CONFIG_LOGIN_URL),
                                                    connectTimeout, readTimeout, proxyUrl,
                                                    initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                                   retryBackendError);
+                                                   retryBackendError, grantType);
   }
 
   /**
