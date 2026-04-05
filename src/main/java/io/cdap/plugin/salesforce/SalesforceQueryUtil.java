@@ -84,6 +84,18 @@ public class SalesforceQueryUtil {
   }
 
   /**
+   * Creates a COUNT query from an existing SOQL query.
+   * Replaces the SELECT fields with COUNT() while preserving the FROM and WHERE clauses.
+   *
+   * @param query the original SOQL query
+   * @return a COUNT SOQL query string
+   */
+  public static String createCountQuery(String query) {
+    String fromStatement = SalesforceQueryParser.getFromStatement(query);
+    return SELECT + "COUNT() " + fromStatement;
+  }
+
+  /**
    * Generates SObject query filter based on provided values.
    *
    * @param filterDescriptor filter options holder

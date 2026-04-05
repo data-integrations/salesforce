@@ -218,6 +218,20 @@ public class SalesforceQueryUtilTest {
   }
 
   @Test
+  public void testCreateCountQuery() {
+    String query = "SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z";
+    String countQuery = SalesforceQueryUtil.createCountQuery(query);
+    Assert.assertEquals("SELECT COUNT() FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z", countQuery);
+  }
+
+  @Test
+  public void testCreateCountQueryWithoutWhere() {
+    String query = "SELECT Id, Name FROM Account";
+    String countQuery = SalesforceQueryUtil.createCountQuery(query);
+    Assert.assertEquals("SELECT COUNT() FROM Account", countQuery);
+  }
+
+  @Test
   public void testCreateSObjectIdQuery() {
     String selectClause = "SELECT Id,Name,SomeField ";
     String fromClause = "FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z";

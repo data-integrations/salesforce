@@ -48,6 +48,8 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -68,6 +70,7 @@ import java.util.stream.Collectors;
 public class SalesforceBatchSource extends
     BatchSource<Schema, Map<String, String>, StructuredRecord> {
 
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
   public static final String NAME = "Salesforce";
 
   private final SalesforceSourceConfig config;
@@ -151,7 +154,18 @@ public class SalesforceBatchSource extends
       long logicStartTime, OAuthInfo oAuthInfo) {
     String query = config.getQuery(logicStartTime, oAuthInfo);
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
-    boolean enablePKChunk = config.getEnablePKChunk();
+    Boolean rawEnablePKChunk = true;
+    boolean enablePKChunk;
+    if (rawEnablePKChunk != null) {
+      enablePKChunk = rawEnablePKChunk;
+    } else {
+      enablePKChunk = SalesforceSplitUtil.shouldAutoPKChunk(
+          query, authenticatorCredentials, 10_00_000);
+      if (enablePKChunk) {
+        LOG.info("PK Chunking auto-enabled: record count exceeds threshold {}",
+                10_00_000);
+      }
+    }
     if (enablePKChunk) {
       String parent = config.getParent();
       int chunkSize = config.getChunkSize();

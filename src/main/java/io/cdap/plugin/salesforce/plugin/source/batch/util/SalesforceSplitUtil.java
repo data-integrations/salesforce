@@ -26,6 +26,9 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
+import com.sforce.ws.ConnectionException;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import dev.failsafe.TimeoutExceededException;
@@ -33,9 +36,11 @@ import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -251,6 +256,42 @@ public final class SalesforceSplitUtil {
         .build();
     } else {
       return RetryPolicy.builder().withMaxRetries(0).build();
+    }
+  }
+
+  /**
+   * Determines whether PK chunking should be enabled automatically based on record count,
+   * object support, and query compatibility.
+   *
+   * @param query       the SOQL query
+   * @param credentials authenticator credentials for SOAP API
+   * @param threshold   the record count threshold above which PK chunking is enabled
+   * @return true if PK chunking should be auto-enabled, false otherwise
+   */
+  public static boolean shouldAutoPKChunk(String query, AuthenticatorCredentials credentials, long threshold) {
+    try {
+      String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+      if (!isPkChunkingSupported(sObjectName)) {
+        LOG.debug("PK Chunking auto-decision: object '{}' is not supported for PK chunking", sObjectName);
+        return false;
+      }
+      if (SalesforceQueryParser.isRestrictedPKQuery(query)) {
+        LOG.debug("PK Chunking auto-decision: query contains restricted clauses, skipping PK chunking");
+        return false;
+      }
+      String countQuery = SalesforceQueryUtil.createCountQuery(query);
+      PartnerConnection partnerConnection = SalesforceConnectionUtil.getPartnerConnection(credentials);
+      QueryResult result = partnerConnection.query(countQuery);
+      int recordCount = result.getSize();
+      LOG.debug("PK Chunking auto-decision: object '{}' has {} records, threshold is {}",
+                sObjectName, recordCount, threshold);
+      return recordCount >= threshold;
+    } catch (ConnectionException e) {
+      LOG.warn("PK Chunking auto-decision: failed to execute count query, falling back to no PK chunking", e);
+      return false;
+    } catch (Exception e) {
+      LOG.warn("PK Chunking auto-decision: unexpected error, falling back to no PK chunking", e);
+      return false;
     }
   }
 
