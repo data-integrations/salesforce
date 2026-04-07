@@ -64,7 +64,8 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
       .put(SalesforceConstants.CONFIG_MAX_RETRY_COUNT,
            Integer.toString(config.getConnection().getMaxRetryCount()))
       .put(SalesforceConstants.CONFIG_RETRY_REQUIRED, Boolean.toString(config.getConnection()
-                                                                         .isRetryOnBackendError()));
+                                                                         .isRetryOnBackendError()))
+      .put(SalesforceConstants.CONFIG_GRANT_TYPE, config.getConnection().getAuthenticationGrantType().getType());
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
@@ -75,13 +76,15 @@ public class SalesforceOutputFormatProvider implements OutputFormatProvider {
         .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
         .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
     } else {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
-        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConnection().getConsumerKey()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConnection().
-                                                                                  getConsumerSecret()))
-        .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      configBuilder.put(SalesforceConstants.CONFIG_CONSUMER_KEY,
+                      Objects.requireNonNull(config.getConnection().getConsumerKey()))
+              .put(SalesforceConstants.CONFIG_CONSUMER_SECRET,
+                      Objects.requireNonNull(config.getConnection().getConsumerSecret()))
+              .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      if (config.getConnection().getAuthenticationGrantType() == AuthenticatorCredentials.GrantType.PASSWORD) {
+        configBuilder.put(SalesforceConstants.CONFIG_USERNAME, config.getConnection().getUsername())
+                .put(SalesforceConstants.CONFIG_PASSWORD, config.getConnection().getPassword());
+      }
     }
 
     if (config.getExternalIdField() != null) {

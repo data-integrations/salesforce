@@ -90,10 +90,11 @@ public class SalesforceMultiSourceConfig extends SalesforceBaseSourceConfig {
                                      @Nullable Long maxRetryDuration,
                                      @Nullable Integer maxRetryCount,
                                      Boolean retryOnBackendError,
-                                     @Nullable String proxyUrl) {
+                                     @Nullable String proxyUrl,
+                                     @Nullable String authenticationGrantType) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
           datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, initialRetryDuration,
-          maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl);
+          maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl, authenticationGrantType);
     this.whiteList = whiteList;
     this.blackList = blackList;
     this.sObjectNameField = sObjectNameField;

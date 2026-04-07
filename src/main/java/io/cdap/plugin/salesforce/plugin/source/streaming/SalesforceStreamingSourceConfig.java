@@ -153,14 +153,15 @@ public class SalesforceStreamingSourceConfig extends ReferencePluginConfig imple
                                          @Nullable Long initialRetryDuration,
                                          @Nullable Long maxRetryDuration,
                                          @Nullable Integer maxRetryCount,
-                                         @Nullable Boolean retryOnBackendError) {
+                                         @Nullable Boolean retryOnBackendError,
+                                         @Nullable String authenticationGrantType) {
     super(referenceName);
     this.pushTopicName = pushTopicName;
     this.sObjectName = sObjectName;
     this.connection = new SalesforceConnectorConfig(consumerKey, consumerSecret, username, password, loginUrl,
                                                     securityToken, connectTimeout, readTimeout, oAuthInfo, proxyUrl,
                                                     initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                                    retryOnBackendError);
+                                                    retryOnBackendError, authenticationGrantType);
     this.schema = schema;
   }
 

@@ -45,6 +45,7 @@ public class SalesforceSourceConfigBuilder {
   private Integer readTimeout;
   private String proxyUrl;
   private Boolean retryOnBackendError;
+  private String authenticationGrantType;
 
   public SalesforceSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -166,11 +167,20 @@ public class SalesforceSourceConfigBuilder {
     return this;
   }
 
+  public String getAuthenticationGrantType() {
+    return authenticationGrantType;
+  }
+
+  public SalesforceSourceConfigBuilder setAuthenticationGrantType(String authenticationGrantType) {
+    this.authenticationGrantType = authenticationGrantType;
+    return this;
+  }
+
   public SalesforceSourceConfig build() {
     return new SalesforceSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                       connectTimeout, readTimeout, query, sObjectName, datetimeAfter, datetimeBefore,
                                       duration, offset, schema, securityToken, operation, initialRetryDuration,
                                       maxRetryDuration, maxRetryCount, retryOnBackendError, null, enablePKChunk,
-                                      chunkSize, parent, proxyUrl);
+                                      chunkSize, parent, proxyUrl, authenticationGrantType);
   }
 }

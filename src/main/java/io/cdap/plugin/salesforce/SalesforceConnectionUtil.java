@@ -123,6 +123,7 @@ public class SalesforceConnectionUtil {
     if (!config.canAttemptToEstablishConnection()) {
       return null;
     }
+    config.validateAuthenticationFields(collector);
     OAuthInfo oAuthInfo = null;
     try {
       oAuthInfo = Authenticator.getOAuthInfo(config.getAuthenticatorCredentials());
