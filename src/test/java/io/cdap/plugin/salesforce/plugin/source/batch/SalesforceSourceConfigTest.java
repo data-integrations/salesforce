@@ -287,7 +287,7 @@ public class SalesforceSourceConfigTest {
                                                                         Mockito.any(), Mockito.any(), Mockito.any(),
                                                                         Mockito.anyString(), Mockito.anyLong(),
                                                                         Mockito.anyLong(), Mockito.anyInt(),
-                                                                        Mockito.anyBoolean())
+                                                                        Mockito.anyBoolean(), Mockito.anyString())
       .thenReturn(connectorConfig);
     SalesforceConnectorInfo salesforceConnectorInfo =
       new SalesforceConnectorInfo(null, connectorConfig,

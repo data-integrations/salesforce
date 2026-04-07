@@ -20,6 +20,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials.GrantType;
 import io.cdap.plugin.salesforce.plugin.connector.SalesforceConnectorConfig;
 
 import javax.annotation.Nullable;
@@ -103,6 +104,14 @@ public class SalesforceConnectorInfo {
     return config.isRetryOnBackendError();
   }
 
+  public GrantType getAuthenticationGrantType() {
+    return config.getAuthenticationGrantType();
+  }
+
+  public void validateAuthenticationFields(FailureCollector collector) {
+    config.validateAuthenticationFields(collector);
+  }
+
   public void validate(FailureCollector collector, @Nullable OAuthInfo oAuthInfo) {
     try {
       validateConnection(oAuthInfo);
@@ -149,6 +158,7 @@ public class SalesforceConnectorInfo {
 
     return !(config.containsMacro(SalesforceConstants.PROPERTY_CONSUMER_KEY)
       || config.containsMacro(SalesforceConstants.PROPERTY_CONSUMER_SECRET)
+      || config.containsMacro(SalesforceConstants.PROPERTY_AUTHENTICATION_GRANT_TYPE)
       || config.containsMacro(SalesforceConstants.PROPERTY_USERNAME)
       || config.containsMacro(SalesforceConstants.PROPERTY_PASSWORD)
       || config.containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL)
