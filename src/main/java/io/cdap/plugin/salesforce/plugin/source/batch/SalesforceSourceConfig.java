@@ -185,7 +185,6 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
         queryDescriptor = SalesforceQueryParser.getObjectDescriptorFromQuery(query);
       } catch (SOQLParsingException e) {
         collector.addFailure(String.format("Invalid SOQL query '%s' : %s", query, e.getMessage()), null)
-          .withStacktrace(e.getStackTrace())
           .withConfigProperty(SalesforceSourceConstants.PROPERTY_QUERY);
         throw collector.getOrThrowException();
       }
@@ -255,8 +254,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
       String errorMessage = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       collector.addFailure(
           String.format("Cannot establish connection to Salesforce to describe SObject: '%s' with error %s",
-                        sObjectName, errorMessage), null)
-        .withStacktrace(e.getStackTrace());
+                        sObjectName, errorMessage), null);
     }
   }
 
@@ -353,7 +351,7 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
     } catch (ConnectionException e) {
       String message = SalesforceConnectionUtil.getSalesforceErrorMessageFromException(e);
       collector.addFailure(String.format("There was issue communicating with Salesforce due to error: %s", message),
-                           null).withStacktrace(e.getStackTrace());
+                           null);
       throw collector.getOrThrowException();
     }
   }

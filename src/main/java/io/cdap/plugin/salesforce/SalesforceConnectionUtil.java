@@ -130,8 +130,7 @@ public class SalesforceConnectionUtil {
     } catch (Exception e) {
       String message = getSalesforceErrorMessageFromException(e);
       collector.addFailure("Error encountered while establishing connection: " + message,
-                           "Please verify authentication properties are provided correctly")
-        .withStacktrace(e.getStackTrace());
+                           "Please verify authentication properties are provided correctly");
       throw collector.getOrThrowException();
     }
     return oAuthInfo;
