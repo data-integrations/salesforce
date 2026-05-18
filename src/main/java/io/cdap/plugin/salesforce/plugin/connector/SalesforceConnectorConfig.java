@@ -51,9 +51,10 @@ public class SalesforceConnectorConfig extends SalesforceConnectorBaseConfig {
                                    @Nullable Long initialRetryDuration,
                                    @Nullable Long maxRetryDuration,
                                    @Nullable Integer maxRetryCount,
-                                   @Nullable Boolean retryOnBackendError) {
+                                   @Nullable Boolean retryOnBackendError,
+                                   @Nullable String authenticationGrantType) {
     super(consumerKey, consumerSecret, username, password, loginUrl, securityToken, connectTimeout, readTimeout,
-          proxyUrl, initialRetryDuration, maxRetryDuration, maxRetryCount, retryOnBackendError);
+        proxyUrl, initialRetryDuration, maxRetryDuration, maxRetryCount, retryOnBackendError, authenticationGrantType);
     this.oAuthInfo = oAuthInfo;
   }
 

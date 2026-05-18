@@ -45,6 +45,7 @@ public class SalesforceMultiSourceConfigBuilder {
   private Integer readTimeout;
   private String proxyUrl;
   private Boolean retryOnBackendError;
+  private String authenticationGrantType;
 
   public SalesforceMultiSourceConfigBuilder setReferenceName(String referenceName) {
     this.referenceName = referenceName;
@@ -156,11 +157,20 @@ public class SalesforceMultiSourceConfigBuilder {
     return this;
   }
 
+  public String getAuthenticationGrantType() {
+    return authenticationGrantType;
+  }
+
+  public SalesforceMultiSourceConfigBuilder setAuthenticationGrantType(String authenticationGrantType) {
+    this.authenticationGrantType = authenticationGrantType;
+    return this;
+  }
+
   public SalesforceMultiSourceConfig build() {
     return new SalesforceMultiSourceConfig(referenceName, consumerKey, consumerSecret, username, password, loginUrl,
                                            connectTimeout, readTimeout, datetimeAfter, datetimeBefore, duration,
                                            offset, whiteList, blackList, sObjectNameField, securityToken, oAuthInfo,
                                            operation, initialRetryDuration, maxRetryDuration, maxRetryCount,
-                                           retryOnBackendError, proxyUrl);
+                                           retryOnBackendError, proxyUrl, authenticationGrantType);
   }
 }
