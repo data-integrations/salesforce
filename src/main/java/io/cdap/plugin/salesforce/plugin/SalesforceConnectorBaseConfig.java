@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 public class SalesforceConnectorBaseConfig extends PluginConfig {
 
   @Name(SalesforceConstants.PROPERTY_AUTHENTICATION_GRANT_TYPE)
-  @Description("Salesforce authentication grant type: basic or client credentials")
+  @Description("Salesforce authentication grant type: 'password' or 'client_credentials'")
   @Nullable
   @Macro
   protected String authenticationGrantType;
