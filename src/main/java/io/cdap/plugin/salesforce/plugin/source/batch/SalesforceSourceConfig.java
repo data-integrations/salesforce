@@ -112,10 +112,11 @@ public class SalesforceSourceConfig extends SalesforceBaseSourceConfig {
                                 @Nullable Boolean enablePKChunk,
                                 @Nullable Integer chunkSize,
                                 @Nullable String parent,
-                                @Nullable String proxyUrl) {
+                                @Nullable String proxyUrl,
+                                @Nullable String authenticationGrantType) {
     super(referenceName, consumerKey, consumerSecret, username, password, loginUrl, connectTimeout, readTimeout,
       datetimeAfter, datetimeBefore, duration, offset, securityToken, oAuthInfo, operation, initialRetryDuration,
-      maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl);
+      maxRetryDuration, maxRetryCount, retryOnBackendError, proxyUrl, authenticationGrantType);
     this.query = query;
     this.sObjectName = sObjectName;
     this.schema = schema;

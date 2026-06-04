@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import io.cdap.cdap.api.data.batch.InputFormatProvider;
 import io.cdap.plugin.salesforce.SalesforceConstants;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 
@@ -51,7 +52,8 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
            config.getConnection().getInitialRetryDuration().toString())
       .put(SalesforceConstants.CONFIG_MAX_RETRY_DURATION, config.getConnection().getMaxRetryDuration().toString())
       .put(SalesforceConstants.CONFIG_MAX_RETRY_COUNT, config.getConnection().getMaxRetryCount().toString())
-      .put(SalesforceConstants.CONFIG_RETRY_REQUIRED, config.getConnection().isRetryOnBackendError().toString());
+      .put(SalesforceConstants.CONFIG_RETRY_REQUIRED, config.getConnection().isRetryOnBackendError().toString())
+      .put(SalesforceConstants.CONFIG_GRANT_TYPE, config.getConnection().getAuthenticationGrantType().getType());
 
     if (!Strings.isNullOrEmpty(config.getConnection().getProxyUrl())) {
       configBuilder.put(SalesforceConstants.CONFIG_PROXY_URL, config.getConnection().getProxyUrl());
@@ -62,13 +64,15 @@ public class SalesforceInputFormatProvider implements InputFormatProvider {
         .put(SalesforceConstants.CONFIG_OAUTH_TOKEN, oAuthInfo.getAccessToken())
         .put(SalesforceConstants.CONFIG_OAUTH_INSTANCE_URL, oAuthInfo.getInstanceURL());
     } else {
-      configBuilder
-        .put(SalesforceConstants.CONFIG_USERNAME, Objects.requireNonNull(config.getConnection().getUsername()))
-        .put(SalesforceConstants.CONFIG_PASSWORD, Objects.requireNonNull(config.getConnection().getPassword()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_KEY, Objects.requireNonNull(config.getConnection().getConsumerKey()))
-        .put(SalesforceConstants.CONFIG_CONSUMER_SECRET, Objects.requireNonNull(config.getConnection().
-                                                                                  getConsumerSecret()))
-        .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      configBuilder.put(SalesforceConstants.CONFIG_CONSUMER_KEY,
+                      Objects.requireNonNull(config.getConnection().getConsumerKey()))
+              .put(SalesforceConstants.CONFIG_CONSUMER_SECRET,
+                      Objects.requireNonNull(config.getConnection().getConsumerSecret()))
+              .put(SalesforceConstants.CONFIG_LOGIN_URL, Objects.requireNonNull(config.getConnection().getLoginUrl()));
+      if (config.getConnection().getAuthenticationGrantType() == AuthenticatorCredentials.GrantType.PASSWORD) {
+        configBuilder.put(SalesforceConstants.CONFIG_USERNAME, config.getConnection().getUsername())
+                .put(SalesforceConstants.CONFIG_PASSWORD, config.getConnection().getPassword());
+      }
     }
     if (sObjectNameField != null) {
       configBuilder.put(SalesforceSourceConstants.CONFIG_SOBJECT_NAME_FIELD, sObjectNameField);

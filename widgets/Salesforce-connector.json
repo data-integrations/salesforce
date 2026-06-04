@@ -13,6 +13,25 @@
           "name": "oAuthInfo"
         },
         {
+          "name": "authenticationGrantType",
+          "label": "OAuth Grant Type",
+          "widget-type": "radio-group",
+          "widget-attributes": {
+            "layout": "inline",
+            "default": "password",
+            "options": [
+              {
+                "id": "password",
+                "label": "Password"
+              },
+              {
+                "id": "client_credentials",
+                "label": "Client Credentials"
+              }
+            ]
+          }
+        },
+        {
           "widget-type": "textbox",
           "label": "User Name",
           "name": "username",
@@ -138,5 +157,26 @@
     }
   ],
   "outputs": [],
-  "filters": []
+  "filters":[
+    {
+      "name": "GrantTypePassword",
+      "condition": {
+        "expression": "authenticationGrantType != 'client_credentials'"
+      },
+      "show": [
+        {
+          "type": "property",
+          "name": "username"
+        },
+        {
+          "type": "property",
+          "name": "password"
+        },
+        {
+          "type": "property",
+          "name": "securityToken"
+        }
+      ]
+    }
+  ]
 }

@@ -16,6 +16,7 @@
 package io.cdap.plugin.salesforce;
 
 import io.cdap.cdap.api.plugin.PluginConfig;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials.GrantType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,10 +66,14 @@ public class SalesforceConstants {
   public static final String CONFIG_MAX_RETRY_DURATION = "mapred.salesforce.maxRetryDuration";
   public static final String CONFIG_MAX_RETRY_COUNT = "mapred.salesforce.maxRetryCount";
   public static final String CONFIG_RETRY_REQUIRED = "mapred.salesforce.retryOnBackendError";
+  public static final String CONFIG_GRANT_TYPE = "mapred.salesforce.grantType";
 
   public static final String PROPERTY_PROXY_URL = "proxyUrl";
   public static final String CONFIG_PROXY_URL = "mapred.salesforce.proxyUrl";
   public static final String REGEX_PROXY_URL = "^(?i)(https?)://.*$";
+
+  public static final String PROPERTY_AUTHENTICATION_GRANT_TYPE = "authenticationGrantType";
+  public static final GrantType DEFAULT_GRANT_TYPE = GrantType.PASSWORD;
 
   public static final String PROPERTY_MAX_RETRY_TIME_IN_MINS = "cdap.streaming.maxRetryTimeInMins";
   public static final long DEFAULT_MAX_RETRY_TIME_IN_MINS = 360L;

@@ -15,6 +15,7 @@
  */
 package io.cdap.plugin.salesforce.plugin;
 
+import com.google.common.base.Strings;
 import com.sforce.ws.ConnectionException;
 import io.cdap.cdap.api.annotation.Description;
 import io.cdap.cdap.api.annotation.Macro;
@@ -24,6 +25,7 @@ import io.cdap.cdap.etl.api.FailureCollector;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials.GrantType;
 
 import javax.annotation.Nullable;
 
@@ -31,6 +33,12 @@ import javax.annotation.Nullable;
  * Base configuration for Salesforce Streaming and Batch plugins
  */
 public class SalesforceConnectorBaseConfig extends PluginConfig {
+
+  @Name(SalesforceConstants.PROPERTY_AUTHENTICATION_GRANT_TYPE)
+  @Description("Salesforce authentication grant type: 'password' or 'client_credentials'")
+  @Nullable
+  @Macro
+  protected String authenticationGrantType;
 
   @Nullable
   @Name(SalesforceConstants.PROPERTY_PROXY_URL)
@@ -81,7 +89,11 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   private final String securityToken;
 
   @Name(SalesforceConstants.PROPERTY_LOGIN_URL)
-  @Description("Endpoint to authenticate to")
+  @Description("Salesforce OAuth2 login URL. For the 'password' grant type, the default generic URL\n" +
+          "`https://login.salesforce.com/services/oauth2/token` can be used. " +
+          "For the 'client_credentials' grant type,\n" +
+          "you must provide your Salesforce instance-specific URL, for example\n" +
+          "`https://<your-instance>.my.salesforce.com/services/oauth2/token`.")
   @Macro
   @Nullable
   private final String loginUrl;
@@ -118,7 +130,8 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
                                        @Nullable Long initialRetryDuration,
                                        @Nullable Long maxRetryDuration,
                                        @Nullable Integer maxRetryCount,
-                                       @Nullable Boolean retryOnBackendError) {
+                                       @Nullable Boolean retryOnBackendError,
+                                       @Nullable String authenticationGrantType) {
     this.consumerKey = consumerKey;
     this.consumerSecret = consumerSecret;
     this.username = username;
@@ -132,6 +145,16 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
     this.maxRetryDuration = maxRetryDuration;
     this.retryOnBackendError = retryOnBackendError;
     this.maxRetryCount = maxRetryCount;
+    this.authenticationGrantType = authenticationGrantType;
+  }
+
+  public GrantType getAuthenticationGrantType() {
+    if (!Strings.isNullOrEmpty(authenticationGrantType) &&
+            authenticationGrantType.equals(GrantType.CLIENT_CREDENTIALS.getType())) {
+      return GrantType.CLIENT_CREDENTIALS;
+    }
+    // Default auth, handles null case when upgrading pipeline
+    return SalesforceConstants.DEFAULT_GRANT_TYPE;
   }
 
   @Nullable
@@ -230,6 +253,56 @@ public class SalesforceConnectorBaseConfig extends PluginConfig {
   @Nullable
   public String getProxyUrl() {
     return proxyUrl;
+  }
+
+  /**
+   * Validates that required authentication fields are present based on the selected OAuth grant type.
+   * For PASSWORD grant type: consumerKey, consumerSecret, username, password, and loginUrl are required.
+   * For CLIENT_CREDENTIALS grant type: consumerKey, consumerSecret, and loginUrl are required.
+   *
+   * @param collector the failure collector to report validation errors
+   */
+  public void validateAuthenticationFields(FailureCollector collector) {
+    if (containsMacro(SalesforceConstants.PROPERTY_AUTHENTICATION_GRANT_TYPE)) {
+      return;
+    }
+
+    // Fields required for all grant types
+    if (!containsMacro(SalesforceConstants.PROPERTY_CONSUMER_KEY) && Strings.isNullOrEmpty(consumerKey)) {
+      collector.addFailure("Consumer Key is required for authentication.",
+                           "Please provide the Consumer Key from your Salesforce connected app.")
+        .withConfigProperty(SalesforceConstants.PROPERTY_CONSUMER_KEY);
+    }
+    if (!containsMacro(SalesforceConstants.PROPERTY_CONSUMER_SECRET) && Strings.isNullOrEmpty(consumerSecret)) {
+      collector.addFailure("Consumer Secret is required for authentication.",
+                           "Please provide the Consumer Secret from your Salesforce connected app.")
+        .withConfigProperty(SalesforceConstants.PROPERTY_CONSUMER_SECRET);
+    }
+    if (!containsMacro(SalesforceConstants.PROPERTY_LOGIN_URL) && Strings.isNullOrEmpty(loginUrl)) {
+      collector.addFailure("Login URL is required for authentication.",
+                           "Please provide the Salesforce login URL.")
+        .withConfigProperty(SalesforceConstants.PROPERTY_LOGIN_URL);
+    }
+
+    GrantType grantType = getAuthenticationGrantType();
+    // Fields required only for PASSWORD grant type
+    if (grantType == GrantType.PASSWORD) {
+      if (!containsMacro(SalesforceConstants.PROPERTY_USERNAME) && Strings.isNullOrEmpty(username)) {
+        collector.addFailure("Username is required for password grant type authentication.",
+                             "Please provide the Salesforce username.")
+          .withConfigProperty(SalesforceConstants.PROPERTY_USERNAME);
+      }
+      if (!containsMacro(SalesforceConstants.PROPERTY_PASSWORD) && Strings.isNullOrEmpty(password)) {
+        collector.addFailure("Password is required for password grant type authentication.",
+                             "Please provide the Salesforce password.")
+          .withConfigProperty(SalesforceConstants.PROPERTY_PASSWORD);
+      }
+      if (!containsMacro(SalesforceConstants.PROPERTY_SECURITY_TOKEN) && Strings.isNullOrEmpty(securityToken)) {
+        collector.addFailure("Security Token is required for password grant type authentication.",
+                             "Please provide the Salesforce security token.")
+          .withConfigProperty(SalesforceConstants.PROPERTY_SECURITY_TOKEN);
+      }
+    }
   }
 
 }
