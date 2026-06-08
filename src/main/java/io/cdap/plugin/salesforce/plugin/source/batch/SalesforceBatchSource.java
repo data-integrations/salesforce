@@ -48,6 +48,8 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.BulkConnectionRetryWrapper;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSourceConstants;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -71,6 +73,7 @@ public class SalesforceBatchSource extends
   public static final String NAME = "Salesforce";
 
   private final SalesforceSourceConfig config;
+  private static final Logger LOG = LoggerFactory.getLogger(SalesforceBatchSource.class);
   private Schema schema;
   private MapToRecordTransformer transformer;
   private Set<String> jobIds = new HashSet<>();
@@ -139,7 +142,7 @@ public class SalesforceBatchSource extends
 
     authenticatorCredentials = config.getConnection().getAuthenticatorCredentials();
     List<SalesforceSplit> querySplits =
-        getSplits(config, authenticatorCredentials, context.getLogicalStartTime(), oAuthInfo);
+        getSplits(config, authenticatorCredentials, context.getLogicalStartTime(), oAuthInfo, false);
     querySplits.stream().forEach(salesforceSplit -> jobIds.add(salesforceSplit.getJobId()));
     context.setInput(Input.of(config.getReferenceNameOrNormalizedFQN(orgId, sObjectName),
         new SalesforceInputFormatProvider(
@@ -148,10 +151,22 @@ public class SalesforceBatchSource extends
 
   public static List<SalesforceSplit> getSplits(
       SalesforceSourceConfig config, AuthenticatorCredentials authenticatorCredentials,
-      long logicStartTime, OAuthInfo oAuthInfo) {
+      long logicStartTime, OAuthInfo oAuthInfo, boolean pkChunkCountCheck) {
     String query = config.getQuery(logicStartTime, oAuthInfo);
     BulkConnection bulkConnection = SalesforceSplitUtil.getBulkConnection(authenticatorCredentials);
+
     boolean enablePKChunk = config.getEnablePKChunk();
+
+    if (enablePKChunk && pkChunkCountCheck) {
+      enablePKChunk = SalesforceSplitUtil.hasRequiredCountForPkChunking(
+          query, authenticatorCredentials, config.getChunkSize());
+      if (!enablePKChunk) {
+        LOG.info(
+            "PK chunking skipped: record count is below threshold {} ",
+                config.getChunkSize());
+      }
+    }
+
     if (enablePKChunk) {
       String parent = config.getParent();
       int chunkSize = config.getChunkSize();
