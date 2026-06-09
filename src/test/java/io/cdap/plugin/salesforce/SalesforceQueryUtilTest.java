@@ -16,9 +16,25 @@
 package io.cdap.plugin.salesforce;
 
 import com.google.common.collect.ImmutableMap;
+import io.cdap.plugin.salesforce.authenticator.Authenticator;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.HttpMethod;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.net.HttpURLConnection;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -32,6 +48,15 @@ import java.util.stream.IntStream;
 /**
  * Tests for {@link SalesforceQueryUtil}.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({
+    SalesforceConnectionUtil.class,
+    Authenticator.class,
+    SalesforceQueryUtil.class,
+    OAuthInfo.class,
+    HttpClient.class,
+    org.eclipse.jetty.util.component.AbstractLifeCycle.class
+})
 public class SalesforceQueryUtilTest {
 
   @Test
@@ -226,5 +251,110 @@ public class SalesforceQueryUtilTest {
     String sObjectIdQuery = SalesforceQueryUtil.createSObjectIdQuery(query);
 
     Assert.assertEquals("SELECT Id " + fromClause, sObjectIdQuery);
+  }
+
+  @Test
+  public void createCountQuery_withWhereClause_replacesSelectFieldsWithCount() {
+    String query = "SELECT Id,Name,SomeField FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z";
+
+    String result = SalesforceQueryUtil.createCountQuery(query);
+
+    Assert.assertEquals(
+      "SELECT COUNT() FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z",
+      result);
+  }
+
+  @Test
+  public void createCountQuery_withoutWhereClause_replacesSelectFieldsWithCount() {
+    String query = "SELECT Id, Name FROM Account";
+
+    String result = SalesforceQueryUtil.createCountQuery(query);
+
+    Assert.assertEquals("SELECT COUNT() FROM Account", result);
+  }
+
+  @Test(expected = Exception.class)
+  public void getQueryPlan_whenRestClientConnectionFails_throwsException() throws Exception {
+    String query = "SELECT Name FROM Account";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
+    PowerMockito.mockStatic(SalesforceConnectionUtil.class);
+    PowerMockito.when(SalesforceConnectionUtil.getPartnerConnection(credentials))
+        .thenThrow(new RuntimeException("REST Client Connection Failure"));
+
+    SalesforceQueryUtil.getQueryPlan(query, credentials);
+  }
+
+  @Test
+  public void getQueryPlan_success_returnsQueryPlanResponse() throws Exception {
+    String query = "SELECT COUNT() FROM Account";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
+    OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
+    Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
+    Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
+    PowerMockito.mockStatic(Authenticator.class);
+    PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
+    HttpClient httpClient = PowerMockito.mock(HttpClient.class);
+    PowerMockito.whenNew(HttpClient.class).withArguments(Mockito.any(SslContextFactory.class))
+        .thenReturn(httpClient);
+    Request request = Mockito.mock(Request.class);
+    Mockito.when(httpClient.newRequest(Mockito.anyString())).thenReturn(request);
+    Mockito.when(request.method(Mockito.any(HttpMethod.class))).thenReturn(request);
+    Mockito.when(request.header(Mockito.any(HttpHeader.class), Mockito.anyString()))
+        .thenReturn(request);
+    ContentResponse response = Mockito.mock(ContentResponse.class);
+    Mockito.when(request.send()).thenReturn(response);
+    Mockito.when(response.getStatus()).thenReturn(HttpURLConnection.HTTP_OK);
+    Mockito.when(response.getContentAsString())
+        .thenReturn("{\"plans\":[{\"relativeCost\":0.5,\"cardinality\":12345,\"leadingOperationType\":\"Index\"}]}");
+
+    SalesforceQueryUtil.QueryPlanResponse result = SalesforceQueryUtil.getQueryPlan(query, credentials);
+
+    Assert.assertNotNull(result);
+    Assert.assertEquals(1, result.getPlans().size());
+    Assert.assertEquals(0.5, result.getPlans().get(0).getRelativeCost(), 0.0001);
+    Assert.assertEquals(12345, result.getPlans().get(0).getCardinality());
+    Assert.assertEquals("Index", result.getPlans().get(0).getLeadingOperationType());
+  }
+
+  @Test
+  public void hasRequiredCountForPkChunking_queryPlanFails_defaultsToTrue() throws Exception {
+    String query = "SELECT Id, Name FROM Opportunity";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    long threshold = 100000;
+    PowerMockito.mockStatic(SalesforceQueryUtil.class);
+    PowerMockito.when(SalesforceQueryUtil.createCountQuery(query))
+        .thenReturn("SELECT COUNT() FROM Opportunity");
+    PowerMockito.when(SalesforceQueryUtil.getQueryPlan(Mockito.anyString(), Mockito.any()))
+        .thenThrow(new RuntimeException("Query plan API error"));
+
+    boolean result = SalesforceSplitUtil.hasRequiredCountForPkChunking(query, credentials, threshold);
+
+    Assert.assertTrue(result);
+  }
+
+  @Test
+  public void hasRequiredCountForPkChunking_countQueryFails_defaultsToTrue() throws Exception {
+    String query = "SELECT Id, Name FROM Opportunity";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    long threshold = 100000;
+    PowerMockito.mockStatic(SalesforceQueryUtil.class);
+    PowerMockito.when(SalesforceQueryUtil.createCountQuery(query))
+        .thenReturn("SELECT COUNT() FROM Opportunity");
+    SalesforceQueryUtil.QueryPlanResponse planResponse = Mockito.mock(SalesforceQueryUtil.QueryPlanResponse.class);
+    SalesforceQueryUtil.QueryPlan plan = Mockito.mock(SalesforceQueryUtil.QueryPlan.class);
+    Mockito.when(plan.getCardinality()).thenReturn(10L);
+    Mockito.when(plan.getRelativeCost()).thenReturn(0.1);
+    Mockito.when(planResponse.getPlans()).thenReturn(Collections.singletonList(plan));
+    PowerMockito.when(SalesforceQueryUtil.getQueryPlan(Mockito.anyString(), Mockito.any()))
+        .thenReturn(planResponse);
+    PowerMockito.mockStatic(SalesforceConnectionUtil.class);
+    PowerMockito.when(SalesforceConnectionUtil.getPartnerConnection(credentials))
+        .thenThrow(new RuntimeException("Partner connection count query error"));
+
+    boolean result = SalesforceSplitUtil.hasRequiredCountForPkChunking(query, credentials, threshold);
+
+    Assert.assertTrue(result);
   }
 }

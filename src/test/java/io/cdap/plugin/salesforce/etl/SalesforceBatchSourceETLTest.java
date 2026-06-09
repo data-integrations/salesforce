@@ -624,4 +624,108 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
     Assert.assertEquals("record3", results.get(2).get("Name"));
     Assert.assertEquals("record4", results.get(3).get("Name"));
   }
+
+  @Test
+  public void getSplits_pkChunkEnabledWithCustomChunkSize_returnsAllRecords() throws Exception {
+    ImmutableMap<String, String> properties = new ImmutableMap.Builder<String, String>()
+        .put("enablePKChunk", "true")
+        .put("chunkSize", "2")
+        .build();
+
+    testPKChunk(properties);
+  }
+
+  @Test
+  public void getSplits_pkChunkEnabledWithDefaultChunkSize_returnsAllRecords() throws Exception {
+    ImmutableMap<String, String> properties = new ImmutableMap.Builder<String, String>()
+        .put("enablePKChunk", "true")
+        .build();
+
+    testPKChunk(properties);
+  }
+
+  @Test
+  public void getSplits_pkChunkEnabledWithRecordsBelowThreshold_chunkingSkipped() throws Exception {
+    String sObjectName = createCustomObject("IT_PKChunkBelowThreshold", null);
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+        .add(new SObjectBuilder()
+            .setType(sObjectName)
+            .put("Name", "record1")
+            .build())
+        .add(new SObjectBuilder()
+            .setType(sObjectName)
+            .put("Name", "record2")
+            .build())
+        .build();
+    addSObjects(sObjects, true);
+    ImmutableMap.Builder<String, String> properties =
+        getBaseProperties("SalesforceReaderPKChunkBelowThreshold");
+    properties.put("enablePKChunk", "true");
+    properties.put(SalesforceSourceConstants.PROPERTY_QUERY, "SELECT Name FROM " + sObjectName);
+
+    List<StructuredRecord> results = getPipelineResults(
+        properties.build(), SalesforceBatchSource.NAME, "SalesforceBatch");
+    results.sort(Comparator.comparing(record -> record.get("Name")));
+
+    Assert.assertEquals(2, results.size());
+    Assert.assertEquals("record1", results.get(0).get("Name"));
+    Assert.assertEquals("record2", results.get(1).get("Name"));
+  }
+
+  @Test
+  public void getSplits_pkChunkDisabled_chunkingNotApplied() throws Exception {
+    String sObjectName = createCustomObject("IT_PKChunkDisabled", null);
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+        .add(new SObjectBuilder()
+            .setType(sObjectName)
+            .put("Name", "record1")
+            .build())
+        .add(new SObjectBuilder()
+            .setType(sObjectName)
+            .put("Name", "record2")
+            .build())
+        .build();
+    addSObjects(sObjects, true);
+    ImmutableMap.Builder<String, String> properties =
+        getBaseProperties("SalesforceReaderPKChunkDisabled");
+    properties.put("enablePKChunk", "false");
+    properties.put(SalesforceSourceConstants.PROPERTY_QUERY, "SELECT Name FROM " + sObjectName);
+
+    List<StructuredRecord> results = getPipelineResults(
+        properties.build(), SalesforceBatchSource.NAME, "SalesforceBatch");
+    results.sort(Comparator.comparing(record -> record.get("Name")));
+
+    Assert.assertEquals(2, results.size());
+    Assert.assertEquals("record1", results.get(0).get("Name"));
+    Assert.assertEquals("record2", results.get(1).get("Name"));
+  }
+
+  @Test
+  public void getSplits_pkChunkEnabledOnCustomObjectBelowThreshold_chunkingSkipped() throws Exception {
+    String customObjectName = createCustomObject("IT_CustomPKChunk", null);
+    List<SObject> sObjects = new ImmutableList.Builder<SObject>()
+        .add(new SObjectBuilder()
+            .setType(customObjectName)
+            .put("Name", "custom_record1")
+            .build())
+        .add(new SObjectBuilder()
+            .setType(customObjectName)
+            .put("Name", "custom_record2")
+            .build())
+        .build();
+    addSObjects(sObjects, true);
+    ImmutableMap.Builder<String, String> properties =
+        getBaseProperties("SalesforceReaderCustomPKChunk");
+    properties.put("enablePKChunk", "true");
+    properties.put("chunkSize", "100000");
+    properties.put(SalesforceSourceConstants.PROPERTY_QUERY, "SELECT Name FROM " + customObjectName);
+
+    List<StructuredRecord> results = getPipelineResults(
+        properties.build(), SalesforceBatchSource.NAME, "SalesforceBatch");
+    results.sort(Comparator.comparing(record -> record.get("Name")));
+
+    Assert.assertEquals(2, results.size());
+    Assert.assertEquals("custom_record1", results.get(0).get("Name"));
+    Assert.assertEquals("custom_record2", results.get(1).get("Name"));
+  }
 }
