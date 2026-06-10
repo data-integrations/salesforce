@@ -26,6 +26,8 @@ import com.sforce.async.ContentType;
 import com.sforce.async.JobInfo;
 import com.sforce.async.JobStateEnum;
 import com.sforce.async.OperationEnum;
+import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.QueryResult;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import dev.failsafe.TimeoutExceededException;
@@ -33,9 +35,13 @@ import io.cdap.plugin.salesforce.BulkAPIBatchException;
 import io.cdap.plugin.salesforce.InvalidConfigException;
 import io.cdap.plugin.salesforce.SObjectDescriptor;
 import io.cdap.plugin.salesforce.SalesforceBulkUtil;
+import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.SalesforceQueryUtil;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.SalesforceSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -263,8 +269,76 @@ public final class SalesforceSplitUtil {
     return false;
   }
 
-  // This is added only for UCS use case.
-  private static boolean isCustomObject(String sobjectName) {
+  /**
+   * Determines whether PK chunking should be enabled or disabled based on the
+   * estimated record count, object support, and query compatibility.
+   *
+   * @param query       the SOQL query
+   * @param credentials authenticator credentials for SOAP API
+   * @param threshold   the record count threshold for enabling PK chunking
+   * @return true if PK chunking should be enabled, false otherwise
+   */
+  public static boolean hasRequiredCountForPkChunking(
+      final String query,
+      final AuthenticatorCredentials credentials,
+      final long threshold) {
+    try {
+      String sObjectName = SObjectDescriptor.fromQuery(query).getName();
+      String countQuery = SalesforceQueryUtil.createCountQuery(query);
+
+      try {
+        SalesforceQueryUtil.QueryPlanResponse planResponse =
+            SalesforceQueryUtil.getQueryPlan(countQuery, credentials);
+        if (planResponse != null && planResponse.getPlans() != null
+            && !planResponse.getPlans().isEmpty()) {
+          SalesforceQueryUtil.QueryPlan leadingPlan =
+              planResponse.getPlans().get(0);
+          LOG.debug(
+              "PK Chunking Query Plan: leading operation is '{}', "
+                  + "cardinality is {}, cost is {}",
+              leadingPlan.getLeadingOperationType(),
+              leadingPlan.getCardinality(),
+              leadingPlan.getRelativeCost());
+          if (leadingPlan.getCardinality() >= threshold
+              || leadingPlan.getRelativeCost() >= 1.0) {
+            LOG.info(
+                "PK Chunking: Query Plan indicates high volume or "
+                    + "non-selective scan. Auto-enabling PK Chunking.");
+            return true;
+          }
+        }
+      } catch (Exception e) {
+        LOG.warn(
+            "PK Chunking: Query Plan check failed, defaulting to true.",
+            e);
+        return true;
+      }
+
+      PartnerConnection partnerConnection =
+          SalesforceConnectionUtil.getPartnerConnection(credentials);
+      QueryResult result = partnerConnection.query(countQuery);
+      int recordCount = result.getSize();
+      LOG.debug(
+          "PK Chunking validation: object '{}' has {} records, "
+              + "threshold is {}",
+          sObjectName, recordCount, threshold);
+      return recordCount >= threshold;
+    } catch (Exception e) {
+      LOG.warn(
+          "PK Chunking validation: unexpected error during COUNT() query "
+              + "check, falling back to default PK chunking",
+          e);
+      return true;
+    }
+  }
+
+  /**
+   * Helper method to check if sobject is custom object.
+   *
+   * @param sobjectName name of the sobject
+   * @return true if custom, false otherwise
+   */
+  private static boolean isCustomObject(final String sobjectName) {
     return sobjectName.toLowerCase().endsWith("__c");
   }
 }
