@@ -313,6 +313,10 @@
       "show": [
         {
           "type": "property",
+          "name": "authenticationGrantType"
+        },
+        {
+          "type": "property",
           "name": "consumerKey"
         },
         {
