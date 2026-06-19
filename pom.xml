@@ -59,7 +59,7 @@
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
     <cdap.version>6.8.0</cdap.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>2.10.2</hadoop.version>
