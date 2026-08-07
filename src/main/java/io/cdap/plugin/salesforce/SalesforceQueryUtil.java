@@ -21,12 +21,11 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import org.eclipse.jetty.client.ContentResponse;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -152,8 +151,7 @@ public class SalesforceQueryUtil {
         SalesforceConstants.API_VERSION,
         URLEncoder.encode(query, "UTF-8"));
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-    HttpClient httpClient = new HttpClient(sslContextFactory);
+    HttpClient httpClient = new HttpClient();
     httpClient.setConnectTimeout(credentials.getConnectTimeout());
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       Authenticator.setProxy(credentials, httpClient);
@@ -163,12 +161,9 @@ public class SalesforceQueryUtil {
       httpClient.start();
       Request request = httpClient.newRequest(explainUrl)
           .method(HttpMethod.GET)
-          .header(
-              HttpHeader.AUTHORIZATION,
-              "Bearer " + oAuthInfo.getAccessToken())
-          .header(
-              HttpHeader.CONTENT_TYPE,
-              "application/json");
+          .headers(headers -> headers
+              .put(HttpHeader.AUTHORIZATION, "Bearer " + oAuthInfo.getAccessToken())
+              .put(HttpHeader.CONTENT_TYPE, "application/json"));
       ContentResponse response = request.send();
       String responseContent = response.getContentAsString();
       if (response.getStatus() != HttpURLConnection.HTTP_OK) {

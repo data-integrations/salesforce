@@ -25,8 +25,7 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.client.Request;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -89,8 +88,7 @@ public class Authenticator {
       throw new IllegalArgumentException("Grant type cannot be null for OAuth flow to fetch access token.");
     }
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-    HttpClient httpClient = new HttpClient(sslContextFactory);
+    HttpClient httpClient = new HttpClient();
     httpClient.setConnectTimeout(credentials.getConnectTimeout());
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       setProxy(credentials, httpClient);
