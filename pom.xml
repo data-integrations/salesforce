@@ -79,6 +79,7 @@
     <testSourceLocation>${project.basedir}/src/test/java/</testSourceLocation>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <jetty.version>12.1.10</jetty.version>
     <powermock.version>2.0.2</powermock.version>
     <failsafe.version>3.3.2</failsafe.version>
   </properties>
@@ -99,7 +100,17 @@
       <dependency>
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-http</artifactId>
-          <version>9.4.52.v20230823</version>
+          <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-client</artifactId>
+          <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+          <version>${jetty.version}</version>
       </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
@@ -270,6 +281,22 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-http</artifactId>
             </exclusion>
+            <exclusion>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+            </exclusion>
+            <exclusion>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+            </exclusion>
         </exclusions>
     </dependency>
     <dependency>
@@ -376,6 +403,14 @@
         <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.orbit</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
       <scope>test</scope>
