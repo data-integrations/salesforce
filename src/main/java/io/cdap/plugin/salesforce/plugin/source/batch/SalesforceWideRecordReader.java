@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -106,8 +107,11 @@ public class SalesforceWideRecordReader extends SalesforceBulkRecordReader {
 
     batchIterator = partitions.iterator();
 
-    // initialize the 1st batch
-    results = fetchBatchRecords();
+    if (batchIterator.hasNext()) {
+      results = fetchBatchRecords();
+    } else {
+      results = Collections.emptyList();
+    }
 
     return this;
   }
