@@ -32,8 +32,7 @@ import org.cometd.client.transport.LongPollingTransport;
 import org.cometd.common.JSONContext;
 import org.cometd.common.JacksonJSONContextClient;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.client.Request;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,10 +128,8 @@ public class SalesforcePushTopicListener {
   private BayeuxClient getClient(AuthenticatorCredentials credentials) throws Exception {
     OAuthInfo oAuthInfo = Authenticator.getOAuthInfo(credentials);
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-
     // Set up a Jetty HTTP client to use with CometD
-    HttpClient httpClient = new HttpClient(sslContextFactory);
+    HttpClient httpClient = new HttpClient();
     httpClient.setConnectTimeout(CONNECTION_TIMEOUT_MS);
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       Authenticator.setProxy(credentials, httpClient);
@@ -146,15 +143,15 @@ public class SalesforcePushTopicListener {
     Map<String, Object> transportOptions = new HashMap<>();
     transportOptions.put(ClientTransport.JSON_CONTEXT_OPTION, jsonContext);
 
-    // Adds the OAuth header in LongPollingTransport
-    LongPollingTransport transport = new LongPollingTransport(
-      transportOptions, httpClient) {
+    // Adds the OAuth header for all CometD requests
+    httpClient.getRequestListeners().addListener(new Request.Listener() {
       @Override
-      protected void customize(Request exchange) {
-        super.customize(exchange);
-        exchange.header("Authorization", "OAuth " + oAuthInfo.getAccessToken());
+      public void onBegin(Request request) {
+        request.headers(headers -> headers.put("Authorization", "OAuth " + oAuthInfo.getAccessToken()));
       }
-    };
+    });
+
+    LongPollingTransport transport = new LongPollingTransport(transportOptions, httpClient);
 
     // Now set up the Bayeux client itself
     return new BayeuxClient(oAuthInfo.getInstanceURL() + DEFAULT_PUSH_ENDPOINT, transport);

@@ -20,12 +20,11 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
+import org.eclipse.jetty.client.ContentResponse;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -296,13 +295,12 @@ public class SalesforceQueryUtilTest {
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
     HttpClient httpClient = PowerMockito.mock(HttpClient.class);
-    PowerMockito.whenNew(HttpClient.class).withArguments(Mockito.any(SslContextFactory.class))
+    PowerMockito.whenNew(HttpClient.class).withNoArguments()
         .thenReturn(httpClient);
     Request request = Mockito.mock(Request.class);
     Mockito.when(httpClient.newRequest(Mockito.anyString())).thenReturn(request);
     Mockito.when(request.method(Mockito.any(HttpMethod.class))).thenReturn(request);
-    Mockito.when(request.header(Mockito.any(HttpHeader.class), Mockito.anyString()))
-        .thenReturn(request);
+    Mockito.when(request.headers(Mockito.any())).thenReturn(request);
     ContentResponse response = Mockito.mock(ContentResponse.class);
     Mockito.when(request.send()).thenReturn(response);
     Mockito.when(response.getStatus()).thenReturn(HttpURLConnection.HTTP_OK);
