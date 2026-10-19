@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public class SalesforceConstants {
 
-  public static final String API_VERSION = "64.0";
+  public static final String API_VERSION = "66.0";
   public static final String REFERENCE_NAME_DELIMITER = ".";
 
   public static final String PROPERTY_CONSUMER_KEY = "consumerKey";
