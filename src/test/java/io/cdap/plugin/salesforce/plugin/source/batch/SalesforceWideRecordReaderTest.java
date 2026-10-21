@@ -21,6 +21,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.junit.Test;
 import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +33,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -105,5 +109,26 @@ public class SalesforceWideRecordReaderTest {
 
     verify(reader, times(4)).fetchBatchRecords();
     assertEquals(3, readRecords.size());
+  }
+
+  @Test
+  public void nextKeyValue_withEmptyBatch_returnsFalse() throws Exception {
+    Schema schema = Schema.recordOf("test", Schema.Field.of("Id", Schema.of(Schema.Type.STRING)));
+    SoapRecordToMapTransformer transformer = mock(SoapRecordToMapTransformer.class);
+    SalesforceWideRecordReader reader = spy(new SalesforceWideRecordReader(
+      schema, "SELECT Id FROM Account", transformer));
+    Field resultsField = SalesforceWideRecordReader.class.getDeclaredField("results");
+    resultsField.setAccessible(true);
+    resultsField.set(reader, Collections.emptyList());
+    Field batchIteratorField = SalesforceWideRecordReader.class.getDeclaredField("batchIterator");
+    batchIteratorField.setAccessible(true);
+    batchIteratorField.set(reader, Collections.emptyIterator());
+
+    boolean hasNext = reader.nextKeyValue();
+
+    assertFalse(hasNext);
+    assertEquals(0.0f, reader.getProgress(), 0.0001);
+    assertNull(reader.getCurrentValue());
+    verify(reader, times(0)).fetchBatchRecords();
   }
 }

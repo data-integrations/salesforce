@@ -18,6 +18,7 @@ package io.cdap.plugin.salesforce.authenticator;
 
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
@@ -25,17 +26,23 @@ import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.ProxyConfiguration;
+import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Authentication to Salesforce via oauth2
  */
 public class Authenticator {
   private static final Gson GSON = new Gson();
+  private static final Pattern HTML_ERROR_PATTERN =
+      Pattern.compile("<div\\b[^>]*\\bid=['\"]?error['\"]?[^>]*>(.*?)</div>",
+          Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
   /**
    * Authenticates via oauth2 to salesforce and returns a connectorConfig
@@ -114,8 +121,30 @@ public class Authenticator {
           break;
       }
 
-      String response = authRequest.send().getContentAsString();
-      AuthResponse authResponse = GSON.fromJson(response, AuthResponse.class);
+      ContentResponse httpResponse = authRequest.send();
+      int statusCode = httpResponse.getStatus();
+      String reason = httpResponse.getReason();
+      String response = httpResponse.getContentAsString();
+      AuthResponse authResponse;
+
+      try {
+        authResponse = GSON.fromJson(response, AuthResponse.class);
+      } catch (JsonSyntaxException e) {
+        throw new IllegalStateException(
+            String.format(
+                "Cannot authenticate to Salesforce (HTTP %d %s). %s",
+                statusCode,
+                Strings.nullToEmpty(reason),
+                extractErrorFromResponse(response)),
+            e);
+      }
+
+      if (authResponse == null) {
+        throw new IllegalStateException(
+            String.format(
+                "Empty OAuth response from Salesforce (HTTP %d %s).",
+                statusCode, Strings.nullToEmpty(reason)));
+      }
 
       if (!Strings.isNullOrEmpty(authResponse.getError())) {
         throw new IllegalArgumentException(
@@ -149,5 +178,18 @@ public class Authenticator {
       throw new IllegalArgumentException(String.format("Cannot set up proxy server call with " +
                                                          "given proxy server details. Error : %s", e.getMessage()), e);
     }
+  }
+
+  private static String extractErrorFromResponse(String response) {
+    if (!Strings.isNullOrEmpty(response)) {
+      Matcher matcher = HTML_ERROR_PATTERN.matcher(response);
+      if (matcher.find()) {
+        String error = matcher.group(1).replaceAll("<[^>]+>", "").trim();
+        if (!error.isEmpty()) {
+          return error;
+        }
+      }
+    }
+    return "Error while authenticating to Salesforce with given credentials.";
   }
 }
