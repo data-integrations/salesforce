@@ -16,11 +16,17 @@
 
 package io.cdap.plugin.salesforce.plugin.source.batch;
 
+import com.sun.net.httpserver.HttpServer;
 import io.cdap.cdap.api.data.schema.Schema;
+import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
+import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.junit.Test;
 import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +37,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -105,5 +113,44 @@ public class SalesforceWideRecordReaderTest {
 
     verify(reader, times(4)).fetchBatchRecords();
     assertEquals(3, readRecords.size());
+  }
+
+  @Test
+  public void nextKeyValue_withEmptyBatch_returnsFalse() throws Exception {
+    HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+    server.createContext("/services/async/", exchange -> {
+      String response = exchange.getRequestURI().getPath().endsWith("/result")
+        ? "<result-list xmlns=\"http://www.force.com/2009/06/asyncapi/dataload\"><result>res1</result></result-list>"
+        : "<batchInfo xmlns=\"http://www.force.com/2009/06/asyncapi/dataload\">"
+            + "<id>batch1</id><jobId>job1</jobId><state>Completed</state></batchInfo>";
+      byte[] bytes = response.getBytes(StandardCharsets.UTF_8);
+      exchange.getResponseHeaders().add("Content-Type", "application/xml");
+      exchange.sendResponseHeaders(200, bytes.length);
+      exchange.getResponseBody().write(bytes);
+      exchange.close();
+    });
+    server.start();
+
+    try {
+      Schema schema = Schema.recordOf("test", Schema.Field.of("Id", Schema.of(Schema.Type.STRING)));
+      SoapRecordToMapTransformer transformer = mock(SoapRecordToMapTransformer.class);
+      SalesforceWideRecordReader reader = spy(new SalesforceWideRecordReader(
+        schema, "SELECT Id FROM Account", transformer));
+      doNothing().when(reader).setupParser();
+      SalesforceSplit split = new SalesforceSplit("job1", "batch1", "SELECT Id FROM Account");
+      OAuthInfo oAuthInfo = new OAuthInfo("token", "http://localhost:" + server.getAddress().getPort());
+      AuthenticatorCredentials credentials = AuthenticatorCredentials.fromParameters(
+        oAuthInfo, 5000, 5000, null, 1L, 1L, 1, false);
+
+      reader.initialize(split, credentials);
+      boolean hasNext = reader.nextKeyValue();
+
+      assertFalse(hasNext);
+      assertEquals(0.0f, reader.getProgress(), 0.0001);
+      assertNull(reader.getCurrentValue());
+      verify(reader, times(0)).fetchBatchRecords();
+    } finally {
+      server.stop(0);
+    }
   }
 }
