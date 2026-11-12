@@ -23,15 +23,16 @@ import com.sforce.ws.ConnectorConfig;
 import io.cdap.plugin.salesforce.SalesforceConnectionUtil;
 import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.HttpProxy;
-import org.eclipse.jetty.client.ProxyConfiguration;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -101,35 +102,41 @@ public class Authenticator {
       throw new IllegalArgumentException("Grant type cannot be null for OAuth flow to fetch access token.");
     }
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-    HttpClient httpClient = new HttpClient(sslContextFactory);
-    httpClient.setConnectTimeout(credentials.getConnectTimeout());
-    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
-      setProxy(credentials, httpClient);
+    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(credentials.getConnectTimeout(), TimeUnit.MILLISECONDS);
+    if (credentials.getReadTimeout() != null) {
+      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
     }
-    try {
-      httpClient.start();
+    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
+      setProxy(credentials, clientBuilder);
+    }
+    OkHttpClient httpClient = clientBuilder.build();
 
-      Request authRequest = httpClient.POST(credentials.getLoginUrl())
-              .param("grant_type", credentials.getGrantType().getType());
+    FormBody.Builder formBuilder = new FormBody.Builder()
+        .add("grant_type", credentials.getGrantType().getType());
 
-      switch(credentials.getGrantType()) {
-        case CLIENT_CREDENTIALS:
-          authRequest = authRequest.param("client_id", credentials.getConsumerKey())
-                  .param("client_secret", credentials.getConsumerSecret());
-          break;
-        case PASSWORD:
-          authRequest = authRequest.param("client_id", credentials.getConsumerKey())
-                  .param("client_secret", credentials.getConsumerSecret())
-                  .param("username", credentials.getUsername())
-                  .param("password", credentials.getPassword());
-          break;
-      }
+    switch (credentials.getGrantType()) {
+      case CLIENT_CREDENTIALS:
+        formBuilder.add("client_id", credentials.getConsumerKey())
+            .add("client_secret", credentials.getConsumerSecret());
+        break;
+      case PASSWORD:
+        formBuilder.add("client_id", credentials.getConsumerKey())
+            .add("client_secret", credentials.getConsumerSecret())
+            .add("username", credentials.getUsername())
+            .add("password", credentials.getPassword());
+        break;
+    }
 
-      ContentResponse httpResponse = authRequest.send();
-      int statusCode = httpResponse.getStatus();
-      String reason = httpResponse.getReason();
-      String response = httpResponse.getContentAsString();
+    Request authRequest = new Request.Builder()
+        .url(credentials.getLoginUrl())
+        .post(formBuilder.build())
+        .build();
+
+    try (Response httpResponse = httpClient.newCall(authRequest).execute()) {
+      int statusCode = httpResponse.code();
+      String reason = httpResponse.message();
+      String response = httpResponse.body() != null ? httpResponse.body().string() : "";
       AuthResponse authResponse;
 
       try {
@@ -159,26 +166,41 @@ public class Authenticator {
 
       return new OAuthInfo(authResponse.getAccessToken(), authResponse.getInstanceUrl());
     } finally {
-      httpClient.stop();
+      closeHttpClient(httpClient);
+    }
+  }
+
+  /**
+   * Releases dispatcher executor threads and evicts idle connections for a per-call {@link OkHttpClient}.
+   *
+   * @param httpClient client instance to clean up
+   */
+  public static void closeHttpClient(OkHttpClient httpClient) {
+    if (httpClient != null) {
+      if (httpClient.dispatcher() != null && httpClient.dispatcher().executorService() != null) {
+        httpClient.dispatcher().executorService().shutdown();
+      }
+      if (httpClient.connectionPool() != null) {
+        httpClient.connectionPool().evictAll();
+      }
     }
   }
 
   /**
    * Set a proxy to http client based on user input.
    *
-   * @param credentials Credentials contain the proxy server details set in config.
-   * @param httpClient  httpClient to be used to call salesforce APIs
+   * @param credentials   Credentials contain the proxy server details set in config.
+   * @param clientBuilder OkHttpClient.Builder to be used to call salesforce APIs
    */
-  public static void setProxy(AuthenticatorCredentials credentials, HttpClient httpClient) {
+  public static void setProxy(AuthenticatorCredentials credentials, OkHttpClient.Builder clientBuilder) {
     if (!credentials.getProxyUrl().matches(SalesforceConstants.REGEX_PROXY_URL)) {
       throw new IllegalArgumentException(String.format("Proxy URL format is wrong: %s.", credentials.getProxyUrl()));
     }
 
     try {
       URI proxyUrl = new URI(credentials.getProxyUrl());
-      ProxyConfiguration proxyConfig = httpClient.getProxyConfiguration();
-      HttpProxy proxy = new HttpProxy(proxyUrl.getHost(), proxyUrl.getPort());
-      proxyConfig.getProxies().add(proxy);
+      Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort()));
+      clientBuilder.proxy(proxy);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(String.format("Cannot set up proxy server call with " +
                                                          "given proxy server details. Error : %s", e.getMessage()), e);

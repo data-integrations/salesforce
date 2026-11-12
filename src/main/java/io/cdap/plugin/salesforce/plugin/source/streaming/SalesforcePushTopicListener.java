@@ -21,19 +21,19 @@ import io.cdap.plugin.salesforce.SalesforceConstants;
 import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.cometd.bayeux.Channel;
 import org.cometd.bayeux.Message;
+import org.cometd.bayeux.Promise;
 import org.cometd.bayeux.client.ClientSessionChannel;
 import org.cometd.client.BayeuxClient;
+import org.cometd.client.http.okhttp.OkHttpClientTransport;
 import org.cometd.client.transport.ClientTransport;
-import org.cometd.client.transport.LongPollingTransport;
 import org.cometd.common.JSONContext;
 import org.cometd.common.JacksonJSONContextClient;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,6 +69,7 @@ public class SalesforcePushTopicListener {
   private final long maxRetryTimeInMillis;
   private final SalesforceReceiver receiver;
   private BayeuxClient bayeuxClient;
+  private OkHttpClient httpClient;
   private JSONContext.Client jsonContext;
   private long firstErrorOccurrenceTime = 0L;
 
@@ -129,16 +130,16 @@ public class SalesforcePushTopicListener {
   private BayeuxClient getClient(AuthenticatorCredentials credentials) throws Exception {
     OAuthInfo oAuthInfo = Authenticator.getOAuthInfo(credentials);
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-
-    // Set up a Jetty HTTP client to use with CometD
-    HttpClient httpClient = new HttpClient(sslContextFactory);
-    httpClient.setConnectTimeout(CONNECTION_TIMEOUT_MS);
-    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
-      Authenticator.setProxy(credentials, httpClient);
+    // Set up an OkHttp client to use with CometD
+    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(CONNECTION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+    if (credentials.getReadTimeout() != null) {
+      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
     }
-
-    httpClient.start();
+    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
+      Authenticator.setProxy(credentials, clientBuilder);
+    }
+    httpClient = clientBuilder.build();
 
     // Use the Jackson implementation
     jsonContext = new JacksonJSONContextClient();
@@ -146,13 +147,13 @@ public class SalesforcePushTopicListener {
     Map<String, Object> transportOptions = new HashMap<>();
     transportOptions.put(ClientTransport.JSON_CONTEXT_OPTION, jsonContext);
 
-    // Adds the OAuth header in LongPollingTransport
-    LongPollingTransport transport = new LongPollingTransport(
+    // Adds the OAuth header in OkHttpClientTransport
+    OkHttpClientTransport transport = new OkHttpClientTransport(
       transportOptions, httpClient) {
       @Override
-      protected void customize(Request exchange) {
-        super.customize(exchange);
-        exchange.header("Authorization", "OAuth " + oAuthInfo.getAccessToken());
+      protected void customize(Request.Builder request, Promise<Request.Builder> promise) {
+        request.header("Authorization", "OAuth " + oAuthInfo.getAccessToken());
+        super.customize(request, promise);
       }
     };
 
@@ -236,9 +237,14 @@ public class SalesforcePushTopicListener {
   }
 
   public void disconnectStream() {
-    if (bayeuxClient != null) {
-      bayeuxClient.getChannel("/topic/" + topic).unsubscribe();
-      bayeuxClient.disconnect();
+    try {
+      if (bayeuxClient != null) {
+        bayeuxClient.getChannel("/topic/" + topic).unsubscribe();
+        bayeuxClient.disconnect();
+      }
+    } finally {
+      Authenticator.closeHttpClient(httpClient);
+      httpClient = null;
     }
   }
 
