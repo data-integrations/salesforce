@@ -21,18 +21,16 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.parser.SalesforceQueryParser;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Provides Salesforce query utility methods.
@@ -152,33 +150,32 @@ public class SalesforceQueryUtil {
         SalesforceConstants.API_VERSION,
         URLEncoder.encode(query, "UTF-8"));
 
-    SslContextFactory sslContextFactory = new SslContextFactory();
-    HttpClient httpClient = new HttpClient(sslContextFactory);
-    httpClient.setConnectTimeout(credentials.getConnectTimeout());
-    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
-      Authenticator.setProxy(credentials, httpClient);
+    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(credentials.getConnectTimeout(), TimeUnit.MILLISECONDS);
+    if (credentials.getReadTimeout() != null) {
+      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
     }
+    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
+      Authenticator.setProxy(credentials, clientBuilder);
+    }
+    OkHttpClient httpClient = clientBuilder.build();
 
-    try {
-      httpClient.start();
-      Request request = httpClient.newRequest(explainUrl)
-          .method(HttpMethod.GET)
-          .header(
-              HttpHeader.AUTHORIZATION,
-              "Bearer " + oAuthInfo.getAccessToken())
-          .header(
-              HttpHeader.CONTENT_TYPE,
-              "application/json");
-      ContentResponse response = request.send();
-      String responseContent = response.getContentAsString();
-      if (response.getStatus() != HttpURLConnection.HTTP_OK) {
+    Request request = new Request.Builder()
+        .url(explainUrl)
+        .get()
+        .header("Authorization", "Bearer " + oAuthInfo.getAccessToken())
+        .header("Content-Type", "application/json")
+        .build();
+    try (Response response = httpClient.newCall(request).execute()) {
+      String responseContent = response.body() != null ? response.body().string() : "";
+      if (response.code() != HttpURLConnection.HTTP_OK) {
         throw new IOException(String.format(
             "Failed to get Query Plan. Status='%s', Response='%s'",
-            response.getStatus(), responseContent));
+            response.code(), responseContent));
       }
       return new Gson().fromJson(responseContent, QueryPlanResponse.class);
     } finally {
-      httpClient.stop();
+      Authenticator.closeHttpClient(httpClient);
     }
   }
 

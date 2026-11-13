@@ -67,12 +67,13 @@
     <hydrator.version>2.10.0</hydrator.version>
     <commons.version>3.18.0</commons.version>
     <salesforce.api.version>66.0.0</salesforce.api.version>
-    <cometd.java.client.version>4.0.0</cometd.java.client.version>
+    <cometd.java.client.version>5.0.23</cometd.java.client.version>
     <antlr.version>4.7.2</antlr.version>
     <mockito.version>2.23.0</mockito.version>
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
-    <jackson2.version>2.17.1</jackson2.version>
+    <jackson2.version>2.21.7</jackson2.version>
+    <jackson2.annotations.version>2.21</jackson2.annotations.version>
     <json.version>20231013</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
@@ -90,17 +91,32 @@
     </repository>
   </repositories>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>${jackson2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson2.annotations.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>1.2.13</version>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
+      <version>9.4.58.v20250814</version>
     </dependency>
-      <dependency>
-          <groupId>org.eclipse.jetty</groupId>
-          <artifactId>jetty-http</artifactId>
-          <version>9.4.52.v20230823</version>
-      </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
       <artifactId>cdap-api</artifactId>
@@ -263,14 +279,8 @@
     </dependency>
     <dependency>
       <groupId>org.cometd.java</groupId>
-      <artifactId>cometd-java-client</artifactId>
+      <artifactId>cometd-java-client-http-okhttp</artifactId>
       <version>${cometd.java.client.version}</version>
-        <exclusions>
-            <exclusion>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-http</artifactId>
-            </exclusion>
-        </exclusions>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
