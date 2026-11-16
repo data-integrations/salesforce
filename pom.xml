@@ -73,7 +73,6 @@
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
     <jackson2.version>2.21.7</jackson2.version>
-    <jackson2.annotations.version>2.21</jackson2.annotations.version>
     <json.version>20231013</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
@@ -94,19 +93,11 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
         <version>${jackson2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>${jackson2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jackson2.annotations.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -307,7 +298,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson2.version}</version>
     </dependency>
     <!-- Salesforce runtime dependencies to avoid NoClassDefFoundError -->
     <dependency>
