@@ -30,6 +30,7 @@ import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -166,17 +167,22 @@ public class SalesforceQueryUtil {
         .header("Authorization", "Bearer " + oAuthInfo.getAccessToken())
         .header("Content-Type", "application/json")
         .build();
+    final int responseCode;
+    final String responseContent;
     try (Response response = httpClient.newCall(request).execute()) {
-      String responseContent = response.body() != null ? response.body().string() : "";
-      if (response.code() != HttpURLConnection.HTTP_OK) {
-        throw new IOException(String.format(
-            "Failed to get Query Plan. Status='%s', Response='%s'",
-            response.code(), responseContent));
-      }
-      return new Gson().fromJson(responseContent, QueryPlanResponse.class);
+      responseCode = response.code();
+      responseContent = response.body() != null ? response.body().string() : "";
+    } catch (IOException e) {
+      throw new ExecutionException(e);
     } finally {
       Authenticator.closeHttpClient(httpClient);
     }
+    if (responseCode != HttpURLConnection.HTTP_OK) {
+      throw new IOException(String.format(
+          "Failed to get Query Plan. Status='%s', Response='%s'",
+          responseCode, responseContent));
+    }
+    return new Gson().fromJson(responseContent, QueryPlanResponse.class);
   }
 
   /**

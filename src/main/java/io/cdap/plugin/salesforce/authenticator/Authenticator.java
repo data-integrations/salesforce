@@ -28,10 +28,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -175,6 +177,8 @@ public class Authenticator {
       }
 
       return new OAuthInfo(authResponse.getAccessToken(), authResponse.getInstanceUrl());
+    } catch (IOException e) {
+      throw new ExecutionException(e);
     } finally {
       closeHttpClient(httpClient);
     }
