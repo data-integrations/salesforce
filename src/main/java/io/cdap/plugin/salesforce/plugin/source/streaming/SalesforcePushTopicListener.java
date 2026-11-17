@@ -58,6 +58,7 @@ public class SalesforcePushTopicListener {
    */
   private static final long CONNECTION_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(110);
   private static final long HANDSHAKE_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(110);
+  private static final long DISCONNECT_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(10);
 
   private static final int HANDSHAKE_CHECK_INTERVAL_MS = 1000;
 
@@ -131,11 +132,10 @@ public class SalesforcePushTopicListener {
     OAuthInfo oAuthInfo = Authenticator.getOAuthInfo(credentials);
 
     // Set up an OkHttp client to use with CometD
+    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
     OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-        .connectTimeout(CONNECTION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-    if (credentials.getReadTimeout() != null) {
-      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
-    }
+        .connectTimeout(CONNECTION_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       Authenticator.setProxy(credentials, clientBuilder);
     }
@@ -240,9 +240,12 @@ public class SalesforcePushTopicListener {
     try {
       if (bayeuxClient != null) {
         bayeuxClient.getChannel("/topic/" + topic).unsubscribe();
-        bayeuxClient.disconnect();
+        if (!bayeuxClient.disconnect(DISCONNECT_TIMEOUT_MS)) {
+          bayeuxClient.abort();
+        }
       }
     } finally {
+      bayeuxClient = null;
       Authenticator.closeHttpClient(httpClient);
       httpClient = null;
     }

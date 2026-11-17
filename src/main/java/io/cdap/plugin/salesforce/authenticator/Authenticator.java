@@ -101,12 +101,22 @@ public class Authenticator {
     if (credentials.getGrantType() == null) {
       throw new IllegalArgumentException("Grant type cannot be null for OAuth flow to fetch access token.");
     }
-
-    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-        .connectTimeout(credentials.getConnectTimeout(), TimeUnit.MILLISECONDS);
-    if (credentials.getReadTimeout() != null) {
-      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
+    if (Strings.isNullOrEmpty(credentials.getLoginUrl())) {
+      throw new IllegalArgumentException("Login URL cannot be null or empty for OAuth flow.");
     }
+    if (credentials.getConsumerKey() == null || credentials.getConsumerSecret() == null) {
+      throw new IllegalArgumentException("Consumer key and consumer secret cannot be null for OAuth flow.");
+    }
+    if (credentials.getGrantType() == AuthenticatorCredentials.GrantType.PASSWORD
+        && (credentials.getUsername() == null || credentials.getPassword() == null)) {
+      throw new IllegalArgumentException("Username and password cannot be null for password grant OAuth flow.");
+    }
+
+    int connectTimeout = credentials.getConnectTimeout() != null ? credentials.getConnectTimeout() : 0;
+    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
+    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       setProxy(credentials, clientBuilder);
     }
@@ -193,13 +203,22 @@ public class Authenticator {
    * @param clientBuilder OkHttpClient.Builder to be used to call salesforce APIs
    */
   public static void setProxy(AuthenticatorCredentials credentials, OkHttpClient.Builder clientBuilder) {
-    if (!credentials.getProxyUrl().matches(SalesforceConstants.REGEX_PROXY_URL)) {
+    if (credentials.getProxyUrl() == null
+        || !credentials.getProxyUrl().matches(SalesforceConstants.REGEX_PROXY_URL)) {
       throw new IllegalArgumentException(String.format("Proxy URL format is wrong: %s.", credentials.getProxyUrl()));
     }
 
     try {
       URI proxyUrl = new URI(credentials.getProxyUrl());
-      Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyUrl.getHost(), proxyUrl.getPort()));
+      String host = proxyUrl.getHost();
+      if (Strings.isNullOrEmpty(host)) {
+        throw new IllegalArgumentException(String.format("Proxy URL format is wrong: %s.", credentials.getProxyUrl()));
+      }
+      int port = proxyUrl.getPort();
+      if (port == -1) {
+        port = "https".equalsIgnoreCase(proxyUrl.getScheme()) ? 443 : 80;
+      }
+      Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
       clientBuilder.proxy(proxy);
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(String.format("Cannot set up proxy server call with " +

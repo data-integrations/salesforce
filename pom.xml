@@ -73,6 +73,7 @@
     <commons.csv.version>1.6</commons.csv.version>
     <jackson.version>1.9.13</jackson.version>
     <jackson2.version>2.21.7</jackson2.version>
+    <jetty.version>9.4.58.v20250814</jetty.version>
     <json.version>20231013</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
@@ -99,6 +100,16 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-util-ajax</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -106,7 +117,6 @@
     <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-util</artifactId>
-      <version>9.4.58.v20250814</version>
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>

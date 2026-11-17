@@ -150,11 +150,11 @@ public class SalesforceQueryUtil {
         SalesforceConstants.API_VERSION,
         URLEncoder.encode(query, "UTF-8"));
 
+    int connectTimeout = credentials.getConnectTimeout() != null ? credentials.getConnectTimeout() : 0;
+    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
     OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-        .connectTimeout(credentials.getConnectTimeout(), TimeUnit.MILLISECONDS);
-    if (credentials.getReadTimeout() != null) {
-      clientBuilder.readTimeout(credentials.getReadTimeout(), TimeUnit.MILLISECONDS);
-    }
+        .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
     if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
       Authenticator.setProxy(credentials, clientBuilder);
     }
