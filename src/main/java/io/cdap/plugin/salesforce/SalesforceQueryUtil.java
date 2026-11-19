@@ -31,7 +31,6 @@ import java.net.URLEncoder;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Provides Salesforce query utility methods.
@@ -151,15 +150,7 @@ public class SalesforceQueryUtil {
         SalesforceConstants.API_VERSION,
         URLEncoder.encode(query, "UTF-8"));
 
-    int connectTimeout = credentials.getConnectTimeout() != null ? credentials.getConnectTimeout() : 0;
-    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
-    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-        .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
-        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
-    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
-      Authenticator.setProxy(credentials, clientBuilder);
-    }
-    OkHttpClient httpClient = clientBuilder.build();
+    OkHttpClient httpClient = Authenticator.createHttpClient(credentials);
 
     Request request = new Request.Builder()
         .url(explainUrl)

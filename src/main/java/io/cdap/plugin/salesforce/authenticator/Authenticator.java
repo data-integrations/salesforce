@@ -114,15 +114,7 @@ public class Authenticator {
       throw new IllegalArgumentException("Username and password cannot be null for password grant OAuth flow.");
     }
 
-    int connectTimeout = credentials.getConnectTimeout() != null ? credentials.getConnectTimeout() : 0;
-    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
-    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
-        .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
-        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
-    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
-      setProxy(credentials, clientBuilder);
-    }
-    OkHttpClient httpClient = clientBuilder.build();
+    OkHttpClient httpClient = createHttpClient(credentials);
 
     FormBody.Builder formBuilder = new FormBody.Builder()
         .add("grant_type", credentials.getGrantType().getType());
@@ -182,6 +174,30 @@ public class Authenticator {
     } finally {
       closeHttpClient(httpClient);
     }
+  }
+
+  /**
+   * Builds a configured {@link OkHttpClient} from {@link AuthenticatorCredentials}.
+   *
+   * <p>Uses {@link SalesforceConstants#DEFAULT_CONNECTION_TIMEOUT_MS} when connect timeout is unset,
+   * and {@code 0} (infinite) when read timeout is unset to preserve the previous Jetty {@code HttpClient}
+   * default instead of OkHttp's 10-second default.
+   *
+   * @param credentials credentials supplying timeouts and optional proxy URL
+   * @return configured OkHttpClient instance
+   */
+  public static OkHttpClient createHttpClient(AuthenticatorCredentials credentials) {
+    int connectTimeout = credentials.getConnectTimeout() != null
+        ? credentials.getConnectTimeout()
+        : SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS;
+    int readTimeout = credentials.getReadTimeout() != null ? credentials.getReadTimeout() : 0;
+    OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
+        .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+        .readTimeout(readTimeout, TimeUnit.MILLISECONDS);
+    if (!Strings.isNullOrEmpty(credentials.getProxyUrl())) {
+      setProxy(credentials, clientBuilder);
+    }
+    return clientBuilder.build();
   }
 
   /**

@@ -17,6 +17,7 @@
 package io.cdap.plugin.salesforce.authenticator;
 
 import com.google.common.base.Strings;
+import io.cdap.plugin.salesforce.SalesforceConstants;
 import okhttp3.OkHttpClient;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,6 +39,34 @@ import java.util.concurrent.TimeUnit;
  * Unit tests for {@link Authenticator}.
  */
 public class AuthenticatorTest {
+
+  @Test
+  public void createHttpClient_nullTimeouts_usesDefaultConnectAndInfiniteReadTimeout() {
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.getBuilder("key", "secret", "https://login.sf.com")
+        .build();
+    OkHttpClient client = Authenticator.createHttpClient(credentials);
+    try {
+      Assert.assertEquals(SalesforceConstants.DEFAULT_CONNECTION_TIMEOUT_MS, client.connectTimeoutMillis());
+      Assert.assertEquals(0, client.readTimeoutMillis());
+    } finally {
+      Authenticator.closeHttpClient(client);
+    }
+  }
+
+  @Test
+  public void createHttpClient_explicitTimeouts_usesConfiguredValues() {
+    AuthenticatorCredentials credentials = AuthenticatorCredentials.getBuilder("key", "secret", "https://login.sf.com")
+        .setConnectTimeout(15000)
+        .setReadTimeout(30000)
+        .build();
+    OkHttpClient client = Authenticator.createHttpClient(credentials);
+    try {
+      Assert.assertEquals(15000, client.connectTimeoutMillis());
+      Assert.assertEquals(30000, client.readTimeoutMillis());
+    } finally {
+      Authenticator.closeHttpClient(client);
+    }
+  }
 
   @Test
   public void setProxy_httpWithoutPort_defaultsToPort80() {

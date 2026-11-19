@@ -46,7 +46,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -59,8 +58,7 @@ import java.util.stream.IntStream;
     Authenticator.class,
     SalesforceQueryUtil.class,
     OAuthInfo.class,
-    OkHttpClient.class,
-    OkHttpClient.Builder.class
+    OkHttpClient.class
 })
 public class SalesforceQueryUtilTest {
 
@@ -295,21 +293,13 @@ public class SalesforceQueryUtilTest {
   public void getQueryPlan_success_returnsQueryPlanResponse() throws Exception {
     String query = "SELECT COUNT() FROM Account";
     AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
-    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
-    Mockito.when(credentials.getReadTimeout()).thenReturn(5000);
     OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
     Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
     Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
-    OkHttpClient.Builder clientBuilder = PowerMockito.mock(OkHttpClient.Builder.class);
-    PowerMockito.whenNew(OkHttpClient.Builder.class).withNoArguments().thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.connectTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.readTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
     OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
-    Mockito.when(clientBuilder.build()).thenReturn(httpClient);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
     Call call = Mockito.mock(Call.class);
     Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
     Response response = new Response.Builder()
@@ -336,21 +326,13 @@ public class SalesforceQueryUtilTest {
   public void getQueryPlan_transportError_throwsExecutionException() throws Exception {
     String query = "SELECT COUNT() FROM Account";
     AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
-    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
-    Mockito.when(credentials.getReadTimeout()).thenReturn(5000);
     OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
     Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
     Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
-    OkHttpClient.Builder clientBuilder = PowerMockito.mock(OkHttpClient.Builder.class);
-    PowerMockito.whenNew(OkHttpClient.Builder.class).withNoArguments().thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.connectTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.readTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
     OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
-    Mockito.when(clientBuilder.build()).thenReturn(httpClient);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
     Call call = Mockito.mock(Call.class);
     Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
     Mockito.when(call.execute()).thenThrow(new SocketTimeoutException("Read timed out"));
@@ -368,21 +350,13 @@ public class SalesforceQueryUtilTest {
   public void getQueryPlan_nonOkStatus_throwsIOException() throws Exception {
     String query = "SELECT COUNT() FROM Account";
     AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
-    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
-    Mockito.when(credentials.getReadTimeout()).thenReturn(5000);
     OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
     Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
     Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
-    OkHttpClient.Builder clientBuilder = PowerMockito.mock(OkHttpClient.Builder.class);
-    PowerMockito.whenNew(OkHttpClient.Builder.class).withNoArguments().thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.connectTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
-    Mockito.when(clientBuilder.readTimeout(Mockito.anyLong(), Mockito.any(TimeUnit.class)))
-        .thenReturn(clientBuilder);
     OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
-    Mockito.when(clientBuilder.build()).thenReturn(httpClient);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
     Call call = Mockito.mock(Call.class);
     Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
     Response response = new Response.Builder()
