@@ -71,7 +71,7 @@ public abstract class BaseSalesforceStreamingSourceETLTest extends BaseSalesforc
 
   @ClassRule
   public static final TestConfiguration CONFIG =
-    new TestConfiguration(Constants.Explore.EXPLORE_ENABLED, false,
+    new TestConfiguration("explore.enabled", false,
                           Constants.AppFabric.SPARK_COMPAT, Compat.SPARK_COMPAT);
 
   @BeforeClass
