@@ -235,6 +235,8 @@ public class Authenticator {
         throw new IllegalArgumentException(String.format("Proxy URL format is wrong: %s.", credentials.getProxyUrl()));
       }
       int port = proxyUrl.getPort();
+      // URI.getPort() returns -1 when no explicit port is set, which InetSocketAddress rejects.
+      // Default to 443/80 to preserve Jetty HttpClient's normalizePort() behavior.
       if (port == -1) {
         port = "https".equalsIgnoreCase(proxyUrl.getScheme()) ? 443 : 80;
       }
