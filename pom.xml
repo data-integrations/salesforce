@@ -58,12 +58,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- version properties -->
     <avro.version>1.7.7</avro.version>
-    <cdap.version>6.8.0</cdap.version>
+    <cdap.version>6.12.0-SNAPSHOT</cdap.version>
     <junit.version>4.12</junit.version>
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
-    <hadoop.version>2.10.2</hadoop.version>
-    <spark2.version>2.1.3</spark2.version>
+    <hadoop.version>3.3.6</hadoop.version>
+    <spark3.version>3.3.2</spark3.version>
     <hydrator.version>2.10.0</hydrator.version>
     <commons.version>3.18.0</commons.version>
     <salesforce.api.version>66.0.0</salesforce.api.version>
@@ -81,6 +81,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <powermock.version>2.0.2</powermock.version>
     <failsafe.version>3.3.2</failsafe.version>
+    <guava.version>32.1.3-jre</guava.version>
   </properties>
 
   <repositories>
@@ -90,7 +91,21 @@
     </repository>
   </repositories>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
@@ -241,8 +256,8 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-streaming_2.11</artifactId>
-      <version>${spark2.version}</version>
+      <artifactId>spark-streaming_2.12</artifactId>
+      <version>${spark3.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -382,7 +397,7 @@
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-data-pipeline2_2.11</artifactId>
+      <artifactId>cdap-data-pipeline3_2.12</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
@@ -424,22 +439,22 @@
     </dependency>
     <dependency>
       <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-data-streams2_2.11</artifactId>
+      <artifactId>cdap-data-streams3_2.12</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>io.cdap.cdap</groupId>
-      <artifactId>cdap-spark-core2_2.11</artifactId>
+      <artifactId>cdap-spark-core3_2.12</artifactId>
       <version>${cdap.version}</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-core_2.11</artifactId>
-      <version>${spark2.version}</version>
+      <artifactId>spark-core_2.12</artifactId>
+      <version>${spark3.version}</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -502,12 +517,8 @@
           <version>1.1.0</version>
           <configuration>
             <cdapArtifacts>
-              <!--
-                Plugins use the new macro substitution that supports object, which is introduced in 6.4.0.
-                The cdap API version that this project depends on is still 6.2.0 since there is no new API needed.
-              -->
-              <parent>system:cdap-data-pipeline[6.8.0,7.0.0-SNAPSHOT)</parent>
-              <parent>system:cdap-data-streams[6.8.0,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-pipeline[6.12.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
+              <parent>system:cdap-data-streams[6.12.0-SNAPSHOT,7.0.0-SNAPSHOT)</parent>
             </cdapArtifacts>
           </configuration>
           <executions>
@@ -523,6 +534,34 @@
       </plugins>
     </pluginManagement>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>enforce-guava-version</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireUpperBoundDeps>
+                  <includes>
+                    <include>com.google.guava:guava</include>
+                  </includes>
+                </requireUpperBoundDeps>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>com.google.guava:guava:(,32.1.3-jre)</exclude>
+                  </excludes>
+                  <message>Guava versions older than 32.1.3-jre are banned due to security vulnerabilities (CVE-2023-2976, CVE-2020-8908).</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -768,16 +807,6 @@
           </plugin>
         </plugins>
       </build>
-      <dependencyManagement>
-        <dependencies>
-          <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>31.0.1-jre</version>
-            <scope>compile</scope>
-          </dependency>
-        </dependencies>
-      </dependencyManagement>
       <dependencies>
         <dependency>
           <groupId>io.cdap.tests.e2e</groupId>
