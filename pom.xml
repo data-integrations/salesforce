@@ -74,7 +74,7 @@
     <jackson.version>1.9.13</jackson.version>
     <jackson2.version>2.21.7</jackson2.version>
     <jetty.version>9.4.58.v20250814</jetty.version>
-    <json.version>20231013</json.version>
+    <json.version>20260719</json.version>
     <awaitility.version>3.1.6</awaitility.version>
     <commons-logging.version>1.2</commons-logging.version>
     <testSourceLocation>${project.basedir}/src/test/java/</testSourceLocation>
