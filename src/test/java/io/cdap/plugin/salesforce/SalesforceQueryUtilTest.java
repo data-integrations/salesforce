@@ -20,12 +20,13 @@ import io.cdap.plugin.salesforce.authenticator.Authenticator;
 import io.cdap.plugin.salesforce.authenticator.AuthenticatorCredentials;
 import io.cdap.plugin.salesforce.plugin.OAuthInfo;
 import io.cdap.plugin.salesforce.plugin.source.batch.util.SalesforceSplitUtil;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
-import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.http.HttpMethod;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
+import okhttp3.Call;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +35,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -42,6 +45,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -54,8 +58,7 @@ import java.util.stream.IntStream;
     Authenticator.class,
     SalesforceQueryUtil.class,
     OAuthInfo.class,
-    HttpClient.class,
-    org.eclipse.jetty.util.component.AbstractLifeCycle.class
+    OkHttpClient.class
 })
 public class SalesforceQueryUtilTest {
 
@@ -248,6 +251,7 @@ public class SalesforceQueryUtilTest {
     String fromClause = "FROM sObjectName WHERE LastModifiedDate>=2019-04-12T23:23:23Z";
     String query = selectClause + fromClause;
 
+
     String sObjectIdQuery = SalesforceQueryUtil.createSObjectIdQuery(query);
 
     Assert.assertEquals("SELECT Id " + fromClause, sObjectIdQuery);
@@ -289,25 +293,25 @@ public class SalesforceQueryUtilTest {
   public void getQueryPlan_success_returnsQueryPlanResponse() throws Exception {
     String query = "SELECT COUNT() FROM Account";
     AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
-    Mockito.when(credentials.getConnectTimeout()).thenReturn(3000);
     OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
     Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
     Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
-    HttpClient httpClient = PowerMockito.mock(HttpClient.class);
-    PowerMockito.whenNew(HttpClient.class).withArguments(Mockito.any(SslContextFactory.class))
-        .thenReturn(httpClient);
-    Request request = Mockito.mock(Request.class);
-    Mockito.when(httpClient.newRequest(Mockito.anyString())).thenReturn(request);
-    Mockito.when(request.method(Mockito.any(HttpMethod.class))).thenReturn(request);
-    Mockito.when(request.header(Mockito.any(HttpHeader.class), Mockito.anyString()))
-        .thenReturn(request);
-    ContentResponse response = Mockito.mock(ContentResponse.class);
-    Mockito.when(request.send()).thenReturn(response);
-    Mockito.when(response.getStatus()).thenReturn(HttpURLConnection.HTTP_OK);
-    Mockito.when(response.getContentAsString())
-        .thenReturn("{\"plans\":[{\"relativeCost\":0.5,\"cardinality\":12345,\"leadingOperationType\":\"Index\"}]}");
+    OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
+    Call call = Mockito.mock(Call.class);
+    Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
+    Response response = new Response.Builder()
+        .request(new Request.Builder().url("https://instance.salesforce.com").build())
+        .protocol(Protocol.HTTP_1_1)
+        .code(HttpURLConnection.HTTP_OK)
+        .message("OK")
+        .body(ResponseBody.create(
+            "{\"plans\":[{\"relativeCost\":0.5,\"cardinality\":12345,\"leadingOperationType\":\"Index\"}]}",
+            MediaType.parse("application/json")))
+        .build();
+    Mockito.when(call.execute()).thenReturn(response);
 
     SalesforceQueryUtil.QueryPlanResponse result = SalesforceQueryUtil.getQueryPlan(query, credentials);
 
@@ -316,6 +320,60 @@ public class SalesforceQueryUtilTest {
     Assert.assertEquals(0.5, result.getPlans().get(0).getRelativeCost(), 0.0001);
     Assert.assertEquals(12345, result.getPlans().get(0).getCardinality());
     Assert.assertEquals("Index", result.getPlans().get(0).getLeadingOperationType());
+  }
+
+  @Test
+  public void getQueryPlan_transportError_throwsExecutionException() throws Exception {
+    String query = "SELECT COUNT() FROM Account";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
+    Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
+    Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
+    PowerMockito.mockStatic(Authenticator.class);
+    PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
+    OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
+    Call call = Mockito.mock(Call.class);
+    Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
+    Mockito.when(call.execute()).thenThrow(new SocketTimeoutException("Read timed out"));
+
+    try {
+      SalesforceQueryUtil.getQueryPlan(query, credentials);
+      Assert.fail("Expected ExecutionException wrapping SocketTimeoutException");
+    } catch (ExecutionException e) {
+      Assert.assertTrue(e.getCause() instanceof SocketTimeoutException);
+      Assert.assertTrue(e.getMessage().contains("java.net.SocketTimeoutException"));
+    }
+  }
+
+  @Test
+  public void getQueryPlan_nonOkStatus_throwsIOException() throws Exception {
+    String query = "SELECT COUNT() FROM Account";
+    AuthenticatorCredentials credentials = Mockito.mock(AuthenticatorCredentials.class);
+    OAuthInfo oAuthInfo = PowerMockito.mock(OAuthInfo.class);
+    Mockito.when(oAuthInfo.getInstanceURL()).thenReturn("https://instance.salesforce.com");
+    Mockito.when(oAuthInfo.getAccessToken()).thenReturn("test-token");
+    PowerMockito.mockStatic(Authenticator.class);
+    PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
+    OkHttpClient httpClient = PowerMockito.mock(OkHttpClient.class);
+    PowerMockito.when(Authenticator.createHttpClient(credentials)).thenReturn(httpClient);
+    Call call = Mockito.mock(Call.class);
+    Mockito.when(httpClient.newCall(Mockito.any(Request.class))).thenReturn(call);
+    Response response = new Response.Builder()
+        .request(new Request.Builder().url("https://instance.salesforce.com").build())
+        .protocol(Protocol.HTTP_1_1)
+        .code(HttpURLConnection.HTTP_INTERNAL_ERROR)
+        .message("Server Error")
+        .body(ResponseBody.create("{\"message\":\"internal error\"}", MediaType.parse("application/json")))
+        .build();
+    Mockito.when(call.execute()).thenReturn(response);
+
+    try {
+      SalesforceQueryUtil.getQueryPlan(query, credentials);
+      Assert.fail("Expected IOException on non-200 query plan response");
+    } catch (IOException e) {
+      Assert.assertTrue(e.getMessage().contains("Status='500'"));
+    }
   }
 
   @Test
