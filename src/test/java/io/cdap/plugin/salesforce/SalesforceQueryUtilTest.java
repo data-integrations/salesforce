@@ -149,7 +149,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithDurationOnly() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
@@ -174,7 +174,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithOffsetOnly() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
@@ -198,7 +198,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithDurationAndOffset() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
