@@ -63,7 +63,7 @@
     <commons.io.version>2.6</commons.io.version>
     <commons.lang.version>2.6</commons.lang.version>
     <hadoop.version>3.3.6</hadoop.version>
-    <spark3.version>3.3.2</spark3.version>
+    <spark3.version>3.5.8</spark3.version>
     <hydrator.version>2.10.0</hydrator.version>
     <commons.version>3.18.0</commons.version>
     <salesforce.api.version>66.0.0</salesforce.api.version>
