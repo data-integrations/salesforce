@@ -40,6 +40,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -48,6 +49,10 @@ import java.util.Map;
 import java.util.Set;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({
+  "javax.management.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
+  "com.sun.org.apache.xerces.*", "javax.net.ssl.*", "jdk.internal.reflect.*"
+})
 @PrepareForTest({SObjectDescriptor.class, SalesforceSchemaUtil.class})
 public class SalesforceConnectorTest {
 
