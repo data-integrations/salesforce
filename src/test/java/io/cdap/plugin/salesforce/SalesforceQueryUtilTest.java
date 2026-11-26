@@ -301,7 +301,9 @@ public class SalesforceQueryUtilTest {
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
     HttpClient httpClient = PowerMockito.mock(HttpClient.class);
-    PowerMockito.whenNew(HttpClient.class).withArguments(Mockito.any(SslContextFactory.class))
+    PowerMockito.whenNew(HttpClient.class)
+        .withParameterTypes(SslContextFactory.class)
+        .withArguments(Mockito.any(SslContextFactory.class))
         .thenReturn(httpClient);
     Request request = Mockito.mock(Request.class);
     Mockito.when(httpClient.newRequest(Mockito.anyString())).thenReturn(request);
