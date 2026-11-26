@@ -44,7 +44,7 @@ public class SObjectFilterDescriptorTest {
 
   @Test
   public void testRangeDuration() {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     SObjectFilterDescriptor filter = SObjectFilterDescriptor.range(
       now.toInstant().toEpochMilli(),
       Collections.singletonMap(ChronoUnit.HOURS, 6),
@@ -56,7 +56,7 @@ public class SObjectFilterDescriptorTest {
 
   @Test
   public void testRangeOffset() {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     SObjectFilterDescriptor filter = SObjectFilterDescriptor.range(
       now.toInstant().toEpochMilli(),
       Collections.emptyMap(),
@@ -68,7 +68,7 @@ public class SObjectFilterDescriptorTest {
 
   @Test
   public void testRangeDurationAndOffset() {
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     SObjectFilterDescriptor filter = SObjectFilterDescriptor.range(
       now.toInstant().toEpochMilli(),
       Collections.singletonMap(ChronoUnit.HOURS, 6),

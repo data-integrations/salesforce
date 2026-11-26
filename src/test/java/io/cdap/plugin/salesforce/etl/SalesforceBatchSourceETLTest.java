@@ -38,6 +38,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -327,7 +328,7 @@ public class SalesforceBatchSourceETLTest extends BaseSalesforceBatchSourceETLTe
 
     addSObjects(Collections.singletonList(sObject1), false);
 
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     String datetimeAfter = now.plusSeconds(1).format(DateTimeFormatter.ISO_DATE_TIME);
     String datetimeBefore = now.plusHours(1).format(DateTimeFormatter.ISO_DATE_TIME);
 

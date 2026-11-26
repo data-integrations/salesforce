@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -49,6 +50,10 @@ import java.util.stream.IntStream;
  * Tests for {@link SalesforceQueryUtil}.
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({
+  "javax.management.*", "javax.xml.*", "org.xml.*", "org.w3c.*",
+  "com.sun.org.apache.xerces.*", "javax.net.ssl.*", "jdk.internal.reflect.*"
+})
 @PrepareForTest({
     SalesforceConnectionUtil.class,
     Authenticator.class,
@@ -149,7 +154,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithDurationOnly() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
@@ -174,7 +179,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithOffsetOnly() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
@@ -198,7 +203,7 @@ public class SalesforceQueryUtilTest {
   public void testCreateSObjectQueryWithDurationAndOffset() {
     List<String> fields = Arrays.asList("Id", "Name", "SomeField");
     String sObjectName = "sObjectName";
-    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+    ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS);
     long currentTimeMillis = now.toInstant().toEpochMilli();
 
     SObjectFilterDescriptor filterDescriptor = SObjectFilterDescriptor.range(
@@ -296,7 +301,9 @@ public class SalesforceQueryUtilTest {
     PowerMockito.mockStatic(Authenticator.class);
     PowerMockito.when(Authenticator.getOAuthInfo(credentials)).thenReturn(oAuthInfo);
     HttpClient httpClient = PowerMockito.mock(HttpClient.class);
-    PowerMockito.whenNew(HttpClient.class).withArguments(Mockito.any(SslContextFactory.class))
+    PowerMockito.whenNew(HttpClient.class)
+        .withParameterTypes(SslContextFactory.class)
+        .withArguments(Mockito.any(SslContextFactory.class))
         .thenReturn(httpClient);
     Request request = Mockito.mock(Request.class);
     Mockito.when(httpClient.newRequest(Mockito.anyString())).thenReturn(request);
